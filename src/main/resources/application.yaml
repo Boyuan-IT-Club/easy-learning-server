@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: early-learning-server
+  profiles:
+    active: dev
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+  global-config:
+    banner: false
+
+aliyun:
+  oss:
+    # 使用客户端可访问的 HTTPS Endpoint；临时下载地址也使用此域名。
+    endpoint: ${OSS_ENDPOINT:}
+    region: ${OSS_REGION:}
+    bucket-name: ${OSS_BUCKET_NAME:}
+    access-key-id: ${OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
+    download-url-ttl-seconds: ${OSS_DOWNLOAD_URL_TTL_SECONDS:900}
