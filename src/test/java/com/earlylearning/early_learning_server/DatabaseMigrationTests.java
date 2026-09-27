@@ -32,7 +32,8 @@ class DatabaseMigrationTests {
                 "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()",
                 String.class);
         assertTrue(tables.containsAll(Set.of("admin_account", "user_account", "user_license",
-                "storage_cloud_file", "grammar", "course", "assessment_material", "dict_entry", "dict_gloss")));
+                "storage_cloud_file", "grammar", "course", "assessment_material", "dict_entry", "dict_gloss",
+                "idempotency_record")));
         assertTrue(flyway.validateWithResult().validationSuccessful);
         assertEquals(0, flyway.migrate().migrationsExecuted);
     }

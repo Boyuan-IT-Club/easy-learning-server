@@ -61,7 +61,7 @@ class OssRealIntegrationTests {
             log.info("[OSS真实测试] 上传成功");
 
             log.info("[OSS真实测试] 正在生成签名地址并下载文件");
-            var downloaded = download(http, storage.generateDownloadUrl(objectKey));
+            var downloaded = download(http, storage.generateDownloadUrl(objectKey).url());
             log.info("[OSS真实测试] 下载响应：HTTP {}，收到 {} 字节", downloaded.statusCode(), downloaded.body().length);
             assertEquals(200, downloaded.statusCode(), "Signed download must succeed");
             assertArrayEquals(content, downloaded.body(), "Downloaded content must match uploaded content");
@@ -69,7 +69,7 @@ class OssRealIntegrationTests {
 
             log.info("[OSS真实测试] 正在删除文件并验证删除结果");
             storage.delete(objectKey);
-            var deleted = download(http, storage.generateDownloadUrl(objectKey));
+            var deleted = download(http, storage.generateDownloadUrl(objectKey).url());
             log.info("[OSS真实测试] 删除后下载响应：HTTP {}，预期 404", deleted.statusCode());
             assertEquals(404, deleted.statusCode(), "Deleted object must no longer be downloadable");
         }

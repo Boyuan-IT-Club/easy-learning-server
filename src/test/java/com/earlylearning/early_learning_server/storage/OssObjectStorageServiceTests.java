@@ -1,5 +1,6 @@
 package com.earlylearning.early_learning_server.storage;
 
+import com.earlylearning.early_learning_server.common.error.BusinessException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
@@ -22,7 +23,7 @@ class OssObjectStorageServiceTests {
     private final OSS client = mock(OSS.class);
     private final ObjectStorageService service = new OssObjectStorageService(client,
             new OssProperties("https://oss-cn-hangzhou.aliyuncs.com", "cn-hangzhou", "test-bucket",
-                    "test-id", "test-secret", 900));
+                    "test-id", "test-secret", 900, 5000, 30000, 5000, 64, 2));
 
     @Test
     void uploadPreservesContentAndMetadataAndLeavesInputOpen() throws Exception {
@@ -55,7 +56,7 @@ class OssObjectStorageServiceTests {
                     throw cause;
                 });
 
-        var failure = assertThrows(IllegalStateException.class,
+        var failure = assertThrows(BusinessException.class,
                 () -> service.upload("image.png", input, 1, "image/png"));
 
         assertSame(cause, failure.getCause());
@@ -82,7 +83,7 @@ class OssObjectStorageServiceTests {
 
         var cause = new OSSException("access denied");
         doThrow(cause).when(client).deleteObject("test-bucket", "protected.png");
-        assertSame(cause, assertThrows(IllegalStateException.class,
+        assertSame(cause, assertThrows(BusinessException.class,
                 () -> service.delete("protected.png")).getCause());
     }
 
@@ -93,20 +94,23 @@ class OssObjectStorageServiceTests {
                 .thenReturn(signed.toURL());
         Instant earliest = Instant.now().plusSeconds(900);
 
-        assertEquals(signed, service.generateDownloadUrl("a +.png"));
+        ObjectStorageService.DownloadUrl result = service.generateDownloadUrl("a +.png");
+        assertEquals(signed, result.url());
 
         Instant latest = Instant.now().plusSeconds(900);
         var expiration = ArgumentCaptor.forClass(Date.class);
         verify(client).generatePresignedUrl(eq("test-bucket"), eq("a +.png"), expiration.capture());
         assertTrue(expiration.getValue().getTime() >= earliest.toEpochMilli());
         assertTrue(expiration.getValue().getTime() <= latest.toEpochMilli());
+        // 回报的到期时刻必须**就是**交给 SDK 的那一个，而不是调用方另算一遍的结果。
+        assertEquals(expiration.getValue().toInstant(), result.expiresAt());
     }
 
     @Test
     void signingFailureRetainsCause() {
         var cause = new ClientException("signing failed");
         when(client.generatePresignedUrl(anyString(), anyString(), any(Date.class))).thenThrow(cause);
-        assertSame(cause, assertThrows(IllegalStateException.class,
+        assertSame(cause, assertThrows(BusinessException.class,
                 () -> service.generateDownloadUrl("key")).getCause());
     }
 }

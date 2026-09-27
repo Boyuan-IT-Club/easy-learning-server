@@ -1,2 +1,19 @@
+# 统一 LF。本项目的 .env、Dockerfile、compose、SQL、mvnw 都要求 LF，
+# 而在 Windows 侧（core.autocrlf=true）clone 出来的工作区是 CRLF——
+# .env 带 \r 会让 compose 静默读到错误的值（例如 endpoint 末尾多一个 \r）。
+* text=auto eol=lf
+
+# 例外必须写在 * 之后：git 属性后出现者覆盖先出现者。
+# mvnw 是 shell 脚本要 LF；mvnw.cmd / *.cmd 是批处理，CRLF 才能被 cmd.exe 正确解析。
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# 二进制资源不做行尾转换。
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.xlsx binary
+*.zip binary

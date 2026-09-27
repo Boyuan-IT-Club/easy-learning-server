@@ -1,0 +1,19 @@
+# 构建上下文里剔除非构建输入，镜像构建不该因为本地日志或 .env 变化而失效。
+target/
+logs/
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+.env
+.env.*
+!.env.example
+HELP.md
+.mvn/
+docs/
+README.md
+compose.yaml
+compose.server.yaml
+Dockerfile
+.dockerignore

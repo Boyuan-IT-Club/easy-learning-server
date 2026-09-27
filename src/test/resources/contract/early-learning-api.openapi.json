@@ -1,0 +1,4705 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "早期学习困难儿童筛查与干预系统 HTTP API",
+    "description": "Android 平板教师端与管理端的功能接口，共 39 个操作。依据《公共工程基础》九份资料、《技术方案》及用户确认口径，为待实现和联调的设计契约。\n\n成功响应 {code,message,data}；错误响应 {code,message,data:null,details?}。使用 Bearer Token 鉴权。标明 Idempotency-Key 的写入，同一操作重试沿用原值，防止重复创建或消耗凭证；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。激活码/凭证只允许短时内存重放，失效返回 SENSITIVE_RESULT_EXPIRED，不重复生成。\n\nAI request_id 防止重复任务，input_revision 用于拒收旧输入的结果。评分标准按基本固定的一套服务端配置使用，不做自动更新、整场预检或服务端会话锁版。首次评分直接提交，服务端返回实际 rubric_version；后续同一评估/课堂沿用该版本即可。所有故事共用同一套评分规则，上新故事不触发评分标准更新。评分结果保存在本地 JSON，不自动重算或改写。转写与评分分开，文本须经教师确认。\n\n儿童业务数据留在本地；AI 音频、文本、图片及结果仅内存临时处理，不云端持久保存。官方内容单向下载，被引用文件不可删除。故事采用 AIScore v2，问答采用 QuestionAIScore；课程/材料必含故事叙述，字典无版本。\n\n调用顺序见 docs/api/业务流程与接口调用.md，导入说明见 docs/api/README.md。示例均为结构演示，不能作为真实内容或凭证使用。\n\n课程和评估材料发布改为 multipart 的 file 字段上传 ZIP，config.json 与素材放在包内。后端转换文件名后保存原冻结结构；现有详情、下载与单文件接口保留，接口总数仍为 39。\n\n刷新凭证不设到期时间，仅在刷新成功时轮换；上一枚凭证通过现有内存缓存保留 30 秒重试宽限期，窗口内返回同一组新凭证，不重复轮换或延长窗口。数据库仅保存当前 refresh_token_hash，不加字段或表。访问凭证仍有有效期。云端等待 ZIP 异步校验与文件准备全部成功后，在短事务中发布新版并禁用同编号旧版，再返回 201。平板独立等待全部资源下载和校验成功后，在本地短事务中启用新版并禁用旧版；任一步失败保留原可用状态。",
+    "version": "1.6.0"
+  },
+  "tags": [
+    {
+      "name": "官方文件"
+    },
+    {
+      "name": "AI与转写"
+    }
+  ],
+  "paths": {
+    "/admin/files": {
+      "post": {
+        "summary": "上传单个官方文件",
+        "deprecated": false,
+        "description": "multipart 上传官方文件；一次请求一个文件，页面批量上传逐个请求并分别展示结果。管理员凭证。服务端检测实际类型、大小/时长和 SHA256，校验通过后写对象存储与文件记录，均完成才返回 READY。object_key 由服务端生成，不接受客户端路径；文件码终身不可变。重复键必须同一文件摘要及元数据，返回原资源，不重复上传。只允许官方 AUDIO/IMAGE/PDF；儿童录音走转写接口，禁止上传儿童报告/备份。 file_name 为可选显示名覆盖；省略时使用 multipart filename。幂等输入比较使用最终规范化显示名，不因两种等价传法产生重复文件。 本接口保留给语法图标和独立素材；课程/评估材料整包直接提交对应发布接口，不在此上传 ZIP。",
+        "operationId": "uploadOfficialFile",
+        "tags": [
+          "官方文件"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "防止重复提交。客户端生成 UUID，同一次操作重试沿用；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "官方资源二进制。",
+                    "example": "<选择本地官方素材文件>"
+                  },
+                  "file_name": {
+                    "type": "string",
+                    "description": "可选显示名称覆盖值；提供时优先，否则使用 file part 的 filename。服务端剥离目录/控制字符后须为非空，不能作为存储路径；两处均缺失/无效则 400 INVALID_REQUEST。",
+                    "minLength": 1,
+                    "pattern": "\\S",
+                    "example": ""
+                  },
+                  "file_kind": {
+                    "$ref": "#/components/schemas/CloudFileKind"
+                  }
+                },
+                "required": [
+                  "file",
+                  "file_kind"
+                ]
+              },
+              "example": {
+                "file": "<选择本地官方素材文件>",
+                "file_name": "",
+                "file_kind": "IMAGE"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/uploadOfficialFileResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "file_code": "CF_EXAMPLE_IMG_1",
+                    "file_name": "example.png",
+                    "file_kind": "IMAGE",
+                    "mime_type": "image/png",
+                    "size_bytes": 1024,
+                    "duration_ms": null,
+                    "status": "READY",
+                    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                    "created_at": "2026-09-24T00:00:00.000Z",
+                    "updated_at": "2026-09-24T00:00:00.000Z"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge",
+            "description": "文件/音频/图片超出部署允许上限。"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType",
+            "description": "不支持的格式或声明 MIME 与实际内容不符。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      },
+      "get": {
+        "summary": "查询官方文件和引用情况",
+        "deprecated": false,
+        "description": "按 id 降序分页；支持 file_code 精确匹配供详情页使用，不新增详情 HTTP 接口。keyword 对文件名和 file_code 包含匹配。reference_count 统计所有有效及历史内容；不返回底层存储路径。",
+        "operationId": "listOfficialFiles",
+        "tags": [
+          "官方文件"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码。",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "每页条数，默认 20，最大 100。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "每页条数。",
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "file_code",
+            "in": "query",
+            "description": "精确资源编号。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudFileCode"
+            }
+          },
+          {
+            "name": "file_kind",
+            "in": "query",
+            "description": "用途类型。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudFileKind"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "状态筛选。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudFileStatus"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "文件名或 file_code 包含匹配，通配符按普通字符处理。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "description": "关键词。"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/listOfficialFilesResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "id": 1,
+                        "file_code": "CF_EXAMPLE_IMG_1",
+                        "file_name": "example.png",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "duration_ms": null,
+                        "status": "READY",
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "created_at": "2026-09-24T00:00:00.000Z",
+                        "updated_at": "2026-09-24T00:00:00.000Z",
+                        "reference_count": 1
+                      }
+                    ],
+                    "page": 1,
+                    "page_size": 20,
+                    "total": 1
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/files/{file_code}/delete": {
+      "post": {
+        "summary": "标记删除未被引用的官方文件",
+        "deprecated": false,
+        "description": "按用户确认的修订：全量检查当前与历史课程、材料、语法和 JSON 内文件引用；命中返回 409 RESOURCE_IN_USE，保持原状态，禁止标记 DELETED 或物理删除。无引用 READY 文件可标记 DELETED；已 DELETED 幂等返回。引用检查与删除状态切换必须防止并发新增引用。此 API 不物理删除对象；仅从未发布的孤儿对象可由后台按宽限期清理。",
+        "operationId": "deleteOfficialFile",
+        "tags": [
+          "官方文件"
+        ],
+        "parameters": [
+          {
+            "name": "file_code",
+            "in": "path",
+            "description": "资源编号。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudFileCode"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/deleteOfficialFileResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "file_code": "CF_EXAMPLE_IMG_1",
+                    "file_name": "example.png",
+                    "file_kind": "IMAGE",
+                    "mime_type": "image/png",
+                    "size_bytes": 1024,
+                    "duration_ms": null,
+                    "status": "DELETED",
+                    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                    "created_at": "2026-09-24T00:00:00.000Z",
+                    "updated_at": "2026-09-24T00:00:00.000Z"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/files/signatures": {
+      "post": {
+        "summary": "批量签发官方资源下载地址",
+        "deprecated": false,
+        "description": "一次最多 100 个唯一 file_code；先全部校验调用权限和 READY 状态，再返回完整签名列表，任意一项失败整批失败，不返回部分可用结果。签名仅可只读 GET 对应文件，expires_at 为实际到期时间。教师仅允许签名该账号可读的已发布内容依赖（含 DISABLED 历史版本）；管理员可预览任一 READY 官方资源，包括尚未被内容引用的新上传文件。两种角色都禁止签发 UPLOADING/INVALID/DELETED 文件；LF_ 不可请求。下载直接访问预签名 URL，不附带我方 Bearer Token。过期重新申请即可；下载后核对大小与 SHA256。 批量失败在 details.field_path 返回第一个失败项的 JSON Pointer；对调用者可披露的资源同时返回 details.file_code，不返回任何部分签名。",
+        "operationId": "signDownloadUrls",
+        "tags": [
+          "官方文件"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "file_codes": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/CloudFileCode"
+                    },
+                    "description": "需要下载的资源编号。",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "uniqueItems": true
+                  }
+                },
+                "required": [
+                  "file_codes"
+                ]
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "file_codes": [
+                      "CF_EXAMPLE_IMG_1"
+                    ]
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/signDownloadUrlsResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_1",
+                        "download_url": "https://objects.example.invalid/example.png?signature=EXAMPLE_NOT_VALID",
+                        "expires_at": "2026-09-24T00:10:00.000Z",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "mime_type": "image/png"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "409": {
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                },
+                "example": {
+                  "code": "RESOURCE_NOT_READY",
+                  "message": "批次中存在尚未就绪的资源，未签发任何地址。",
+                  "data": null,
+                  "details": {
+                    "field_path": "/file_codes/0",
+                    "file_code": "CF_EXAMPLE_IMG_1"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "410": {
+            "$ref": "#/components/responses/Gone",
+            "description": "文件已删除，不能签发下载地址。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          },
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/files/{file_code}": {
+      "get": {
+        "summary": "按编号查询官方文件元数据",
+        "deprecated": false,
+        "description": "教师只能读取其可访问已发布内容的依赖；管理员可查询全部官方资源供检查。教师读取非 READY 返回 409，DELETED 返回 410；管理员查询可返回任何状态。响应不包含可下载地址，下载地址通过 signatures 单独签发。禁止将云端 id 写入本地外键。",
+        "operationId": "getFileMetadata",
+        "tags": [
+          "官方文件"
+        ],
+        "parameters": [
+          {
+            "name": "file_code",
+            "in": "path",
+            "description": "资源编号。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudFileCode"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getFileMetadataResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "file_code": "CF_EXAMPLE_IMG_1",
+                    "file_name": "example.png",
+                    "file_kind": "IMAGE",
+                    "mime_type": "image/png",
+                    "size_bytes": 1024,
+                    "duration_ms": null,
+                    "status": "READY",
+                    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                    "created_at": "2026-09-24T00:00:00.000Z",
+                    "updated_at": "2026-09-24T00:00:00.000Z"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "410": {
+            "$ref": "#/components/responses/Gone",
+            "description": "文件已删除，不能签发下载地址。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          },
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/ai/transcribe": {
+      "post": {
+        "summary": "提交录音转写任务",
+        "deprecated": false,
+        "description": "异步返回任务凭据，随后查询结果。同一教师的 request_id 在三个提交接口间不可复用；同标识同输入不重复创建，不同输入返回 409 IDEMPOTENCY_CONFLICT。retry_attempt 首次为 0，网络重发不变；FAILED 且可重试时加 1，重启原 task_id。旧序号不再次重启，跳号或运行中递增返回 409 TASK_RETRY_CONFLICT。输入改变须换 request_id/input_revision。\n\n提交 audio 与 context，只做转写，不自动评分；识别结果须教师确认。支持可识别的 m4a/mp3/wav/ogg/webm，故事录音最多 10 分钟，问答上限由部署指定且不超过 10 分钟。音频及结果只在内存处理，不写临时文件；识别失败不等于无回应。",
+        "operationId": "submitTranscription",
+        "tags": [
+          "AI与转写"
+        ],
+        "parameters": [
+          {
+            "name": "retry_attempt",
+            "in": "query",
+            "description": "仅 AI 提交接口使用；首次为 0，确认任务 FAILED 后递增。网络超时重试沿用本次值。迟到的旧尝试不重启任务。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "显式重试序号。",
+              "default": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "audio": {
+                  "contentType": "audio/mp4, audio/mpeg, audio/wav, audio/ogg, audio/webm"
+                },
+                "context": {
+                  "contentType": "application/json"
+                }
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "audio": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "本次单段录音二进制，不能用本地 URI 或 file_code 替代。",
+                    "example": "<选择本地录音文件>"
+                  },
+                  "context": {
+                    "$ref": "#/components/schemas/TranscriptionContext"
+                  }
+                },
+                "required": [
+                  "audio",
+                  "context"
+                ]
+              },
+              "example": {
+                "audio": "<选择本地录音文件>",
+                "context": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "input_revision": "22222222-2222-4222-8222-222222222222",
+                  "business_type": "ASSESSMENT",
+                  "activity_id": "act_003",
+                  "target": "STORY_NARRATION"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "任务已受理；通过查询接口读取状态。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/submitTranscriptionResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "任务已受理",
+                  "data": {
+                    "task_id": "33333333-3333-4333-8333-333333333333",
+                    "request_id": "11111111-1111-4111-8111-111111111111",
+                    "input_revision": "22222222-2222-4222-8222-222222222222",
+                    "task_kind": "TRANSCRIPTION",
+                    "attempt_no": 0,
+                    "rubric_version": null,
+                    "submitted_at": "2026-09-24T00:00:00.000Z",
+                    "business_type": "ASSESSMENT",
+                    "activity_id": "act_003"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge",
+            "description": "文件/音频/图片超出部署允许上限。"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType",
+            "description": "不支持的格式或声明 MIME 与实际内容不符。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/ai/score": {
+      "post": {
+        "summary": "提交故事叙述评分任务",
+        "deprecated": false,
+        "description": "异步返回任务凭据，随后查询结果。同一教师的 request_id 在三个提交接口间不可复用；同标识同输入不重复创建，不同输入返回 409 IDEMPOTENCY_CONFLICT。retry_attempt 首次为 0，网络重发不变；FAILED 且可重试时加 1，重启原 task_id。旧序号不再次重启，跳号或运行中递增返回 409 TASK_RETRY_CONFLICT。输入改变须换 request_id/input_revision。 同一任务的重试继续使用任务记录的实际评分版本。\n\n所有故事共用同一套长期固定规则，上新故事不改变评分版本。首次可省略 rubric_version，服务端使用固定配置并在任务凭据返回实际版本；同一评估/课堂后续传回该版本。无须评分前查询目录、汇总整场规则或申请版本锁。客户端保存结果前检查本场版本一致，不混用不同评分标准。指定版本不可用返回 503 RUBRIC_UNAVAILABLE，不默默换版。\n\n提交确认故事文本、故事依据、分组及实际图片或确认说明。完整校验维度、分组、版本、0/1/2 分、理由和原文证据后返回 AIScore v2；失败不能返回成功分数。\n\n客户端按原冻结 JSON 保存评分；历史已保存结果不因新内容或标准发布而自动重算、覆盖。",
+        "operationId": "submitStoryScoring",
+        "tags": [
+          "AI与转写"
+        ],
+        "parameters": [
+          {
+            "name": "retry_attempt",
+            "in": "query",
+            "description": "仅 AI 提交接口使用；首次为 0，确认任务 FAILED 后递增。网络超时重试沿用本次值。迟到的旧尝试不重启任务。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "显式重试序号。",
+              "default": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoryScoringRequest"
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "request_id": "11111111-1111-4111-8111-111111111111",
+                    "input_revision": "22222222-2222-4222-8222-222222222222",
+                    "business_type": "ASSESSMENT",
+                    "activity_id": "act_003",
+                    "confirmed_text": "仅为接口结构示例，无真实儿童回答。",
+                    "text_confirmed": true,
+                    "story_context": "待填写：与七张图片一致的完整故事文本；本占位文本不可用于正式评分。",
+                    "content_items": [
+                      {
+                        "content_item_id": "content_001",
+                        "image_file_codes": [
+                          "CF_EXAMPLE_IMG_1"
+                        ],
+                        "rubric_item_code": "NARRATIVE_CONTENT_01"
+                      },
+                      {
+                        "content_item_id": "content_002",
+                        "image_file_codes": [
+                          "CF_EXAMPLE_IMG_2",
+                          "CF_EXAMPLE_IMG_3"
+                        ],
+                        "rubric_item_code": "NARRATIVE_CONTENT_02"
+                      },
+                      {
+                        "content_item_id": "content_003",
+                        "image_file_codes": [
+                          "CF_EXAMPLE_IMG_4",
+                          "CF_EXAMPLE_IMG_5"
+                        ],
+                        "rubric_item_code": "NARRATIVE_CONTENT_03"
+                      },
+                      {
+                        "content_item_id": "content_004",
+                        "image_file_codes": [
+                          "CF_EXAMPLE_IMG_6"
+                        ],
+                        "rubric_item_code": "NARRATIVE_CONTENT_04"
+                      },
+                      {
+                        "content_item_id": "content_005",
+                        "image_file_codes": [
+                          "CF_EXAMPLE_IMG_7"
+                        ],
+                        "rubric_item_code": "NARRATIVE_CONTENT_05"
+                      }
+                    ],
+                    "images": [
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_1",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_2",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_3",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_4",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_5",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_6",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_7",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      }
+                    ]
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "任务已受理；通过查询接口读取状态。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/submitStoryScoringResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "任务已受理",
+                  "data": {
+                    "task_id": "33333333-3333-4333-8333-333333333333",
+                    "request_id": "11111111-1111-4111-8111-111111111111",
+                    "input_revision": "22222222-2222-4222-8222-222222222222",
+                    "task_kind": "STORY_SCORING",
+                    "attempt_no": 0,
+                    "rubric_version": "narrative-assessment-v1",
+                    "submitted_at": "2026-09-24T00:00:00.000Z",
+                    "business_type": "ASSESSMENT",
+                    "activity_id": "act_003"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge",
+            "description": "文件/音频/图片超出部署允许上限。"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType",
+            "description": "不支持的格式或声明 MIME 与实际内容不符。"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity",
+            "description": "JSON 可解析，但不满足业务语义或冻结契约。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/ai/score-answer": {
+      "post": {
+        "summary": "提交单题提示前或提示后评分任务",
+        "deprecated": false,
+        "description": "异步返回任务凭据，随后查询结果。同一教师的 request_id 在三个提交接口间不可复用；同标识同输入不重复创建，不同输入返回 409 IDEMPOTENCY_CONFLICT。retry_attempt 首次为 0，网络重发不变；FAILED 且可重试时加 1，重启原 task_id。旧序号不再次重启，跳号或运行中递增返回 409 TASK_RETRY_CONFLICT。输入改变须换 request_id/input_revision。 同一任务的重试继续使用任务记录的实际评分版本。\n\n所有故事共用同一套长期固定规则，上新故事不改变评分版本。首次可省略 rubric_version，服务端使用固定配置并在任务凭据返回实际版本；同一评估/课堂后续传回该版本。无须评分前查询目录、汇总整场规则或申请版本锁。客户端保存结果前检查本场版本一致，不混用不同评分标准。指定版本不可用返回 503 RUBRIC_UNAVAILABLE，不默默换版。\n\n单题提示前/后分别提交、独立评分。录音可选，教师按原话录入并确认后可直接评分；空文本仅表示确认无回应。返回 QuestionAIScore，模型信息在 result.model_meta。最终分取提示后分，未提示沿用提示前分；不取两次最大值。\n\n客户端按原冻结 JSON 保存评分；历史已保存结果不因新内容或标准发布而自动重算、覆盖。",
+        "operationId": "submitAnswerScoring",
+        "tags": [
+          "AI与转写"
+        ],
+        "parameters": [
+          {
+            "name": "retry_attempt",
+            "in": "query",
+            "description": "仅 AI 提交接口使用；首次为 0，确认任务 FAILED 后递增。网络超时重试沿用本次值。迟到的旧尝试不重启任务。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "显式重试序号。",
+              "default": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerScoringRequest"
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "request_id": "11111111-1111-4111-8111-111111111111",
+                    "input_revision": "22222222-2222-4222-8222-222222222222",
+                    "business_type": "CLASSROOM",
+                    "activity_id": "act_002",
+                    "rubric_version": "narrative-assessment-v1",
+                    "confirmed_text": "",
+                    "text_confirmed": true,
+                    "story_context": "待填写：与七张图片一致的完整故事文本；本占位文本不可用于正式评分。",
+                    "question": {
+                      "question_id": "q_001",
+                      "text": "为什么老师不知道是这几个男生打坏了窗户？（心智理解）",
+                      "hint": ""
+                    },
+                    "attempt": "BEFORE_HINT",
+                    "images": [
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_1",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_2",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_3",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_4",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_5",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_6",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      },
+                      {
+                        "kind": "CONFIRMED_DESCRIPTION",
+                        "file_code": "CF_EXAMPLE_IMG_7",
+                        "description": "仅为字段格式示例；正式评分须替换为对应图片的真实内容说明。",
+                        "confirmed": true
+                      }
+                    ]
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "任务已受理；通过查询接口读取状态。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/submitAnswerScoringResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "任务已受理",
+                  "data": {
+                    "task_id": "33333333-3333-4333-8333-333333333333",
+                    "request_id": "11111111-1111-4111-8111-111111111111",
+                    "input_revision": "22222222-2222-4222-8222-222222222222",
+                    "task_kind": "ANSWER_SCORING",
+                    "attempt_no": 0,
+                    "rubric_version": "narrative-assessment-v1",
+                    "submitted_at": "2026-09-24T00:00:00.000Z",
+                    "business_type": "CLASSROOM",
+                    "activity_id": "act_002"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge",
+            "description": "文件/音频/图片超出部署允许上限。"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType",
+            "description": "不支持的格式或声明 MIME 与实际内容不符。"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity",
+            "description": "JSON 可解析，但不满足业务语义或冻结契约。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/ai/tasks/{task_id}": {
+      "get": {
+        "summary": "查询 AI 任务阶段与结果",
+        "deprecated": false,
+        "description": "查询当前教师的任务；不存在或他人任务返回 404 TASK_NOT_FOUND。任务失败仍返回 HTTP 200，检查 data.stage 和 failure。成功结果仅在内存有效期内可读；过期或服务重启后返回 FAILED（RESULT_EXPIRED/PROCESS_RESTARTED），重交必要材料。元数据清理后返回 404，用新 request_id 和原实际评分版本重交。保存结果前校验任务与输入修订、结果条目及版本一致，拒收旧输入的迟到结果；AI 成功不自动完成评估或课堂。",
+        "operationId": "getAiTask",
+        "tags": [
+          "AI与转写"
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "description": "任务凭据中的 task_id。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getAiTaskResponse"
+                },
+                "examples": {
+                  "story_success": {
+                    "summary": "故事评分成功，仅结构示例",
+                    "value": {
+                      "code": "OK",
+                      "message": "成功",
+                      "data": {
+                        "task_id": "33333333-3333-4333-8333-333333333333",
+                        "request_id": "11111111-1111-4111-8111-111111111111",
+                        "input_revision": "22222222-2222-4222-8222-222222222222",
+                        "task_kind": "STORY_SCORING",
+                        "attempt_no": 0,
+                        "rubric_version": "narrative-assessment-v1",
+                        "submitted_at": "2026-09-24T00:00:00.000Z",
+                        "stage": "SUCCEEDED",
+                        "updated_at": "2026-09-24T00:00:00.000Z",
+                        "result_expires_at": "2026-09-24T00:30:00.000Z",
+                        "result": {
+                          "ai_score": {
+                            "schema_version": 2,
+                            "rubric_version": "narrative-assessment-v1",
+                            "summary": null,
+                            "macrostructure": {
+                              "dimensions": [
+                                {
+                                  "item_code": "EVENT_SEQUENCE",
+                                  "item_name": "事件顺序",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "PLOT_STRUCTURE",
+                                  "item_name": "情节结构",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "THEME",
+                                  "item_name": "主题体现",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "COHERENCE",
+                                  "item_name": "故事连贯性",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "CAUSAL_LOGIC",
+                                  "item_name": "因果逻辑",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "DETAIL_EXPANSION",
+                                  "item_name": "细节拓展",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                }
+                              ],
+                              "content_items": [
+                                {
+                                  "content_item_id": "content_001",
+                                  "rubric_item_code": "NARRATIVE_CONTENT_01",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "content_item_id": "content_002",
+                                  "rubric_item_code": "NARRATIVE_CONTENT_02",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "content_item_id": "content_003",
+                                  "rubric_item_code": "NARRATIVE_CONTENT_03",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "content_item_id": "content_004",
+                                  "rubric_item_code": "NARRATIVE_CONTENT_04",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "content_item_id": "content_005",
+                                  "rubric_item_code": "NARRATIVE_CONTENT_05",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                }
+                              ]
+                            },
+                            "microstructure": {
+                              "dimensions": [
+                                {
+                                  "item_code": "VOCABULARY_DIVERSITY",
+                                  "item_name": "词汇丰富度",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "MENTAL_STATE_WORDS",
+                                  "item_name": "心理状态词",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "SYNTACTIC_COMPLEXITY",
+                                  "item_name": "句法复杂度",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "REFERENTIAL_COHESION",
+                                  "item_name": "指称衔接",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                },
+                                {
+                                  "item_code": "CONJUNCTION_COHESION",
+                                  "item_name": "连词衔接",
+                                  "score": 1,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
+                                }
+                              ],
+                              "productivity": {
+                                "mean_c_unit_length": null,
+                                "adjective_count": null,
+                                "adverb_count": null,
+                                "conjunction_count": null,
+                                "score": 1,
+                                "max_score": 2,
+                                "reason": "仅为结构示例，不是对实际回答的评分。",
+                                "evidence": [],
+                                "item_code": "NARRATIVE_PRODUCTIVITY"
+                              }
+                            },
+                            "model_meta": {
+                              "model": "example-model",
+                              "prompt_version": "example-prompt-v1"
+                            }
+                          }
+                        },
+                        "business_type": "ASSESSMENT",
+                        "activity_id": "act_003"
+                      }
+                    }
+                  },
+                  "answer_success": {
+                    "summary": "单次问答评分成功，仅结构示例",
+                    "value": {
+                      "code": "OK",
+                      "message": "成功",
+                      "data": {
+                        "task_id": "33333333-3333-4333-8333-333333333333",
+                        "request_id": "11111111-1111-4111-8111-111111111111",
+                        "input_revision": "22222222-2222-4222-8222-222222222222",
+                        "task_kind": "ANSWER_SCORING",
+                        "attempt_no": 0,
+                        "rubric_version": "narrative-assessment-v1",
+                        "submitted_at": "2026-09-24T00:00:00.000Z",
+                        "stage": "SUCCEEDED",
+                        "updated_at": "2026-09-24T00:00:00.000Z",
+                        "result_expires_at": "2026-09-24T00:30:00.000Z",
+                        "result": {
+                          "question_id": "q_001",
+                          "attempt": "BEFORE_HINT",
+                          "ai_score": {
+                            "rubric_version": "narrative-assessment-v1",
+                            "score": 1,
+                            "max_score": 2,
+                            "reason": "仅为结构示例，不是对实际回答的评分。",
+                            "evidence": []
+                          },
+                          "model_meta": {
+                            "model": "example-model",
+                            "prompt_version": "example-prompt-v1"
+                          }
+                        },
+                        "business_type": "CLASSROOM",
+                        "activity_id": "act_002"
+                      }
+                    }
+                  },
+                  "transcribed": {
+                    "summary": "转写成功，须教师确认",
+                    "value": {
+                      "code": "OK",
+                      "message": "成功",
+                      "data": {
+                        "task_id": "33333333-3333-4333-8333-333333333333",
+                        "request_id": "11111111-1111-4111-8111-111111111111",
+                        "input_revision": "22222222-2222-4222-8222-222222222222",
+                        "task_kind": "TRANSCRIPTION",
+                        "attempt_no": 0,
+                        "rubric_version": null,
+                        "submitted_at": "2026-09-24T00:00:00.000Z",
+                        "stage": "SUCCEEDED",
+                        "updated_at": "2026-09-24T00:00:00.000Z",
+                        "result_expires_at": "2026-09-24T00:30:00.000Z",
+                        "result": {
+                          "transcript": "仅为接口结构示例，无真实儿童回答。"
+                        },
+                        "business_type": "ASSESSMENT",
+                        "activity_id": "act_003"
+                      }
+                    }
+                  },
+                  "processing": {
+                    "summary": "处理中，不含成功结果",
+                    "value": {
+                      "code": "OK",
+                      "message": "成功",
+                      "data": {
+                        "task_id": "33333333-3333-4333-8333-333333333333",
+                        "request_id": "11111111-1111-4111-8111-111111111111",
+                        "input_revision": "22222222-2222-4222-8222-222222222222",
+                        "task_kind": "STORY_SCORING",
+                        "attempt_no": 0,
+                        "rubric_version": "narrative-assessment-v1",
+                        "submitted_at": "2026-09-24T00:00:00.000Z",
+                        "stage": "SCORING",
+                        "updated_at": "2026-09-24T00:00:00.000Z",
+                        "business_type": "ASSESSMENT",
+                        "activity_id": "act_003"
+                      }
+                    }
+                  },
+                  "expired": {
+                    "summary": "结果已过期，客户端重交材料",
+                    "value": {
+                      "code": "OK",
+                      "message": "成功",
+                      "data": {
+                        "task_id": "33333333-3333-4333-8333-333333333333",
+                        "request_id": "11111111-1111-4111-8111-111111111111",
+                        "input_revision": "22222222-2222-4222-8222-222222222222",
+                        "task_kind": "STORY_SCORING",
+                        "attempt_no": 0,
+                        "rubric_version": "narrative-assessment-v1",
+                        "submitted_at": "2026-09-24T00:00:00.000Z",
+                        "stage": "FAILED",
+                        "updated_at": "2026-09-24T00:00:00.000Z",
+                        "failed_stage": "SCORE",
+                        "failure": {
+                          "code": "RESULT_EXPIRED",
+                          "message": "结果已过期，请重新提交本次材料。",
+                          "retryable": true
+                        },
+                        "business_type": "ASSESSMENT",
+                        "activity_id": "act_003"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/ai/rubrics": {
+      "get": {
+        "summary": "读取内容编制所需的评分条目目录",
+        "deprecated": false,
+        "description": "仅供管理员编制官方内容、教师编制私人课程时查看统一评分条目。所有故事共用同一套长期固定规则，课程只将自身图片分组显式映射到现有条目，不需要为每个新故事补规则或发布评分版本。目录可缓存复用，正常评估、课堂和评分前无需调用。无版本查询参数、不列历史版本、不提供规则编辑或自动更新接口。服务端统一评分配置缺失或不可用时返回 503 RUBRIC_UNAVAILABLE。",
+        "operationId": "getRubricCatalog",
+        "tags": [
+          "AI与转写"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/getRubricCatalogResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "rubric_version": "narrative-assessment-v1",
+                    "ai_score_schema_version": 2,
+                    "business_types": [
+                      "ASSESSMENT",
+                      "CLASSROOM"
+                    ],
+                    "items": [
+                      {
+                        "item_code": "EVENT_SEQUENCE",
+                        "item_name": "事件顺序",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "PLOT_STRUCTURE",
+                        "item_name": "情节结构",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "THEME",
+                        "item_name": "主题体现",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "COHERENCE",
+                        "item_name": "故事连贯性",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "CAUSAL_LOGIC",
+                        "item_name": "因果逻辑",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "NARRATIVE_CONTENT_01",
+                        "item_name": "图1",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事通用；本故事图片通过 content_items 显式映射到此条目，不按图片序号猜测。"
+                      },
+                      {
+                        "item_code": "NARRATIVE_CONTENT_02",
+                        "item_name": "图2、3",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事通用；本故事图片通过 content_items 显式映射到此条目，不按图片序号猜测。"
+                      },
+                      {
+                        "item_code": "NARRATIVE_CONTENT_03",
+                        "item_name": "图4、5",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事通用；本故事图片通过 content_items 显式映射到此条目，不按图片序号猜测。"
+                      },
+                      {
+                        "item_code": "NARRATIVE_CONTENT_04",
+                        "item_name": "图6",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事通用；本故事图片通过 content_items 显式映射到此条目，不按图片序号猜测。"
+                      },
+                      {
+                        "item_code": "NARRATIVE_CONTENT_05",
+                        "item_name": "图7",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事通用；本故事图片通过 content_items 显式映射到此条目，不按图片序号猜测。"
+                      },
+                      {
+                        "item_code": "DETAIL_EXPANSION",
+                        "item_name": "细节拓展",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "NARRATIVE_PRODUCTIVITY",
+                        "item_name": "叙事产生性（量化的统计）",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "VOCABULARY_DIVERSITY",
+                        "item_name": "词汇丰富度",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "MENTAL_STATE_WORDS",
+                        "item_name": "心理状态词",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "SYNTACTIC_COMPLEXITY",
+                        "item_name": "句法复杂度",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "REFERENTIAL_COHESION",
+                        "item_name": "衔接使用",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "CONJUNCTION_COHESION",
+                        "item_name": "衔接使用",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      },
+                      {
+                        "item_code": "QUESTION_REASONING",
+                        "item_name": "统一问答推理",
+                        "task_kind": "ANSWER_SCORING",
+                        "applicability": "所有故事共用的统一叙事或问答评价条目。"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          },
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CloudId": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "云端数据库 ID；不能作为本地 SQLite 外键直接保存。",
+        "maximum": 9007199254740991
+      },
+      "Code": {
+        "type": "string",
+        "description": "稳定业务编号；不含路径分隔符。",
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9_-]+$",
+        "maxLength": 128
+      },
+      "FileCode": {
+        "type": "string",
+        "description": "资源稳定编号。新增官方资源 CF_，平板自产 LF_；旧冻结示例中的编号仅演示。不可据此构造路径。",
+        "minLength": 1,
+        "pattern": "\\S",
+        "maxLength": 128
+      },
+      "CloudFileCode": {
+        "type": "string",
+        "description": "官方资源编号；终身对应同一份字节，不复用。",
+        "minLength": 1,
+        "pattern": "^CF_[A-Za-z0-9_-]+$",
+        "maxLength": 128
+      },
+      "Timestamp": {
+        "type": "string",
+        "description": "UTC ISO 8601 时间戳。",
+        "format": "date-time"
+      },
+      "Uuid": {
+        "type": "string",
+        "description": "客户端生成的随机 UUID；不得包含儿童身份信息。",
+        "format": "uuid"
+      },
+      "RubricVersion": {
+        "type": "string",
+        "description": "实际采用的评分标准版本，用于结果追溯和同场续评分；通常长期不变。与模型/Prompt 版本、内容版本和 JSON 结构版本分别管理。",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "Hash": {
+        "type": "string",
+        "description": "SHA-256 十六进制小写摘要。",
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      "CloudFileStatus": {
+        "type": "string",
+        "enum": [
+          "UPLOADING",
+          "READY",
+          "INVALID",
+          "DELETED"
+        ],
+        "description": "云端文件状态。DELETED 文件无业务引用且不再签发下载地址。"
+      },
+      "CloudFileKind": {
+        "type": "string",
+        "enum": [
+          "AUDIO",
+          "PDF",
+          "IMAGE"
+        ],
+        "description": "云端仅管理官方资料；EXPORT/BACKUP 为本地文件，不支持上传。"
+      },
+      "ModelMeta": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "服务端实际调用的模型标识，不采信模型自报。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "prompt_version": {
+            "type": "string",
+            "description": "服务端部署的提示词版本。",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "model",
+          "prompt_version"
+        ]
+      },
+      "CloudFile": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "file_code": {
+            "$ref": "#/components/schemas/CloudFileCode"
+          },
+          "file_name": {
+            "type": "string",
+            "description": "原始文件名；只用于展示，不作为路径。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "file_kind": {
+            "$ref": "#/components/schemas/CloudFileKind"
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "服务端检测的实际 MIME。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "文件字节数。"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "音频毫秒时长；非音频为 null。",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/CloudFileStatus"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "READY 必须为非空 SHA256；其他状态允许尚无摘要。",
+            "pattern": "^[a-f0-9]{64}$",
+            "nullable": true
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "file_code",
+          "file_name",
+          "file_kind",
+          "mime_type",
+          "size_bytes",
+          "duration_ms",
+          "status",
+          "sha256",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "不返回 object_key、内部磁盘路径或永久存储凭据。",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "READY"
+                ],
+                "description": "可用文件。"
+              },
+              "sha256": {
+                "$ref": "#/components/schemas/Hash"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "UPLOADING",
+                  "INVALID",
+                  "DELETED"
+                ],
+                "description": "非可用文件。"
+              }
+            }
+          }
+        ]
+      },
+      "AdminFile": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "file_code": {
+            "$ref": "#/components/schemas/CloudFileCode"
+          },
+          "file_name": {
+            "type": "string",
+            "description": "原始文件名；只用于展示，不作为路径。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "file_kind": {
+            "$ref": "#/components/schemas/CloudFileKind"
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "服务端检测的实际 MIME。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "文件字节数。"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "音频毫秒时长；非音频为 null。",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/CloudFileStatus"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "READY 必须为非空 SHA256；其他状态允许尚无摘要。",
+            "pattern": "^[a-f0-9]{64}$",
+            "nullable": true
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "reference_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "全量引用扫描命中的业务记录数；不返回儿童信息。 大于 0 即被引用，不再返回可推导的 referenced。"
+          }
+        },
+        "required": [
+          "id",
+          "file_code",
+          "file_name",
+          "file_kind",
+          "mime_type",
+          "size_bytes",
+          "duration_ms",
+          "status",
+          "sha256",
+          "created_at",
+          "updated_at",
+          "reference_count"
+        ],
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "READY"
+                ],
+                "description": "可用文件。"
+              },
+              "sha256": {
+                "$ref": "#/components/schemas/Hash"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "UPLOADING",
+                  "INVALID",
+                  "DELETED"
+                ],
+                "description": "非可用文件。"
+              }
+            }
+          }
+        ]
+      },
+      "DownloadSignature": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "file_code": {
+            "$ref": "#/components/schemas/CloudFileCode"
+          },
+          "download_url": {
+            "type": "string",
+            "description": "对象存储 HTTPS 只读预签名地址；不得写日志或永久保存。",
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "下载校验字节数。"
+          },
+          "sha256": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "实际 MIME。",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "file_code",
+          "download_url",
+          "expires_at",
+          "size_bytes",
+          "sha256",
+          "mime_type"
+        ]
+      },
+      "ContentItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "content_item_id": {
+            "type": "string",
+            "description": "叙事活动内唯一的图片分组编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "image_file_codes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileCode"
+            },
+            "description": "该分组的实际图片编号，顺序即展示顺序。",
+            "uniqueItems": true
+          },
+          "rubric_item_code": {
+            "type": "string",
+            "description": "统一评分规则中的图片评分条目编号；所有故事共用，通过 content_items 显式映射本故事图片分组。",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "content_item_id",
+          "image_file_codes",
+          "rubric_item_code"
+        ]
+      },
+      "Evidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "TRANSCRIPT"
+            ],
+            "description": "证据来自对应已确认文本。"
+          },
+          "text": {
+            "type": "string",
+            "description": "原文片段，必须与偏移截取内容完全一致。"
+          },
+          "start_offset": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "JavaScript UTF-16 code unit 起点，左闭。"
+          },
+          "end_offset": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "UTF-16 code unit 终点，右开；必须大于起点且不超过文本长度。"
+          }
+        },
+        "required": [
+          "source",
+          "text",
+          "start_offset",
+          "end_offset"
+        ]
+      },
+      "QuestionAIScore": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rubric_version": {
+            "$ref": "#/components/schemas/RubricVersion"
+          },
+          "score": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "成功评分，只能为整数 0/1/2；null 不能作为成功结果。"
+          },
+          "max_score": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "单项满分固定 2。"
+          },
+          "reason": {
+            "type": "string",
+            "description": "针对本次回答的完整评分理由。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "description": "可为 []，不能编造引文。"
+          }
+        },
+        "required": [
+          "rubric_version",
+          "score",
+          "max_score",
+          "reason",
+          "evidence"
+        ],
+        "description": "冻结 QuestionAIScore；模型元数据位于 HTTP 任务结果外层，保存时不往此对象添加字段。"
+      },
+      "ScoreContentItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "score": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "成功评分，只能为整数 0/1/2；null 不能作为成功结果。"
+          },
+          "max_score": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "单项满分固定 2。"
+          },
+          "reason": {
+            "type": "string",
+            "description": "针对本次回答的完整评分理由。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "description": "可为 []，不能编造引文。"
+          },
+          "content_item_id": {
+            "type": "string",
+            "description": "与请求内容分组逐项匹配。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "rubric_item_code": {
+            "type": "string",
+            "description": "与分组规则映射完全一致。",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "score",
+          "max_score",
+          "reason",
+          "evidence",
+          "content_item_id",
+          "rubric_item_code"
+        ]
+      },
+      "ScoreProductivity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "score": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "成功评分，只能为整数 0/1/2；null 不能作为成功结果。"
+          },
+          "max_score": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "单项满分固定 2。"
+          },
+          "reason": {
+            "type": "string",
+            "description": "针对本次回答的完整评分理由。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "description": "可为 []，不能编造引文。"
+          },
+          "item_code": {
+            "type": "string",
+            "enum": [
+              "NARRATIVE_PRODUCTIVITY"
+            ],
+            "description": "叙事产生性。"
+          },
+          "mean_c_unit_length": {
+            "type": "number",
+            "minimum": 0,
+            "description": "纳入统计的词数 / C 单元数；无有效统计为 null，不按字数计算。",
+            "nullable": true
+          },
+          "adjective_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "形容词数量；未确定有效统计口径时 null。",
+            "nullable": true
+          },
+          "adverb_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "副词数量；无有效统计时 null。",
+            "nullable": true
+          },
+          "conjunction_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "连词数量；无有效统计时 null。",
+            "nullable": true
+          }
+        },
+        "required": [
+          "score",
+          "max_score",
+          "reason",
+          "evidence",
+          "item_code",
+          "mean_c_unit_length",
+          "adjective_count",
+          "adverb_count",
+          "conjunction_count"
+        ]
+      },
+      "MacroDimension": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "score": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "成功评分，只能为整数 0/1/2；null 不能作为成功结果。"
+          },
+          "max_score": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "单项满分固定 2。"
+          },
+          "reason": {
+            "type": "string",
+            "description": "针对本次回答的完整评分理由。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "description": "可为 []，不能编造引文。"
+          },
+          "item_code": {
+            "type": "string",
+            "enum": [
+              "EVENT_SEQUENCE",
+              "PLOT_STRUCTURE",
+              "THEME",
+              "COHERENCE",
+              "CAUSAL_LOGIC",
+              "DETAIL_EXPANSION"
+            ],
+            "description": "六个固定宏观维度之一；全部各出现一次。"
+          },
+          "item_name": {
+            "type": "string",
+            "description": "评分规则中的显示名称。",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "score",
+          "max_score",
+          "reason",
+          "evidence",
+          "item_code",
+          "item_name"
+        ]
+      },
+      "MicroDimension": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "score": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "description": "成功评分，只能为整数 0/1/2；null 不能作为成功结果。"
+          },
+          "max_score": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "单项满分固定 2。"
+          },
+          "reason": {
+            "type": "string",
+            "description": "针对本次回答的完整评分理由。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "description": "可为 []，不能编造引文。"
+          },
+          "item_code": {
+            "type": "string",
+            "enum": [
+              "VOCABULARY_DIVERSITY",
+              "MENTAL_STATE_WORDS",
+              "SYNTACTIC_COMPLEXITY",
+              "REFERENTIAL_COHESION",
+              "CONJUNCTION_COHESION"
+            ],
+            "description": "五个固定微观维度之一；全部各出现一次。"
+          },
+          "item_name": {
+            "type": "string",
+            "description": "评分规则中的显示名称。",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "score",
+          "max_score",
+          "reason",
+          "evidence",
+          "item_code",
+          "item_name"
+        ]
+      },
+      "AIScore": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "冻结 AIScore 结构版本。"
+          },
+          "rubric_version": {
+            "$ref": "#/components/schemas/RubricVersion"
+          },
+          "summary": {
+            "type": "string",
+            "description": "整体文字概述，可为 null；不是总分。",
+            "nullable": true
+          },
+          "macrostructure": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "dimensions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MacroDimension"
+                },
+                "description": "六个固定维度按规则顺序完整返回，不允许重复或缺漏。 uniqueItems 仅能拒绝完全相同的条目；item_code 集合完整/唯一必须经运行时语义校验，不能仅凭 Schema 成功。",
+                "minItems": 6,
+                "maxItems": 6,
+                "uniqueItems": true
+              },
+              "content_items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScoreContentItem"
+                },
+                "description": "覆盖请求全部图片分组，不能多漏。"
+              }
+            },
+            "required": [
+              "dimensions",
+              "content_items"
+            ]
+          },
+          "microstructure": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "dimensions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MicroDimension"
+                },
+                "description": "五个固定维度，按规则顺序完整返回。 uniqueItems 仅能拒绝完全相同的条目；item_code 集合完整/唯一必须经运行时语义校验，不能仅凭 Schema 成功。",
+                "minItems": 5,
+                "maxItems": 5,
+                "uniqueItems": true
+              },
+              "productivity": {
+                "$ref": "#/components/schemas/ScoreProductivity"
+              }
+            },
+            "required": [
+              "dimensions",
+              "productivity"
+            ]
+          },
+          "model_meta": {
+            "$ref": "#/components/schemas/ModelMeta"
+          }
+        },
+        "required": [
+          "schema_version",
+          "rubric_version",
+          "summary",
+          "macrostructure",
+          "microstructure",
+          "model_meta"
+        ],
+        "description": "冻结 AIScore v2 的成功响应子集：各项 score/reason 均非 null；不新增 overall_score。未评分模板中的 null 只可存在于本地中间态，不能通过此成功 Schema。量化统计细则仍待专业确认，禁止编造阈值。"
+      },
+      "InlineImage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "INLINE_IMAGE"
+            ],
+            "description": "真实图片内容。"
+          },
+          "file_code": {
+            "$ref": "#/components/schemas/FileCode"
+          },
+          "mime_type": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ],
+            "description": "实际图片类型，服务端校验魔数。"
+          },
+          "content_base64": {
+            "type": "string",
+            "description": "完整图片二进制的标准 Base64，不含 data: 前缀；服务端限制解码大小和像素，不落盘。",
+            "format": "byte",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "kind",
+          "file_code",
+          "mime_type",
+          "content_base64"
+        ]
+      },
+      "ImageDescription": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "CONFIRMED_DESCRIPTION"
+            ],
+            "description": "经教师确认的图片内容说明，供纯文本评分。"
+          },
+          "file_code": {
+            "$ref": "#/components/schemas/FileCode"
+          },
+          "description": {
+            "type": "string",
+            "description": "图片内容说明，不包含系统指令。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "必须由教师确认。"
+          }
+        },
+        "required": [
+          "kind",
+          "file_code",
+          "description",
+          "confirmed"
+        ]
+      },
+      "ImageContext": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/InlineImage"
+          },
+          {
+            "$ref": "#/components/schemas/ImageDescription"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "INLINE_IMAGE": "#/components/schemas/InlineImage",
+            "CONFIRMED_DESCRIPTION": "#/components/schemas/ImageDescription"
+          }
+        }
+      },
+      "Attempt": {
+        "type": "string",
+        "enum": [
+          "BEFORE_HINT",
+          "AFTER_HINT"
+        ],
+        "description": "提示前或提示后；独立任务、独立评分，不混合两次文本。"
+      },
+      "StoryScoringRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "仅业务种类；不上传儿童姓名、个案资料或本地数据库 ID。"
+          },
+          "activity_id": {
+            "type": "string",
+            "description": "配置中的活动编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "rubric_version": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "可省略。首次直接采用服务端固定评分配置；收到任务凭据中的实际版本后，同一评估/课堂的后续评分和重试传回该版本。无需查询目录或创建评分会话。不支持的指定版本返回 503 RUBRIC_UNAVAILABLE，不静默替换。"
+          },
+          "confirmed_text": {
+            "type": "string",
+            "description": "本次经教师确认的原话。空字符串只表示已明确确认无回应，不代表缺失或转写失败。"
+          },
+          "text_confirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "教师已经明确确认。"
+          },
+          "story_context": {
+            "type": "string",
+            "description": "经确认的故事依据，不接受占位内容。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "content_items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItem"
+            },
+            "description": "本次叙事的全部图片分组，按配置顺序。",
+            "minItems": 1
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageContext"
+            },
+            "description": "必须为所有分组引用的图片逐一提供真实图片或确认说明；不得仅发送 file_code。",
+            "minItems": 1
+          }
+        },
+        "required": [
+          "request_id",
+          "input_revision",
+          "business_type",
+          "activity_id",
+          "confirmed_text",
+          "text_confirmed",
+          "story_context",
+          "content_items",
+          "images"
+        ],
+        "description": "所有故事共用同一套服务端评分规则，不按故事发布独立标准。只提交本次评分需要的确认文本、故事依据、图片和分组；不提交整场规则清单、录音或其他儿童数据。输入材料不作为模型系统指令。服务端校验规则条目存在及实际图片分组映射完整，不按示例故事或图片序号限制规则复用。评分结果由客户端校验后保存到原本地 JSON；内容更新不触发历史结果重算或改写。"
+      },
+      "AnswerScoringRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "仅业务种类；不上传儿童姓名、个案资料或本地数据库 ID。"
+          },
+          "activity_id": {
+            "type": "string",
+            "description": "配置中的活动编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "rubric_version": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "可省略。首次直接采用服务端固定评分配置；收到任务凭据中的实际版本后，同一评估/课堂的后续评分和重试传回该版本。无需查询目录或创建评分会话。不支持的指定版本返回 503 RUBRIC_UNAVAILABLE，不静默替换。"
+          },
+          "confirmed_text": {
+            "type": "string",
+            "description": "本次经教师确认的原话。空字符串只表示已明确确认无回应，不代表缺失或转写失败。"
+          },
+          "text_confirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "教师已经明确确认。"
+          },
+          "story_context": {
+            "type": "string",
+            "description": "经确认的故事依据，不接受占位内容。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "question": {
+            "$ref": "#/components/schemas/ScoringQuestion"
+          },
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageContext"
+            },
+            "description": "纯文本故事依据足够时可空；需要识图时必须提供全部相关图片或确认说明。"
+          }
+        },
+        "required": [
+          "request_id",
+          "input_revision",
+          "business_type",
+          "activity_id",
+          "confirmed_text",
+          "text_confirmed",
+          "story_context",
+          "question",
+          "attempt",
+          "images"
+        ],
+        "description": "单题单次评分，只提交问题、提示、确认回答和必要故事上下文。BEFORE_HINT 仅评价提示前回答，不引入提示后文本。临场追加提示未获业务确认，本期不支持。"
+      },
+      "TaskKind": {
+        "type": "string",
+        "enum": [
+          "TRANSCRIPTION",
+          "STORY_SCORING",
+          "ANSWER_SCORING"
+        ],
+        "description": "任务类型，三种任务独立。"
+      },
+      "TaskHandle": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "task_kind": {
+            "$ref": "#/components/schemas/TaskKind"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已接受的重试序号；等于提交 query 的 retry_attempt。"
+          },
+          "rubric_version": {
+            "type": "string",
+            "description": "评分任务实际采用的规则版本；转写任务可为 null。用于追溯和同场后续评分，不表示存在独立的版本锁。",
+            "minLength": 1,
+            "pattern": "\\S",
+            "nullable": true
+          },
+          "submitted_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "回显请求业务种类，不包含儿童身份。"
+          },
+          "activity_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "回显请求活动编号。"
+          }
+        },
+        "required": [
+          "task_id",
+          "request_id",
+          "input_revision",
+          "task_kind",
+          "attempt_no",
+          "rubric_version",
+          "submitted_at",
+          "business_type",
+          "activity_id"
+        ],
+        "description": "已受理任务的凭据。保存任务与当前活动/回答的对应关系，按 request_id、input_revision 和 rubric_version 核对结果。同场后续评分传回已返回的实际版本，不创建额外评分会话。",
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "task_kind": {
+                "type": "string",
+                "enum": [
+                  "TRANSCRIPTION"
+                ],
+                "description": "任务种类约束。"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "task_kind": {
+                "type": "string",
+                "enum": [
+                  "STORY_SCORING",
+                  "ANSWER_SCORING"
+                ],
+                "description": "任务种类约束。"
+              },
+              "rubric_version": {
+                "$ref": "#/components/schemas/RubricVersion"
+              }
+            }
+          }
+        ]
+      },
+      "TranscriptionResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "transcript": {
+            "type": "string",
+            "description": "原始识别文本，可能为空；仍须教师确认，不能自动当作无回应。"
+          }
+        },
+        "required": [
+          "transcript"
+        ]
+      },
+      "StoryScoringResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ai_score": {
+            "$ref": "#/components/schemas/AIScore"
+          }
+        },
+        "required": [
+          "ai_score"
+        ]
+      },
+      "AnswerScoringResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "description": "对应请求题号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "attempt": {
+            "$ref": "#/components/schemas/Attempt"
+          },
+          "ai_score": {
+            "$ref": "#/components/schemas/QuestionAIScore"
+          },
+          "model_meta": {
+            "$ref": "#/components/schemas/ModelMeta"
+          }
+        },
+        "required": [
+          "question_id",
+          "attempt",
+          "ai_score",
+          "model_meta"
+        ]
+      },
+      "TaskFailure": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "ASR_FAILED",
+              "MODEL_TIMEOUT",
+              "MODEL_OUTPUT_INVALID",
+              "RUBRIC_UNAVAILABLE",
+              "PROCESS_RESTARTED",
+              "RESULT_EXPIRED",
+              "TASK_TIMEOUT"
+            ],
+            "description": "稳定任务失败码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏错误信息，不附加儿童原话。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "retryable": {
+            "type": "boolean",
+            "description": "是否可按原输入重试。输入改变须换 request_id 和 input_revision；自动重试次数由客户端控制，教师可手动重试。"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "retryable"
+        ]
+      },
+      "RunningTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "task_kind": {
+            "$ref": "#/components/schemas/TaskKind"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已接受的重试序号；等于提交 query 的 retry_attempt。"
+          },
+          "rubric_version": {
+            "type": "string",
+            "description": "评分任务实际采用的规则版本；转写任务可为 null。用于追溯和同场后续评分，不表示存在独立的版本锁。",
+            "minLength": 1,
+            "pattern": "\\S",
+            "nullable": true
+          },
+          "submitted_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "TRANSCRIBING",
+              "SCORING"
+            ],
+            "description": "TRANSCRIPTION 只能 QUEUED/TRANSCRIBING；评分只能 QUEUED/SCORING。"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "回显请求业务种类，不包含儿童身份。"
+          },
+          "activity_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "回显请求活动编号。"
+          }
+        },
+        "required": [
+          "task_id",
+          "request_id",
+          "input_revision",
+          "task_kind",
+          "attempt_no",
+          "rubric_version",
+          "submitted_at",
+          "stage",
+          "updated_at",
+          "business_type",
+          "activity_id"
+        ],
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "task_kind": {
+                "type": "string",
+                "enum": [
+                  "TRANSCRIPTION"
+                ],
+                "description": "任务种类约束。"
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "QUEUED",
+                  "TRANSCRIBING"
+                ],
+                "description": "转写运行阶段。"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "task_kind": {
+                "type": "string",
+                "enum": [
+                  "STORY_SCORING",
+                  "ANSWER_SCORING"
+                ],
+                "description": "任务种类约束。"
+              },
+              "rubric_version": {
+                "$ref": "#/components/schemas/RubricVersion"
+              },
+              "stage": {
+                "type": "string",
+                "enum": [
+                  "QUEUED",
+                  "SCORING"
+                ],
+                "description": "评分运行阶段。"
+              }
+            }
+          }
+        ]
+      },
+      "FailedTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "task_kind": {
+            "$ref": "#/components/schemas/TaskKind"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已接受的重试序号；等于提交 query 的 retry_attempt。"
+          },
+          "rubric_version": {
+            "type": "string",
+            "description": "评分任务实际采用的规则版本；转写任务可为 null。用于追溯和同场后续评分，不表示存在独立的版本锁。",
+            "minLength": 1,
+            "pattern": "\\S",
+            "nullable": true
+          },
+          "submitted_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "FAILED"
+            ],
+            "description": "任务失败，不是业务主状态。"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "failed_stage": {
+            "type": "string",
+            "enum": [
+              "TRANSCRIBE",
+              "SCORE"
+            ],
+            "description": "对应可重做阶段。"
+          },
+          "failure": {
+            "$ref": "#/components/schemas/TaskFailure"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "回显请求业务种类，不包含儿童身份。"
+          },
+          "activity_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "回显请求活动编号。"
+          }
+        },
+        "required": [
+          "task_id",
+          "request_id",
+          "input_revision",
+          "task_kind",
+          "attempt_no",
+          "rubric_version",
+          "submitted_at",
+          "stage",
+          "updated_at",
+          "failed_stage",
+          "failure",
+          "business_type",
+          "activity_id"
+        ],
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "task_kind": {
+                "type": "string",
+                "enum": [
+                  "TRANSCRIPTION"
+                ],
+                "description": "任务种类约束。"
+              },
+              "failed_stage": {
+                "type": "string",
+                "enum": [
+                  "TRANSCRIBE"
+                ],
+                "description": "转写失败阶段。"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "task_kind": {
+                "type": "string",
+                "enum": [
+                  "STORY_SCORING",
+                  "ANSWER_SCORING"
+                ],
+                "description": "任务种类约束。"
+              },
+              "rubric_version": {
+                "$ref": "#/components/schemas/RubricVersion"
+              },
+              "failed_stage": {
+                "type": "string",
+                "enum": [
+                  "SCORE"
+                ],
+                "description": "评分失败阶段。"
+              }
+            }
+          }
+        ]
+      },
+      "TranscriptionSucceededTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "task_kind": {
+            "type": "string",
+            "enum": [
+              "TRANSCRIPTION"
+            ],
+            "description": "成功任务类型。"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已接受的重试序号；等于提交 query 的 retry_attempt。"
+          },
+          "rubric_version": {
+            "type": "string",
+            "description": "评分任务实际采用的规则版本；转写任务可为 null。用于追溯和同场后续评分，不表示存在独立的版本锁。",
+            "minLength": 1,
+            "pattern": "\\S",
+            "nullable": true
+          },
+          "submitted_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "SUCCEEDED"
+            ],
+            "description": "全部结果已校验通过。"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "result_expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "result": {
+            "$ref": "#/components/schemas/TranscriptionResult"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "回显请求业务种类，不包含儿童身份。"
+          },
+          "activity_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "回显请求活动编号。"
+          }
+        },
+        "required": [
+          "task_id",
+          "request_id",
+          "input_revision",
+          "task_kind",
+          "attempt_no",
+          "rubric_version",
+          "submitted_at",
+          "stage",
+          "updated_at",
+          "result_expires_at",
+          "result",
+          "business_type",
+          "activity_id"
+        ],
+        "description": "只有内存中的完整结果仍可读取时才返回 SUCCEEDED；过期/进程重启后转 FAILED，失败码 RESULT_EXPIRED/PROCESS_RESTARTED。成功评分不得返回 null 分或缺失条目。"
+      },
+      "StoryScoringSucceededTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "task_kind": {
+            "type": "string",
+            "enum": [
+              "STORY_SCORING"
+            ],
+            "description": "成功任务类型。"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已接受的重试序号；等于提交 query 的 retry_attempt。"
+          },
+          "rubric_version": {
+            "$ref": "#/components/schemas/RubricVersion"
+          },
+          "submitted_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "SUCCEEDED"
+            ],
+            "description": "全部结果已校验通过。"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "result_expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "result": {
+            "$ref": "#/components/schemas/StoryScoringResult"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "回显请求业务种类，不包含儿童身份。"
+          },
+          "activity_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "回显请求活动编号。"
+          }
+        },
+        "required": [
+          "task_id",
+          "request_id",
+          "input_revision",
+          "task_kind",
+          "attempt_no",
+          "rubric_version",
+          "submitted_at",
+          "stage",
+          "updated_at",
+          "result_expires_at",
+          "result",
+          "business_type",
+          "activity_id"
+        ],
+        "description": "只有内存中的完整结果仍可读取时才返回 SUCCEEDED；过期/进程重启后转 FAILED，失败码 RESULT_EXPIRED/PROCESS_RESTARTED。成功评分不得返回 null 分或缺失条目。"
+      },
+      "AnswerScoringSucceededTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "input_revision": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "task_kind": {
+            "type": "string",
+            "enum": [
+              "ANSWER_SCORING"
+            ],
+            "description": "成功任务类型。"
+          },
+          "attempt_no": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "已接受的重试序号；等于提交 query 的 retry_attempt。"
+          },
+          "rubric_version": {
+            "$ref": "#/components/schemas/RubricVersion"
+          },
+          "submitted_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "SUCCEEDED"
+            ],
+            "description": "全部结果已校验通过。"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "result_expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "result": {
+            "$ref": "#/components/schemas/AnswerScoringResult"
+          },
+          "business_type": {
+            "type": "string",
+            "enum": [
+              "ASSESSMENT",
+              "CLASSROOM"
+            ],
+            "description": "回显请求业务种类，不包含儿童身份。"
+          },
+          "activity_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "回显请求活动编号。"
+          }
+        },
+        "required": [
+          "task_id",
+          "request_id",
+          "input_revision",
+          "task_kind",
+          "attempt_no",
+          "rubric_version",
+          "submitted_at",
+          "stage",
+          "updated_at",
+          "result_expires_at",
+          "result",
+          "business_type",
+          "activity_id"
+        ],
+        "description": "只有内存中的完整结果仍可读取时才返回 SUCCEEDED；过期/进程重启后转 FAILED，失败码 RESULT_EXPIRED/PROCESS_RESTARTED。成功评分不得返回 null 分或缺失条目。"
+      },
+      "TaskState": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/RunningTask"
+          },
+          {
+            "$ref": "#/components/schemas/FailedTask"
+          },
+          {
+            "$ref": "#/components/schemas/TranscriptionSucceededTask"
+          },
+          {
+            "$ref": "#/components/schemas/StoryScoringSucceededTask"
+          },
+          {
+            "$ref": "#/components/schemas/AnswerScoringSucceededTask"
+          }
+        ],
+        "description": "只属于 HTTP 任务层，不扩展 assessment.status / course_instance.status。GET 成功获取失败任务仍为 HTTP 200、外层 code=OK，任务失败见 data.stage/failure。"
+      },
+      "ConflictResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "USERNAME_EXISTS",
+              "LICENSE_UNAVAILABLE",
+              "LICENSE_REVOKED",
+              "CONTENT_VERSION_EXISTS",
+              "RESOURCE_IN_USE",
+              "IDEMPOTENCY_CONFLICT",
+              "SENSITIVE_RESULT_EXPIRED",
+              "TASK_RETRY_CONFLICT",
+              "VERSION_CONFLICT",
+              "RESOURCE_NOT_READY"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "uploadOfficialFileResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CloudFile"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "READY"
+                    ],
+                    "description": "只有字节和记录均已提交且通过校验才上传成功。"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "AdminFilePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminFile"
+            },
+            "description": "当前页记录。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "listOfficialFilesResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminFilePage"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "deleteOfficialFileResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CloudFile"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "signDownloadUrlsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DownloadSignature"
+                },
+                "description": "顺序与请求一致，编号一一对应。"
+              }
+            },
+            "required": [
+              "items"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "getFileMetadataResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CloudFile"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "submitTranscriptionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskHandle"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "submitStoryScoringResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskHandle"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "submitAnswerScoringResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskHandle"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "getAiTaskResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskState"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "RubricCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rubric_version": {
+            "$ref": "#/components/schemas/RubricVersion"
+          },
+          "ai_score_schema_version": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "故事 AIScore 的结构版本；与 rubric_version 独立。QuestionAIScore 沿用冻结对象，无新增 schema_version。"
+          },
+          "business_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ASSESSMENT",
+                "CLASSROOM"
+              ],
+              "description": "该版本支持的业务种类。"
+            },
+            "description": "整套规则适用的业务范围。",
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "item_code": {
+                  "$ref": "#/components/schemas/Code"
+                },
+                "item_name": {
+                  "type": "string",
+                  "description": "经专业人员确认的条目显示名。",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "task_kind": {
+                  "type": "string",
+                  "enum": [
+                    "STORY_SCORING",
+                    "ANSWER_SCORING"
+                  ],
+                  "description": "使用该条目的评分类型。"
+                },
+                "applicability": {
+                  "type": "string",
+                  "description": "统一评分条目的用途和图片分组映射说明；所有故事均可复用同一套规则，不能仅凭图片序号猜测映射。",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              },
+              "required": [
+                "item_code",
+                "item_name",
+                "task_kind",
+                "applicability"
+              ]
+            },
+            "description": "该版本完整的固定维度、图片分组、叙事产生性及问答规则目录；item_code 全局唯一。",
+            "minItems": 1
+          }
+        },
+        "required": [
+          "rubric_version",
+          "ai_score_schema_version",
+          "business_types",
+          "items"
+        ],
+        "description": "所有故事共用的固定评分条目目录，仅用于内容编制和编号映射，不下发 Prompt 或模型参数。评分结果保存在本地 JSON，不因目录或内容更新自动修改。"
+      },
+      "getRubricCatalogResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RubricCatalog"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "ScoringQuestion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "description": "问答活动内唯一且稳定的题目编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "text": {
+            "type": "string",
+            "description": "经业务确认的问题原文。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "hint": {
+            "type": "string",
+            "description": "预设提示，允许空字符串；不得混入评分规则。"
+          }
+        },
+        "required": [
+          "question_id",
+          "text",
+          "hint"
+        ],
+        "description": "单题评分最小上下文；grammar 只用于本地教学归类，不发送给评分服务。冻结课程 Question 保留原 grammar。"
+      },
+      "ErrorDetails": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field_path": {
+            "type": "string",
+            "description": "第一个失败字段的 JSON Pointer；普通请求相对请求体根，ZIP 发布相对 config.json 根。路径/query 参数使用 /parameters/参数名，不嵌入用户文本。",
+            "pattern": "^/"
+          },
+          "file_code": {
+            "$ref": "#/components/schemas/CloudFileCode"
+          },
+          "rubric_item_code": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "current_version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "语法修改发生版本冲突时的服务端当前版本。"
+          },
+          "limit": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": [
+                  "size_bytes",
+                  "duration_ms",
+                  "image_count",
+                  "text_length"
+                ],
+                "description": "被触发限制的名称；text_length 按 UTF-16 code unit。"
+              },
+              "maximum": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "部署实际允许上限，单位由 name 指定。"
+              }
+            },
+            "required": [
+              "name",
+              "maximum"
+            ]
+          },
+          "license_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CloudId"
+            },
+            "description": "仅生成激活码的 SENSITIVE_RESULT_EXPIRED 返回：该幂等请求实际创建的全部云端 id，可逐个调用既有 revoke；不含原码/哈希。",
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true
+          },
+          "file_name": {
+            "$ref": "#/components/schemas/PackageFileName"
+          }
+        },
+        "description": "按错误类型提供必要的非敏感定位；不要求每项齐全，不回显儿童原话、凭证、输入值或整份请求。一次定位首个失败即可；无需遍历其他未获授权资源。",
+        "minProperties": 1
+      },
+      "PackageFileName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "pattern": "^(?!\\.{1,2}$)[^<>:\"/\\\\|?*\\u0000-\\u001F\\u007F]+$",
+        "description": "ZIP 根目录中的文件名，不带路径；首尾不得为空白。包内文件名忽略大小写不得重复，JSON 引用必须与实际文件名大小写完全一致。"
+      },
+      "TranscriptionContext": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "request_id": {
+                "$ref": "#/components/schemas/Uuid"
+              },
+              "input_revision": {
+                "$ref": "#/components/schemas/Uuid"
+              },
+              "business_type": {
+                "type": "string",
+                "enum": [
+                  "ASSESSMENT",
+                  "CLASSROOM"
+                ],
+                "description": "仅业务种类；不上传儿童姓名、个案资料或本地数据库 ID。"
+              },
+              "activity_id": {
+                "type": "string",
+                "description": "配置中的活动编号。",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "target": {
+                "type": "string",
+                "enum": [
+                  "STORY_NARRATION"
+                ],
+                "description": "故事录音。"
+              }
+            },
+            "required": [
+              "request_id",
+              "input_revision",
+              "business_type",
+              "activity_id",
+              "target"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "request_id": {
+                "$ref": "#/components/schemas/Uuid"
+              },
+              "input_revision": {
+                "$ref": "#/components/schemas/Uuid"
+              },
+              "business_type": {
+                "type": "string",
+                "enum": [
+                  "ASSESSMENT",
+                  "CLASSROOM"
+                ],
+                "description": "仅业务种类；不上传儿童姓名、个案资料或本地数据库 ID。"
+              },
+              "activity_id": {
+                "type": "string",
+                "description": "配置中的活动编号。",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "target": {
+                "type": "string",
+                "enum": [
+                  "QUESTION_ANSWERING"
+                ],
+                "description": "单题录音。"
+              },
+              "question_id": {
+                "type": "string",
+                "description": "配置内题目编号。",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "attempt": {
+                "$ref": "#/components/schemas/Attempt"
+              }
+            },
+            "required": [
+              "request_id",
+              "input_revision",
+              "business_type",
+              "activity_id",
+              "target",
+              "question_id",
+              "attempt"
+            ]
+          }
+        ],
+        "discriminator": {
+          "propertyName": "target"
+        }
+      },
+      "BadRequestResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_REQUEST"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "UnauthorizedResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "TOKEN_MISSING",
+              "TOKEN_INVALID",
+              "TOKEN_EXPIRED",
+              "INVALID_CREDENTIALS",
+              "REFRESH_TOKEN_INVALID"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "ForbiddenResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "ACCOUNT_DISABLED",
+              "LICENSE_REVOKED",
+              "AUTH_ROLE_MISMATCH",
+              "RESOURCE_FORBIDDEN"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "NotFoundResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "RESOURCE_NOT_FOUND",
+              "TASK_NOT_FOUND"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "GoneResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "FILE_DELETED"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "PayloadTooLargeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "PAYLOAD_TOO_LARGE",
+              "AUDIO_DURATION_EXCEEDED",
+              "IMAGE_LIMIT_EXCEEDED"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "UnsupportedMediaTypeResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "UNSUPPORTED_MEDIA_TYPE",
+              "CONTENT_TYPE_MISMATCH"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "UnprocessableEntityResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_ACTIVITY_CONFIG",
+              "STORY_NARRATION_REQUIRED",
+              "INVALID_RESOURCE_REFERENCE",
+              "INVALID_RUBRIC_MAPPING",
+              "INVALID_GRAMMAR_REFERENCE",
+              "INVALID_GLOSS_OFFSET",
+              "TEXT_NOT_CONFIRMED",
+              "INCOMPLETE_IMAGE_CONTEXT",
+              "INVALID_VERSION_TRANSITION"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "TooManyRequestsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "RATE_LIMITED"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "InternalErrorResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "INTERNAL_ERROR"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "UnavailableResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "SERVICE_UNAVAILABLE",
+              "RUBRIC_UNAVAILABLE",
+              "DEPENDENCY_UNAVAILABLE"
+            ],
+            "description": "该 HTTP 状态下的稳定错误码。"
+          },
+          "message": {
+            "type": "string",
+            "description": "可展示的脱敏说明，不包含输入文本、密码或 Token。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "data": {
+            "type": "object",
+            "enum": [
+              null
+            ],
+            "description": "必须为 null",
+            "properties": {},
+            "nullable": true
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数或编码不合法。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BadRequestResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "INVALID_REQUEST",
+                  "message": "请求参数或编码不合法。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "缺少凭证、凭证失效或账号密码不正确。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UnauthorizedResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "TOKEN_MISSING",
+                  "message": "缺少凭证、凭证失效或账号密码不正确。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "账号/激活码不可用、凭证类型错误或无资源权限。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ForbiddenResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "ACCOUNT_DISABLED",
+                  "message": "账号/激活码不可用、凭证类型错误或无资源权限。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NotFoundResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "RESOURCE_NOT_FOUND",
+                  "message": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "当前状态冲突或同一逻辑请求的输入已改变。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ConflictResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "USERNAME_EXISTS",
+                  "message": "当前状态冲突或同一逻辑请求的输入已改变。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "Gone": {
+        "description": "文件已删除，不能签发下载地址。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GoneResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "FILE_DELETED",
+                  "message": "文件已删除，不能签发下载地址。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "文件/音频/图片超出部署允许上限。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PayloadTooLargeResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "PAYLOAD_TOO_LARGE",
+                  "message": "文件/音频/图片超出部署允许上限。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnsupportedMediaType": {
+        "description": "不支持的格式或声明 MIME 与实际内容不符。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UnsupportedMediaTypeResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "UNSUPPORTED_MEDIA_TYPE",
+                  "message": "不支持的格式或声明 MIME 与实际内容不符。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "JSON 可解析，但不满足业务语义或冻结契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UnprocessableEntityResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "INVALID_ACTIVITY_CONFIG",
+                  "message": "JSON 可解析，但不满足业务语义或冻结契约。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "请求频率或并发超过上限，请稍后重试。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TooManyRequestsResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "RATE_LIMITED",
+                  "message": "请求频率或并发超过上限，请稍后重试。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "内部错误，请稍后重试。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/InternalErrorResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "INTERNAL_ERROR",
+                  "message": "内部错误，请稍后重试。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "服务或必需依赖暂不可用。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UnavailableResponse"
+            },
+            "examples": {
+              "成功示例": {
+                "summary": "成功示例",
+                "value": {
+                  "code": "SERVICE_UNAVAILABLE",
+                  "message": "服务或必需依赖暂不可用。",
+                  "data": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "AdminBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "管理员登录返回的 token。每次请求校验账号仍为 ACTIVE；不能以教师 Token 替代。"
+      },
+      "TeacherBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "注册或刷新取得的 access_token；每次请求校验教师状态为 1、绑定激活码为 ACTIVE。禁用不影响本地登录。"
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "TeacherBearer": []
+    }
+  ]
+}

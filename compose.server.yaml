@@ -1,0 +1,22 @@
+# 服务器部署的叠加配置：
+#   docker compose -f compose.yaml -f compose.server.yaml up -d --build
+#
+# 与本地开发的差别**只有暴露面和重启策略**——镜像、代码、Flyway 迁移完全相同。
+# 一份构建产物跑所有环境，环境差异全部落在环境变量与编排上；
+# 这样才不会出现「本地能跑、服务器跑不起来」这种只在部署时刻才暴露的差异。
+
+services:
+  mysql:
+    # 服务器上数据库不对外暴露，只在 compose 网络内被 app 访问。
+    ports: !reset []
+    restart: unless-stopped
+
+  app:
+    restart: unless-stopped
+    # 端口沿用 compose.yaml 的 127.0.0.1:8080：由宿主机的 Nginx 反代，
+    # 应用本身不直接对公网监听。
+
+  web:
+    restart: unless-stopped
+    # 服务器上唯一需要对外的是前端：它同时托管页面并反代后端接口，
+    # 因此外层 Nginx（或直接暴露 8081）只需要面对这一个入口。
