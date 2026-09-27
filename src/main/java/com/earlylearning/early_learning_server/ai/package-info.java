@@ -1,13 +1,20 @@
 /**
- * AI 转写与评分能力预留。
+ * AI 转写与评分。
  *
- * <p>规划承接转写、故事评分、逐题问答评分、评分规则及模型/Prompt 版本管理。具体业务结果由移动端保存；当前仅预留模块，任务持久化设计明确后再实现异步任务及查询接口。</p>
+ * <p>包结构（按"变化的原因"分，不按技术种类）：
+ * <ul>
+ *   <li>{@code task}       —— 与业务无关的任务语义与执行基础设施；</li>
+ *   <li>{@code transcribe} —— 转写业务；</li>
+ *   <li>{@code score}      —— 故事评分与单题评分；{@code rubric} 是其版本与条目目录；</li>
+ *   <li>{@code port}       —— 出站端口（会被替换的接口）；</li>
+ *   <li>{@code adapter}    —— 端口实现，当前只有 {@code adapter.fake} 假实现；</li>
+ *   <li>{@code web}        —— HTTP 边界：Controller、请求/响应 DTO、请求语义校验。</li>
+ * </ul>
+ * 依赖方向单向：{@code web → 业务 → task}、{@code adapter → port}，反向禁止。
  *
- * <p>数据边界：任务存储尚未设计，不新增数据库表。</p>
- * <p>依据：<a href="https://boyuanclub.feishu.cn/wiki/XTvkwj6pHimslckweHKcaxmQngh">06_文件同步与AI，3.16 AI / 转写</a>；
- * 表结构和 JSON 契约以 docs/技术方案.md 为准。</p>
+ * <p>任务状态**不落库**：结果只在内存有效期内可读，进程重启后客户端会收到 {@code PROCESS_RESTARTED}
+ * 并重交材料。业务结果由移动端保存，服务端不长期持有儿童数据。
  *
- * <p>Controller、DTO、Service、Mapper、Entity 及子包按实际功能需要创建。</p>
+ * <p>数据边界：无数据库表；儿童音频与回答文本不落盘、不写日志、不进备份。
  */
 package com.earlylearning.early_learning_server.ai;
-
