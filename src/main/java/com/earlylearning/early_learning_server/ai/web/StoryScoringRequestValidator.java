@@ -99,14 +99,11 @@ public class StoryScoringRequestValidator {
         for (int i = 0; i < images.size(); i++) {
             ImageContext image = images.get(i);
             String path = "images/" + i;
+            // 三种形态都收：契约 /api/ai/score 的 images 明确写「由服务端按 file_code 取图（SERVER_FETCH），
+            // 或教师确认过的图片说明（CONFIRMED_DESCRIPTION）。**不再要求客户端内联图片内容**」。
+            // 取回动作在提交的同步路径上完成（见 AiStoryScoringService.toInput → ScoringImageResolver），
+            // 编号不可读会当场 404/409/410/413，而不是落成任务失败。
             imageContextValidator.validate(image, path);
-            if (image.kind() == ImageContext.ImageKind.SERVER_FETCH) {
-                // 契约：「必须为所有分组引用的图片逐一提供真实图片或确认说明；**不得仅发送 file_code**」。
-                // 单题评分可以用 SERVER_FETCH（服务端按编号取图），故事评分不行。
-                throw new BusinessException(ErrorCode.INVALID_REQUEST,
-                        "故事评分的图片必须提供内容或确认说明，不能只给 file_code",
-                        ApiErrorDetails.atField("/" + path + "/kind"));
-            }
             if (!provided.add(image.fileCode())) {
                 throw invalid(path + "/file_code");
             }

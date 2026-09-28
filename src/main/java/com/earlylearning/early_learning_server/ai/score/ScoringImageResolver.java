@@ -23,8 +23,7 @@ import org.springframework.stereotype.Component;
  * <ul>
  *   <li>{@code SERVER_FETCH} —— 按 {@code file_code} 取回字节（这正是本次需求要的能力）；
  *       取之前校验状态与大小，校验语义与签发/元数据接口一致，避免"下载拿不到、评分却能拿到"。
- *       **这一形态只服务单题评分**：故事评分的契约禁止"只发 file_code"，
- *       那边由 {@code StoryScoringRequestValidator} 在提交时就拒掉，走不到这个分支。</li>
+ *       两个评分接口都接受它（契约的 images 明确写了"由服务端按 file_code 取图"）。</li>
  *   <li>{@code INLINE_IMAGE} —— 请求里带的 base64 图片，解码后交给模型（校验边界在这一步）；</li>
  *   <li>{@code CONFIRMED_DESCRIPTION} —— 教师确认过的说明，直接作为文字给模型。</li>
  * </ul>

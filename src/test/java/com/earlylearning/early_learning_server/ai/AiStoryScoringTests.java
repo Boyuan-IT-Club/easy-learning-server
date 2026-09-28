@@ -189,21 +189,17 @@ class AiStoryScoringTests {
     }
 
     @Test
-    void aFileCodeOnlyImageIsRejectedBecauseTheContractForbidsIt() {
-        // 契约：故事评分「必须为所有分组引用的图片逐一提供真实图片或确认说明；不得仅发送 file_code」。
-        // 单题评分可以用 SERVER_FETCH（服务端按编号取图），故事评分不行——放进来模型就收不到图。
+    void aFileCodeOnlyImageIsAcceptedBecauseTheContractAllowsIt() {
+        // 契约：故事评分的 images「由服务端按 file_code 取图（SERVER_FETCH），或教师确认过的图片说明……
+        // 不再要求客户端内联图片内容」。取回发生在提交的同步路径上（ScoringImageResolver），
+        // 取回本身由 ScoringImageResolverTests 覆盖；这里只钉住请求校验不再拒它。
         StoryScoringRequest fileCodeOnly = new StoryScoringRequest(UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(), BusinessType.ASSESSMENT, "ACT_1", null,
                 TEXT, true, "故事依据", groups(),
                 List.of(new ImageContext(ImageContext.ImageKind.SERVER_FETCH, "CF_A", null, null, null, null),
-                        images().get(1)));
+                        new ImageContext(ImageContext.ImageKind.CONFIRMED_DESCRIPTION, "CF_B", null, null, "图2是一只小猫", true)));
 
-        assertThatThrownBy(() -> requestValidator.validate(fileCodeOnly))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST);
-                    assertThat(((BusinessException) ex).getDetails().fieldPath()).isEqualTo("/images/0/kind");
-                });
+        requestValidator.validate(fileCodeOnly);
     }
 
     @Test
