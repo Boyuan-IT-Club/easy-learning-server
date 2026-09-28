@@ -1,0 +1,87 @@
+# 本地开发用的依赖服务。
+#
+# 三个服务：mysql（数据库）、app（后端）、web（管理端前端，nginx 托管构建产物并反代后端接口）。
+# 默认只起 MySQL，应用仍在 IDE / ./mvnw 里跑——改一行代码不用重建镜像，这是最快的循环。
+# 看完整效果（含前端页面）：docker compose up -d --build
+#
+# 服务器部署在这份之上叠加 compose.server.yaml，差异只有「暴露面」与「重启策略」：
+#   docker compose -f compose.yaml -f compose.server.yaml up -d
+# 说明见 ../docs/08-部署方式.md
+name: early-learning
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: early-learning-mysql
+    environment:
+      # 不加默认值：本地库也不该用弱口令，没配就直接报错而不是悄悄跑起来。
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD，模板见 .env.example}
+      MYSQL_DATABASE: early_learning
+      TZ: Asia/Shanghai
+    command:
+      # Schema 自己声明了字符集与排序规则，这里只统一服务端默认值，避免建库时用错。
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    ports:
+      # 只绑回环地址：本地开发不需要把数据库暴露到局域网。
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # 应用必须等数据库真正可连（而不是容器起来了）再启动，否则 Flyway 会连不上。
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  app:
+    build: .
+    image: early-learning-server:local
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      # 容器内的库名是 compose 服务名 mysql，不是 localhost。
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/early_learning?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD，模板见 .env.example}
+      # OSS 五项在 OssProperties 上是 @NotBlank：缺任何一个应用都不会启动，这是有意的启动期校验。
+      OSS_ENDPOINT: ${OSS_ENDPOINT:-}
+      OSS_REGION: ${OSS_REGION:-}
+      OSS_BUCKET_NAME: ${OSS_BUCKET_NAME:-}
+      OSS_ACCESS_KEY_ID: ${OSS_ACCESS_KEY_ID:-}
+      OSS_ACCESS_KEY_SECRET: ${OSS_ACCESS_KEY_SECRET:-}
+      OSS_DOWNLOAD_URL_TTL_SECONDS: ${OSS_DOWNLOAD_URL_TTL_SECONDS:-900}
+      # 大模型同样是"缺省可用、配了就真跑"：缺省 fake（不联网也能把链路跑通），
+      # 配 AI_LLM_PROVIDER=ecnu 就用真实模型。此前这几项没传给容器，
+      # 结果是浏览器里点出来的分数其实来自假实现——排查时极易误判。
+      AI_LLM_PROVIDER: ${AI_LLM_PROVIDER:-fake}
+      AI_LLM_ECNU_BASE_URL: ${AI_LLM_ECNU_BASE_URL:-}
+      AI_LLM_ECNU_API_KEY: ${AI_LLM_ECNU_API_KEY:-}
+      AI_LLM_ECNU_MODEL_TEXT: ${AI_LLM_ECNU_MODEL_TEXT:-ecnu-max}
+      AI_LLM_ECNU_MODEL_VISION: ${AI_LLM_ECNU_MODEL_VISION:-ecnu-plus}
+      AI_LLM_ECNU_THINKING: ${AI_LLM_ECNU_THINKING:-false}
+      AI_LLM_ECNU_REASONING_EFFORT: ${AI_LLM_ECNU_REASONING_EFFORT:-}
+      AI_LLM_ECNU_TIMEOUT_SECONDS: ${AI_LLM_ECNU_TIMEOUT_SECONDS:-120}
+      AI_LLM_ECNU_MAX_IMAGE_BYTES: ${AI_LLM_ECNU_MAX_IMAGE_BYTES:-5242880}
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  web:
+    # 前端在另一个仓库里，因此完整栈需要两个仓库并排（见 ../docs/08-部署方式.md）。
+    build:
+      context: ../early-learning-admin-web
+      args:
+        # 空值 = 同源相对路径：由 web 容器的 nginx 把 /api 与 /admin 转给 app。
+        VITE_API_BASE_URL: ""
+    image: early-learning-admin-web:local
+    depends_on:
+      - app
+    ports:
+      # 8080 是后端，前端放 8081；本地开发更常用 npm run dev（5173），那条路不经过这里。
+      - "127.0.0.1:8081:80"
+
+volumes:
+  mysql-data:

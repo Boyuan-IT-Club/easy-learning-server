@@ -14,8 +14,24 @@
 | `OSS_ACCESS_KEY_ID` | 运行身份的 AccessKey ID |
 | `OSS_ACCESS_KEY_SECRET` | 对应的 AccessKey Secret |
 | `OSS_DOWNLOAD_URL_TTL_SECONDS` | 可选，临时下载地址有效秒数，默认 900，范围 1～604800 |
+| `OSS_CONNECTION_TIMEOUT_MS` | 可选，建连超时毫秒，默认 5000，范围 1000～60000 |
+| `OSS_SOCKET_TIMEOUT_MS` | 可选，单次读无数据的超时毫秒，默认 30000，范围 1000～300000 |
+| `OSS_CONNECTION_REQUEST_TIMEOUT_MS` | 可选，从连接池取连接的超时毫秒，默认 5000，范围 100～60000 |
+| `OSS_MAX_CONNECTIONS` | 可选，连接池上限，默认 64，范围 1～1024 |
+| `OSS_MAX_ERROR_RETRY` | 可选，重试次数，默认 2，范围 0～5 |
 
-必要配置为空或有效期越界时，启动校验失败。凭证只通过运行环境注入，不写入代码或提交到仓库。运行完整应用仍需原有的数据库配置。
+必要配置为空或取值越界时，启动校验失败。凭证只通过运行环境注入，不写入代码或提交到仓库。运行完整应用仍需原有的数据库配置。
+
+### 超时与重试的两条边界
+
+**① 不启用「整请求总时长」上限。** 上传最大 500MB，慢网下正常耗时可能超过任何合理的总时长；
+设了只会误杀正在正常传输的上传。「卡住」由 `OSS_SOCKET_TIMEOUT_MS` 覆盖——它关心的是「多久没有数据」，不是「总共花了多久」。
+
+**② 重试只覆盖连接层故障，不覆盖 HTTP 5xx。** 连接被断开（网络抖动）会被自动重发；
+服务端明确返回 503 则如实抛出。两个方向都有测试钉住，不要假设「配了重试，5xx 就能自动恢复」。
+
+另外，**重试要求请求体能重放**：输入流必须支持 `mark/reset`。
+`ByteArrayInputStream` 支持，普通 `FileInputStream` 不支持——上传实现需注意这一点。
 
 `OssConfig` 创建单例 OSS Client，使用 V4 签名，并通过 Bean 的 `destroyMethod` 在 Spring 容器关闭时调用 `shutdown()`。参考：[阿里云 Java SDK 官方说明](https://www.alibabacloud.com/help/en/oss/developer-reference/oss-java-sdk/)。
 

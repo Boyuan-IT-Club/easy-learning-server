@@ -34,3 +34,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### 运行期日志（logback-spring.xml 输出）
+logs/
+
+# 从飞书 wiki 取下的设计文档参考副本（临时）
+.refs/

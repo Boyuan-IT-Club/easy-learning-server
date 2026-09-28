@@ -6,8 +6,16 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
+      # 比业务上限（storage.upload.max-size-bytes，默认 500MB）略高：
+      # 这样"略微超限"的文件能进到控制器，由业务抛出带 details.limit 的 413；
+      # 只有远超上限的请求才会被 Spring 拦在更前面（那种情况没有 details 是合理的）。
+      max-file-size: 520MB
+      max-request-size: 540MB
+      # Spring 默认阈值为 0，意思是**所有** multipart 文件部分先落盘到 servlet 临时目录。
+      # 儿童录音在磁盘上留副本违反「不落盘、不写日志、不进备份」的硬约束，所以这里把阈值提到
+      # 单段录音上限（ai.transcription.max-size-bytes，默认 50MB）之上：录音只在内存里。
+      # 官方素材（上限 500MB）仍会溢写到临时目录——那是机构自有资源，不属该约束；Tomcat 在请求结束时清理。
+      file-size-threshold: 60MB
 
 mybatis-plus:
   configuration:
@@ -25,3 +33,17 @@ aliyun:
     access-key-id: ${OSS_ACCESS_KEY_ID:}
     access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
     download-url-ttl-seconds: ${OSS_DOWNLOAD_URL_TTL_SECONDS:900}
+
+    # 超时与连接池：不用 SDK 默认值（连接 50s、取连接无限等待、池 1024），
+    # 那些默认值在故障时会把请求挂住而不是快速失败。详见 OssProperties 的说明。
+    connection-timeout-ms: ${OSS_CONNECTION_TIMEOUT_MS:5000}
+    socket-timeout-ms: ${OSS_SOCKET_TIMEOUT_MS:30000}
+    connection-request-timeout-ms: ${OSS_CONNECTION_REQUEST_TIMEOUT_MS:5000}
+    max-connections: ${OSS_MAX_CONNECTIONS:64}
+    max-error-retry: ${OSS_MAX_ERROR_RETRY:2}
+
+storage:
+  upload:
+    # 业务侧单文件上限。413 PAYLOAD_TOO_LARGE 的 details.limit.maximum 用的就是这个值，
+    # 所以它必须比 spring.servlet.multipart 的上限低——否则超限会先被 Spring 拦下，带不出 details。
+    max-size-bytes: ${UPLOAD_MAX_SIZE_BYTES:524288000}
