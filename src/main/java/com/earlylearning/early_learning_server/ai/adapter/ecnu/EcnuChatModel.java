@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.earlylearning.early_learning_server.ai.llm.ChatModel;
-import com.earlylearning.early_learning_server.ai.llm.ChatModelException;
+import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -30,8 +31,9 @@ import org.slf4j.LoggerFactory;
  *       所以调用方给的是字节，不是链接。</li>
  * </ul>
  *
- * <p>失败分类决定上层能不能重试：429（并发配额）、5xx、超时与 IO 归可重试；
- * 4xx（除 429）与响应结构不对归不可重试。
+ * <p>失败一律抛 {@link AiTaskFailedException}（与其他出站端口同一套错误处理，不再自带异常类型）：
+ * 429（并发配额）、5xx、超时与 IO 归可重试；4xx（除 429）与响应结构不对归不可重试。
+ * 响应本身不合法用 {@code MODEL_OUTPUT_INVALID}，传输层问题用 {@code MODEL_TIMEOUT}。
  */
 public class EcnuChatModel implements ChatModel {
 
@@ -69,10 +71,11 @@ public class EcnuChatModel implements ChatModel {
         try {
             response = http.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         } catch (IOException ex) {
-            throw new ChatModelException("调用 ECNU 失败：" + ex.getClass().getSimpleName(), true, ex);
+            throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT,
+                    "调用 ECNU 失败：" + ex.getClass().getSimpleName(), true, ex);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new ChatModelException("调用 ECNU 被中断", true, ex);
+            throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "调用 ECNU 被中断", true, ex);
         }
 
         int status = response.statusCode();
@@ -80,7 +83,7 @@ public class EcnuChatModel implements ChatModel {
             // 并发配额是每用户每模型 3，超出直接 429；5xx 与限流都值得重试
             boolean retryable = status == 429 || status >= 500;
             log.warn("ECNU 返回非 200 status={} model={} retryable={}", status, model, retryable);
-            throw new ChatModelException("ECNU 返回 " + status, retryable);
+            throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "ECNU 返回 " + status, retryable);
         }
         return new ChatResponse(extractContent(response.body()), model);
     }
@@ -93,7 +96,8 @@ public class EcnuChatModel implements ChatModel {
         if (request.images() != null) {
             for (ImagePart image : request.images()) {
                 if (image.content() != null && image.content().length > properties.maxImageBytes()) {
-                    throw new ChatModelException("单张图片超过上限 " + properties.maxImageBytes() + " 字节", false);
+                    throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT,
+                        "单张图片超过上限 " + properties.maxImageBytes() + " 字节", false);
                 }
             }
         }
@@ -141,13 +145,14 @@ public class EcnuChatModel implements ChatModel {
             JsonNode root = JSON.readTree(responseBody);
             JsonNode content = root.path("choices").path(0).path("message").path("content");
             if (content.isMissingNode() || content.asText().isBlank()) {
-                throw new ChatModelException("ECNU 响应里没有内容", false);
+                throw new AiTaskFailedException(TaskFailureCode.MODEL_OUTPUT_INVALID, "ECNU 响应里没有内容", false);
             }
             return content.asText();
-        } catch (ChatModelException ex) {
+        } catch (AiTaskFailedException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new ChatModelException("ECNU 响应无法解析：" + ex.getClass().getSimpleName(), false, ex);
+            throw new AiTaskFailedException(TaskFailureCode.MODEL_OUTPUT_INVALID,
+                    "ECNU 响应无法解析：" + ex.getClass().getSimpleName(), false, ex);
         }
     }
 
@@ -155,7 +160,9 @@ public class EcnuChatModel implements ChatModel {
         try {
             return JSON.writeValueAsString(value);
         } catch (Exception ex) {
-            throw new ChatModelException("请求体序列化失败", false, ex);
+            // 请求体由我们自己拼装，序列化失败说明代码有问题，不是"模型调用失败"：
+        // 按项目约定归编程错误（IllegalStateException），执行器会落成阶段默认失败码并留下类型名
+        throw new IllegalStateException("请求体序列化失败", ex);
         }
     }
 
@@ -163,7 +170,8 @@ public class EcnuChatModel implements ChatModel {
         try {
             return JSON.readTree(json);
         } catch (Exception ex) {
-            throw new ChatModelException("输出 Schema 不是合法 JSON", false, ex);
+            // 同上：Schema 是我们自己给的常量，解析不了是编程错误
+        throw new IllegalStateException("输出 Schema 不是合法 JSON", ex);
         }
     }
 }

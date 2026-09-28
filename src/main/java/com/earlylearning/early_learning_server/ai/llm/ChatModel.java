@@ -18,7 +18,8 @@ public interface ChatModel {
      *
      * @param request 消息、图片与可选的输出 JSON Schema
      * @return 模型返回的文本（指定 Schema 时应当是符合 Schema 的纯净 JSON）
-     * @throws ChatModelException 调用失败；{@link ChatModelException#retryable()} 表明是否值得重试
+     * @throws AiTaskFailedException 调用失败（与其他出站端口一致，携带任务失败码）；
+     *         {@link AiTaskFailedException#isRetryable()} 表明是否值得重试
      */
     ChatResponse complete(ChatRequest request);
 

@@ -8,7 +8,8 @@ import com.earlylearning.early_learning_server.ai.llm.ChatModel;
 import com.earlylearning.early_learning_server.ai.llm.ChatModel.ChatMessage;
 import com.earlylearning.early_learning_server.ai.llm.ChatModel.ChatRequest;
 import com.earlylearning.early_learning_server.ai.llm.ChatModel.ImagePart;
-import com.earlylearning.early_learning_server.ai.llm.ChatModelException;
+import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,7 +102,9 @@ class EcnuChatModelTests {
                 null, null, List.of(new ImagePart("image/png", new byte[2048])));
 
         assertThatThrownBy(() -> EcnuChatModel.buildBody(request, tiny, "ecnu-plus"))
-                .isInstanceOf(ChatModelException.class)
+                .isInstanceOf(AiTaskFailedException.class)
+                .satisfies(ex -> assertThat(((AiTaskFailedException) ex).getFailureCode())
+                        .isEqualTo(TaskFailureCode.MODEL_TIMEOUT))
                 .hasMessageContaining("单张图片超过上限");
     }
 

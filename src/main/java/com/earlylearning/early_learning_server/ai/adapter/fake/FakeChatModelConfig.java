@@ -3,7 +3,8 @@ package com.earlylearning.early_learning_server.ai.adapter.fake;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.earlylearning.early_learning_server.ai.llm.ChatModel;
-import com.earlylearning.early_learning_server.ai.llm.ChatModelException;
+import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -49,10 +50,10 @@ public class FakeChatModelConfig {
             @Override
             public ChatResponse complete(ChatRequest request) {
                 if (Boolean.getBoolean("ai.fake-chat.fail-permanently")) {
-                    throw new ChatModelException("示例：模型调用被拒绝", false);
+                    throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "示例：模型调用被拒绝", false);
                 }
                 if (Boolean.getBoolean("ai.fake-chat.fail")) {
-                    throw new ChatModelException("示例：模型调用暂时不可用", true);
+                    throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "示例：模型调用暂时不可用", true);
                 }
                 String content = System.getProperty("ai.fake-chat.content", DEFAULT_CONTENT);
                 log.info("假大模型被调用 第{}次 带图={} 模型={}",

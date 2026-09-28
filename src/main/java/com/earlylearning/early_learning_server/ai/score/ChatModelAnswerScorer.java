@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.earlylearning.early_learning_server.ai.llm.ChatModel;
-import com.earlylearning.early_learning_server.ai.llm.ChatModelException;
 import com.earlylearning.early_learning_server.ai.rubric.RubricConfig;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * 单题评分的真实实现：**与厂商无关**，只依赖 {@link ChatModel} 端口。
@@ -28,7 +28,15 @@ import tools.jackson.databind.ObjectMapper;
  */
 public class ChatModelAnswerScorer implements AnswerScorer {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /**
+     * 只接受 Schema 声明的类型：模型把分数写成字符串 {@code "2"} 时判失败，而不是悄悄转成 2。
+     * （端点并不严格保证 schema，所以这一层是必要的。）
+     */
+    private static final ObjectMapper JSON = JsonMapper.builder()
+            .withCoercionConfig(tools.jackson.databind.type.LogicalType.Integer,
+                    config -> config.setCoercion(tools.jackson.databind.cfg.CoercionInputShape.String,
+                            tools.jackson.databind.cfg.CoercionAction.Fail))
+            .build();
 
     /** 提示词版本：随 prompt 一起演进，写进结果的 model_meta，便于追溯。 */
     private static final String PROMPT_VERSION = "QUESTION_SCORING_PROMPT_V1";
@@ -66,17 +74,12 @@ public class ChatModelAnswerScorer implements AnswerScorer {
                         new ChatModel.ChatMessage("user", userPrompt(input))),
                 "QuestionScore", RESPONSE_SCHEMA, imageParts(input));
 
-        ChatModel.ChatResponse response;
-        try {
-            response = chat.complete(request);
-        } catch (ChatModelException ex) {
-            // 可重试的（限流、超时、5xx）落成可重试任务失败；其余的照样失败但客户端不该重试
-            throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "模型调用失败", ex.retryable(), ex);
-        }
+        // 端口失败已经是 AiTaskFailedException（带失败码与可重试性），执行器认得，这里不必再翻译一次
+        ChatModel.ChatResponse response = chat.complete(request);
 
         ModelOutput output = parse(response.content());
         QuestionAiScore score = new QuestionAiScore(rubricVersion, output.score(), output.maxScore(),
-                output.reason(), locateEvidence(output.evidence(), input.confirmedText()));
+                output.reason(), EvidenceLocator.locate(output.evidence(), input.confirmedText()));
         // 模型标识取适配器实际用的那个，不取响应里的 self-report
         return new AnswerScoringOutput(score, new ModelMeta(response.model(), PROMPT_VERSION));
     }
@@ -133,43 +136,6 @@ public class ChatModelAnswerScorer implements AnswerScorer {
             }
         }
         return parts;
-    }
-
-    /**
-     * 把模型照抄的片段**定位**到确认文本里，得到带偏移的证据。
-     *
-     * <p>为什么不采信模型给的偏移：实测同一 prompt 连打 5 次，有 3 次把 11 个 UTF-16 单元的句子
-     * 标成 [0,12)——模型数不准偏移。让模型只负责"照抄哪句话"，偏移由服务端算，
-     * 这条链路才稳定；也顺带保证了"不能编造引文"：片段找不到就不放进结果。
-     */
-    private static List<Evidence> locateEvidence(List<String> snippets, String confirmedText) {
-        if (snippets == null || snippets.isEmpty()) {
-            return List.of();
-        }
-        if (confirmedText == null) {
-            return List.of();
-        }
-        List<Evidence> located = new ArrayList<>(snippets.size());
-        int dropped = 0;
-        for (String snippet : snippets) {
-            if (snippet == null || snippet.isBlank()) {
-                dropped++;
-                continue;
-            }
-            int start = confirmedText.indexOf(snippet);
-            if (start < 0) {
-                // 原文里没有这句话：视为编造/改写，不放进结果（绝不替模型编证据）
-                dropped++;
-                continue;
-            }
-            located.add(new Evidence(Evidence.SOURCE_TRANSCRIPT, snippet, start, start + snippet.length()));
-        }
-        if (dropped > 0) {
-            // 只记条数，不记内容——片段就是儿童原话，不能进日志
-            org.slf4j.LoggerFactory.getLogger(ChatModelAnswerScorer.class)
-                    .info("模型给出的 {} 条证据里有 {} 条无法在原文中定位，已丢弃", snippets.size(), dropped);
-        }
-        return located;
     }
 
     private static ModelOutput parse(String content) {

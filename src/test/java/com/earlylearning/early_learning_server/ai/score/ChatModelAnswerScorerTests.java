@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.earlylearning.early_learning_server.ai.llm.ChatModel;
-import com.earlylearning.early_learning_server.ai.llm.ChatModelException;
 import com.earlylearning.early_learning_server.ai.rubric.RubricConfig;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.task.Attempt;
+import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -119,17 +119,21 @@ class ChatModelAnswerScorerTests {
     }
 
     @Test
-    void aRetryableModelFailureBecomesARetryableTaskFailure() {
-        chat.failure = new ChatModelException("限流", true);
+    void aRetryableModelFailureKeepsItsCodeAndRetryability() {
+        // 端口直接抛 AiTaskFailedException：失败码与可重试性原样到达执行器，评分器不再翻译一遍
+        chat.failure = new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "限流", true);
 
         assertThatThrownBy(() -> scorer.score(input(false), RUBRIC_VERSION))
                 .isInstanceOf(AiTaskFailedException.class)
-                .satisfies(ex -> assertThat(((AiTaskFailedException) ex).isRetryable()).isTrue());
+                .satisfies(ex -> {
+                    assertThat(((AiTaskFailedException) ex).getFailureCode()).isEqualTo(TaskFailureCode.MODEL_TIMEOUT);
+                    assertThat(((AiTaskFailedException) ex).isRetryable()).isTrue();
+                });
     }
 
     @Test
     void aPermanentModelFailureIsNotMarkedRetryable() {
-        chat.failure = new ChatModelException("令牌无效", false);
+        chat.failure = new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "令牌无效", false);
 
         assertThatThrownBy(() -> scorer.score(input(false), RUBRIC_VERSION))
                 .isInstanceOf(AiTaskFailedException.class)
@@ -149,13 +153,13 @@ class ChatModelAnswerScorerTests {
                 new RubricConfig.Item("统一问答推理", "理解或推理是否合理", "QUESTION_REASONING", List.of(
                         new RubricConfig.Level(2, "合理的理解或推理；"),
                         new RubricConfig.Level(1, "正确但不完整的理解或推理；"),
-                        new RubricConfig.Level(0, "无回应或完全错误的推理和理解。"))));
+                        new RubricConfig.Level(0, "无回应或完全错误的推理和理解。")), null));
     }
 
     private class StubChat implements ChatModel {
         final List<ChatRequest> requests = new ArrayList<>();
         String content = "{}";
-        ChatModelException failure;
+        AiTaskFailedException failure;
 
         @Override
         public ChatResponse complete(ChatRequest request) {

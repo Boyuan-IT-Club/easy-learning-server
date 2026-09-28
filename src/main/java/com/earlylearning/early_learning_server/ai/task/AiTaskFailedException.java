@@ -17,6 +17,11 @@ public class AiTaskFailedException extends RuntimeException {
         this.retryable = retryable;
     }
 
+    /** 没有原始异常可带时用这个，省得调用方写一个无意义的 {@code null}。 */
+    public AiTaskFailedException(TaskFailureCode failureCode, String message, boolean retryable) {
+        this(failureCode, message, retryable, null);
+    }
+
     public TaskFailureCode getFailureCode() {
         return failureCode;
     }
