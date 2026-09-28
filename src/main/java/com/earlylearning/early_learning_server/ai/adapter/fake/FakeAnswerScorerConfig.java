@@ -9,10 +9,12 @@ import com.earlylearning.early_learning_server.ai.score.ModelMeta;
 import com.earlylearning.early_learning_server.ai.score.QuestionAiScore;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
-import com.earlylearning.early_learning_server.ai.web.AnswerScoringRequest;
+import com.earlylearning.early_learning_server.ai.score.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.score.ScoringImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -28,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
  * <p>理由与证据都是固定内容：不给儿童数据留任何进入文本的路径。
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(name = "ai.llm.provider", havingValue = "fake", matchIfMissing = true)
 public class FakeAnswerScorerConfig {
 
     private static final Logger log = LoggerFactory.getLogger(FakeAnswerScorerConfig.class);
@@ -38,7 +41,7 @@ public class FakeAnswerScorerConfig {
 
     @Bean
     public AnswerScorer fakeAnswerScorer() {
-        return (request, rubricVersion) -> {
+        return (input, rubricVersion) -> {
             if (Boolean.getBoolean("ai.fake-answer-scorer.fail")) {
                 throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "示例：模型调用超时", true, null);
             }
@@ -48,15 +51,18 @@ public class FakeAnswerScorerConfig {
                         new QuestionAiScore(rubricVersion, null, QuestionAiScore.MAX_SCORE, SAMPLE_REASON, List.of()),
                         modelMeta());
             }
-            log.info("假单题评分器被调用 attempt={} questionId={} rubricVersion={}",
-                    request.attempt(), request.question().questionId(), rubricVersion);
-            return new AnswerScoringOutput(buildValidScore(request, rubricVersion), modelMeta());
+            // 把"真的收到了图"打出来：这条链路的价值就在于图片字节确实到了适配器
+            log.info("假单题评分器被调用 attempt={} questionId={} rubricVersion={} 图片={}张 其中带字节={}张",
+                    input.attempt(), input.questionId(), rubricVersion,
+                    input.images() == null ? 0 : input.images().size(),
+                    input.images() == null ? 0 : input.images().stream().filter(ScoringImage::hasBytes).count());
+            return new AnswerScoringOutput(buildValidScore(input, rubricVersion), modelMeta());
         };
     }
 
-    private QuestionAiScore buildValidScore(AnswerScoringRequest request, String rubricVersion) {
+    private QuestionAiScore buildValidScore(AnswerScoringInput input, String rubricVersion) {
         return new QuestionAiScore(rubricVersion, SAMPLE_SCORE, QuestionAiScore.MAX_SCORE, SAMPLE_REASON,
-                sampleEvidence(request.confirmedText()));
+                sampleEvidence(input.confirmedText()));
     }
 
     /** 确认文本为空时不给任何证据——宁可没有证据，也不编造引文。 */

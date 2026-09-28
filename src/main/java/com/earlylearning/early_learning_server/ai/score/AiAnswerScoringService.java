@@ -41,19 +41,22 @@ public class AiAnswerScoringService {
     private final AnswerScorer scorer;
     private final QuestionScoreValidator scoreValidator;
     private final AnswerScoringRequestValidator requestValidator;
+    private final ScoringImageResolver imageResolver;
 
     public AiAnswerScoringService(AiTaskSubmission submission,
                                   AiTaskRunner runner,
                                   RubricService rubricService,
                                   AnswerScorer scorer,
                                   QuestionScoreValidator scoreValidator,
-                                  AnswerScoringRequestValidator requestValidator) {
+                                  AnswerScoringRequestValidator requestValidator,
+                                  ScoringImageResolver imageResolver) {
         this.submission = submission;
         this.runner = runner;
         this.rubricService = rubricService;
         this.scorer = scorer;
         this.scoreValidator = scoreValidator;
         this.requestValidator = requestValidator;
+        this.imageResolver = imageResolver;
     }
 
     public TaskHandleResponse submit(AnswerScoringRequest request, int retryAttempt) {
@@ -64,7 +67,7 @@ public class AiAnswerScoringService {
         AiTaskSubmission.Outcome outcome = submission.resolveAndRegister(request.requestId(), fingerprint,
                 retryAttempt, () -> newTask(request, resolvedVersion));
         AiTask task = switch (outcome.action()) {
-            case CREATE -> runScoring(outcome.task(), request, resolvedVersion);
+            case CREATE -> runScoring(outcome.task(), toInput(request), resolvedVersion);
             case RESTART -> restart(outcome.task(), request);
             case REPLAY -> outcome.task();
         };
@@ -89,16 +92,34 @@ public class AiAnswerScoringService {
     private AiTask restart(AiTask task, AnswerScoringRequest request) {
         String recordedVersion = rubricService.versionForRetry(task.getRubricVersion(), request.rubricVersion());
         task.restart(Instant.now());
-        return runScoring(task, request, recordedVersion);
+        return runScoring(task, toInput(request), recordedVersion);
     }
 
-    private AiTask runScoring(AiTask task, AnswerScoringRequest request, String rubricVersion) {
+    /**
+     * 把请求解析成适配器的领域输入：**在这里按 file_code 取图**。
+     *
+     * <p>放在提交的同步路径上而不是任务里，是为了让"图片编号有问题"立刻以 404/409/410/415 暴露，
+     * 与签发、元数据接口语义一致；若落成任务失败，失败码的语义并不贴切。
+     * 重放（REPLAY）不会走到这里，不会白白重复下载。
+     */
+    private AnswerScoringInput toInput(AnswerScoringRequest request) {
+        return new AnswerScoringInput(
+                request.question().questionId(),
+                request.question().text(),
+                request.question().hint(),
+                request.attempt(),
+                request.confirmedText(),
+                request.storyContext(),
+                imageResolver.resolve(request.images()));
+    }
+
+    private AiTask runScoring(AiTask task, AnswerScoringInput input, String rubricVersion) {
         runner.run(task, TaskStage.SCORING, FailedStage.SCORE, TaskFailureCode.MODEL_OUTPUT_INVALID, () -> {
-            AnswerScoringOutput output = scorer.score(request, rubricVersion);
+            AnswerScoringOutput output = scorer.score(input, rubricVersion);
             // 模型输出必须过运行时语义校验：缺分数、分数越界、编造引文都在这里被挡下
-            scoreValidator.validate(output, rubricVersion, request.confirmedText());
+            scoreValidator.validate(output, rubricVersion, input.confirmedText());
             // 题号与 attempt 由服务端写入，不采信模型
-            return new AnswerScoringResult(request.question().questionId(), request.attempt(),
+            return new AnswerScoringResult(input.questionId(), input.attempt(),
                     output.score(), output.modelMeta());
         });
         return task;

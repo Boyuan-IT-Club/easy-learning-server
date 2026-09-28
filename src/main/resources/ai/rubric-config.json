@@ -1,0 +1,343 @@
+{
+  "schema_version": 2,
+  "rubric_version": "narrative-assessment-v1",
+  "macrostructure": [
+    {
+      "item": "事件顺序",
+      "criterion": "事件发展是否按照特定顺序展开",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "叙事顺序整体合理清晰；"
+        },
+        {
+          "score": 1,
+          "description": "大部分叙事顺序合理，存在小范围不清晰或不完整；"
+        },
+        {
+          "score": 0,
+          "description": "叙事混乱，无法判断故事的发展顺序。"
+        }
+      ],
+      "item_code": "EVENT_SEQUENCE"
+    },
+    {
+      "item": "情节结构",
+      "criterion": "总体叙事结构完整，包含故事的基本要素：背景（时间、地点、人物）、事件的起因、经过和结果",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "情节结构完整，背景、起因、经过和结果均有描述；"
+        },
+        {
+          "score": 1,
+          "description": "故事主要情节有一定描述，但缺乏对于背景的介绍或情节结构存在一定不完整，但不影响事件的形成；"
+        },
+        {
+          "score": 0,
+          "description": "缺乏对于故事主要情节的描述，无法形成完整事件结构。"
+        }
+      ],
+      "item_code": "PLOT_STRUCTURE"
+    },
+    {
+      "item": "主题体现",
+      "criterion": "叙事呈现出特定主题，且主题正确清晰",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "叙事体现特定主题，并且主题正确合理；"
+        },
+        {
+          "score": 1,
+          "description": "叙事体现特定主题但主题存在偏离；"
+        },
+        {
+          "score": 0,
+          "description": "叙事零碎不体现特定主题。"
+        }
+      ],
+      "item_code": "THEME"
+    },
+    {
+      "item": "故事连贯性",
+      "criterion": "叙事事件之间衔接流畅，转换清晰",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "叙事各情节过渡自然、顺畅；"
+        },
+        {
+          "score": 1,
+          "description": "叙事部分连贯，但情节存在跳跃；"
+        },
+        {
+          "score": 0,
+          "description": "事件整体缺乏连贯性。"
+        }
+      ],
+      "item_code": "COHERENCE"
+    },
+    {
+      "item": "因果逻辑",
+      "criterion": "叙事发展逻辑合理，因果明确",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "因果关系存在完整且清晰，能够通过语言明确连接事件之间的关系；"
+        },
+        {
+          "score": 1,
+          "description": "因果关系存在，但不够完整或清晰；"
+        },
+        {
+          "score": 0,
+          "description": "事件发展无因果逻辑。"
+        }
+      ],
+      "item_code": "CAUSAL_LOGIC"
+    },
+    {
+      "item": "图1",
+      "criterion": "叙事内容\n时间、地点、人物、具体活动",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "完整描述故事背景，并对具体活动内容有一定介绍；"
+        },
+        {
+          "score": 1,
+          "description": "描述故事背景，但缺少对于活动的介绍或对于活动有一定介绍，但是背景描述不完整；"
+        },
+        {
+          "score": 0,
+          "description": "缺少对于本张图片的描述。"
+        }
+      ],
+      "item_code": "NARRATIVE_CONTENT_01"
+    },
+    {
+      "item": "图2、3",
+      "criterion": "叙事内容",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "明确主体、行为及结果，完整描述情节；"
+        },
+        {
+          "score": 1,
+          "description": "出现主体、行为、结果中至少两项，部分情节缺失；"
+        },
+        {
+          "score": 0,
+          "description": "描述不准确或缺少对于本组图片的描述。"
+        }
+      ],
+      "item_code": "NARRATIVE_CONTENT_02"
+    },
+    {
+      "item": "图4、5",
+      "criterion": "叙事内容",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "完整描述情节；"
+        },
+        {
+          "score": 1,
+          "description": "缺少对于行为起因的描述；"
+        },
+        {
+          "score": 0,
+          "description": "缺少对于本组图片的描述。"
+        }
+      ],
+      "item_code": "NARRATIVE_CONTENT_03"
+    },
+    {
+      "item": "图6",
+      "criterion": "叙事内容",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "完整描述情节；"
+        },
+        {
+          "score": 1,
+          "description": "部分描述情节；"
+        },
+        {
+          "score": 0,
+          "description": "缺乏对于本组图片的描述。"
+        }
+      ],
+      "item_code": "NARRATIVE_CONTENT_04"
+    },
+    {
+      "item": "图7",
+      "criterion": "叙事内容",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "完整描述情节（和主要内容相关）；"
+        },
+        {
+          "score": 1,
+          "description": "对图片进行描述，但描述内容偏离故事主要情节；"
+        },
+        {
+          "score": 0,
+          "description": "描述偏离图片内容或缺少对于本张图片的描述。"
+        }
+      ],
+      "item_code": "NARRATIVE_CONTENT_05"
+    },
+    {
+      "item": "细节拓展",
+      "criterion": "细节拓展",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "根据故事内容和主旨，对细节进行合理拓展；"
+        },
+        {
+          "score": 1,
+          "description": "偏离故事内容和主旨，对细节进行补充描述；"
+        },
+        {
+          "score": 0,
+          "description": "无任何细节拓展或完全错误的拓展。"
+        }
+      ],
+      "item_code": "DETAIL_EXPANSION"
+    }
+  ],
+  "microstructure": [
+    {
+      "item": "叙事产生性（量化的统计）",
+      "criterion": "平均句子长度（C单元）、词汇（形容词、副词、连词使用频次）",
+      "score_levels": null,
+      "item_code": "NARRATIVE_PRODUCTIVITY",
+      "scoring_mode": "AI_JUDGMENT",
+      "allowed_scores": [
+        0,
+        1,
+        2
+      ],
+      "max_score": 2,
+      "scoring_instruction": "由AI结合儿童叙事表现和量化统计自主判断0、1或2分，并说明理由；不预设各等级的固定阈值。"
+    },
+    {
+      "item": "词汇丰富度",
+      "criterion": "叙事表达中词汇的运用",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "词汇丰富且使用正确；"
+        },
+        {
+          "score": 1,
+          "description": "词汇使用存在一定变化，描述较为准确；"
+        },
+        {
+          "score": 0,
+          "description": "词汇使用较为单一，多为具体名词或动词。"
+        }
+      ],
+      "item_code": "VOCABULARY_DIVERSITY"
+    },
+    {
+      "item": "心理状态词",
+      "criterion": "通常指描述人物内部心理活动、情绪体验、认知状态或意图体验的词语或短语",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "出现认知或意图状态"
+        },
+        {
+          "score": 1,
+          "description": "仅出现情绪或感知状态词；"
+        },
+        {
+          "score": 0,
+          "description": "无相应心理状态词。"
+        }
+      ],
+      "item_code": "MENTAL_STATE_WORDS"
+    },
+    {
+      "item": "句法复杂度",
+      "criterion": "叙事表达中句式的使用",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "句式结构完整，并且复杂句式使用频率高；"
+        },
+        {
+          "score": 1,
+          "description": "句式基本结构完整，但表达较为简单；"
+        },
+        {
+          "score": 0,
+          "description": "大部分句式结构表达不完整"
+        }
+      ],
+      "item_code": "SYNTACTIC_COMPLEXITY"
+    },
+    {
+      "item": "衔接使用",
+      "criterion": "指称衔接",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "清晰介绍多个故事角色，并且指称使用稳定；"
+        },
+        {
+          "score": 1,
+          "description": "至少清晰介绍一个故事角色；"
+        },
+        {
+          "score": 0,
+          "description": "故事角色介绍不清晰或指称使用不稳定。"
+        }
+      ],
+      "item_code": "REFERENTIAL_COHESION"
+    },
+    {
+      "item": "衔接使用",
+      "criterion": "连词衔接",
+      "score_levels": [
+        {
+          "score": 2,
+          "description": "3处以上正确使用；"
+        },
+        {
+          "score": 1,
+          "description": "1~2处正确使用"
+        },
+        {
+          "score": 0,
+          "description": "未使用"
+        }
+      ],
+      "item_code": "CONJUNCTION_COHESION"
+    }
+  ],
+  "question_reasoning": {
+    "score_levels": [
+      {
+        "score": 2,
+        "description": "合理的理解或推理；"
+      },
+      {
+        "score": 1,
+        "description": "正确但不完整的理解或推理；"
+      },
+      {
+        "score": 0,
+        "description": "无回应或完全错误的推理和理解。"
+      }
+    ],
+    "item_code": "QUESTION_REASONING"
+  }
+}

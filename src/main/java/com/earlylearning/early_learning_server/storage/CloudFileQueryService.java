@@ -1,5 +1,6 @@
 package com.earlylearning.early_learning_server.storage;
 
+import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import java.util.HashMap;
 import java.util.List;
@@ -75,6 +76,26 @@ public class CloudFileQueryService {
      *
      * <p>DELETED 必须先判——它不是 READY，但状态码是 410 而非 409。
      */
+    /**
+     * 按编号取文件实体（含 {@code objectKey} 等内部字段），供**模块内部读取内容**使用。
+     *
+     * <p>校验语义与签发、元数据接口保持一致：不存在 404、已删除 410、未就绪 409。
+     * 否则会出现"评分能拿到图、下载却拿不到"这类最难查的不一致。
+     */
+    public CloudFile requireReadable(String fileCode) {
+        CloudFile file = mapper.selectOne(new QueryWrapper<CloudFile>().eq("file_code", fileCode));
+        if (file == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, ApiErrorDetails.atFile(fileCode));
+        }
+        if (file.getStatus() == CloudFileStatus.DELETED) {
+            throw new BusinessException(ErrorCode.FILE_DELETED, ApiErrorDetails.atFile(fileCode));
+        }
+        if (file.getStatus() != CloudFileStatus.READY) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_READY, ApiErrorDetails.atFile(fileCode));
+        }
+        return file;
+    }
+
     public CloudFileResponse metadata(String fileCode) {
         CloudFile file = mapper.selectOne(new QueryWrapper<CloudFile>().eq("file_code", fileCode));
         if (file == null) {

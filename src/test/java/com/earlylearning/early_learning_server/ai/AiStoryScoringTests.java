@@ -57,7 +57,7 @@ class AiStoryScoringTests {
     private final AiTaskStore store = new AiTaskStore(100);
     private final RubricService rubricService = new RubricService(new RubricProperties(RUBRIC_VERSION));
     private final ScoreValidator scoreValidator = new ScoreValidator(new EvidenceValidator());
-    private final StoryScoringRequestValidator requestValidator = new StoryScoringRequestValidator(new ImageContextValidator(), new ScoringLimits(20000, 20));
+    private final StoryScoringRequestValidator requestValidator = new StoryScoringRequestValidator(new ImageContextValidator(), new ScoringLimits(20000, 20, 5242880));
     private final FakeStoryScorerConfig fakeConfig = new FakeStoryScorerConfig();
 
     private volatile StoryScorer scorer = fakeConfig.fakeStoryScorer();

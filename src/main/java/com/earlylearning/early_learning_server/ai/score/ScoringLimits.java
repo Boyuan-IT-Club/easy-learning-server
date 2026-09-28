@@ -18,10 +18,12 @@ import org.springframework.validation.annotation.Validated;
  *
  * @param maxTextLength 单段确认文本与故事依据的 UTF-16 code unit 上限
  * @param maxImageCount 单次请求的图片数量上限
+ * @param maxImageBytes 单张图片字节上限（ECNU 文档未给图片上限，这里由业务侧定）
  */
 @Validated
 @ConfigurationProperties(prefix = "ai.scoring")
 public record ScoringLimits(
         @DefaultValue("20000") @Min(1) @Max(1000000) int maxTextLength,
-        @DefaultValue("20") @Min(1) @Max(1000) int maxImageCount) {
+        @DefaultValue("20") @Min(1) @Max(1000) int maxImageCount,
+        @DefaultValue("5242880") @Min(1024) @Max(52428800) long maxImageBytes) {
 }

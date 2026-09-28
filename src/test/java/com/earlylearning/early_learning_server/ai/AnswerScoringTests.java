@@ -6,6 +6,10 @@ import java.util.UUID;
 
 import com.earlylearning.early_learning_server.ai.adapter.fake.FakeAnswerScorerConfig;
 import com.earlylearning.early_learning_server.ai.score.AnswerScorer;
+import com.earlylearning.early_learning_server.ai.score.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.score.ScoringImageResolver;
+import com.earlylearning.early_learning_server.storage.CloudFileQueryService;
+import com.earlylearning.early_learning_server.storage.ObjectStorageService;
 import com.earlylearning.early_learning_server.ai.rubric.RubricProperties;
 import com.earlylearning.early_learning_server.ai.rubric.RubricService;
 import com.earlylearning.early_learning_server.ai.score.AiAnswerScoringService;
@@ -40,6 +44,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.Mockito.mock;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,7 +71,7 @@ class AnswerScoringTests {
     private final QuestionScoreValidator scoreValidator =
             new QuestionScoreValidator(new EvidenceValidator());
     private final AnswerScoringRequestValidator requestValidator =
-            new AnswerScoringRequestValidator(new ImageContextValidator(), new ScoringLimits(20000, 20));
+            new AnswerScoringRequestValidator(new ImageContextValidator(), new ScoringLimits(20000, 20, 5242880));
     private final FakeAnswerScorerConfig fakeConfig = new FakeAnswerScorerConfig();
 
     private volatile AnswerScorer scorer = fakeConfig.fakeAnswerScorer();
@@ -75,9 +81,14 @@ class AnswerScoringTests {
     @BeforeEach
     void setUp() {
         AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
+        // 解析器用真实实现 + mock 依赖：本测试的图片都是 CONFIRMED_DESCRIPTION / INLINE_IMAGE，
+        // 走"直接放行"分支、不碰存储；SERVER_FETCH 由 ScoringImageResolverTests 单独覆盖
+        ScoringImageResolver imageResolver = new ScoringImageResolver(
+                mock(CloudFileQueryService.class), mock(ObjectStorageService.class),
+                new ScoringLimits(20000, 20, 5242880));
         service = new AiAnswerScoringService(new AiTaskSubmission(store), runner, rubricService,
-                (request, rubricVersion) -> scorer.score(request, rubricVersion),
-                scoreValidator, requestValidator);
+                (input, rubricVersion) -> scorer.score(input, rubricVersion),
+                scoreValidator, requestValidator, imageResolver);
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new AiAnswerScoringController(service))
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -109,8 +120,8 @@ class AnswerScoringTests {
     void beforeAndAfterHintAreIndependentTasksWhoseScoresDoNotOverwriteEachOther() throws Exception {
         String beforeRequestId = UUID.randomUUID().toString();
         String afterRequestId = UUID.randomUUID().toString();
-        scorer = (request, rubricVersion) -> new AnswerScoringOutput(
-                new QuestionAiScore(rubricVersion, request.attempt() == Attempt.AFTER_HINT ? 2 : 1, 2,
+        scorer = (input, rubricVersion) -> new AnswerScoringOutput(
+                new QuestionAiScore(rubricVersion, input.attempt() == Attempt.AFTER_HINT ? 2 : 1, 2,
                         "示例理由", List.of()),
                 new ModelMeta("m", "PROMPT_V1"));
 
@@ -137,7 +148,7 @@ class AnswerScoringTests {
     @Test
     void missingScoreBecomesAFailedTaskInsteadOfASuccessfulZero() throws Exception {
         // 契约：null 不能作为成功结果
-        scorer = (request, rubricVersion) ->
+        scorer = (input, rubricVersion) ->
                 new AnswerScoringOutput(new QuestionAiScore(rubricVersion, null, 2, "示例理由", List.of()),
                         new ModelMeta("m", "PROMPT_V1"));
 
@@ -152,7 +163,7 @@ class AnswerScoringTests {
     @Test
     void retryContinuesWithTheVersionRecordedOnTheTask() throws Exception {
         String requestId = UUID.randomUUID().toString();
-        scorer = (request, rubricVersion) -> {
+        scorer = (input, rubricVersion) -> {
             throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "临时故障", true, null);
         };
         String taskId = taskIdOf(mockMvc.perform(submit(request(requestId, Attempt.AFTER_HINT, null), 0))
@@ -173,7 +184,7 @@ class AnswerScoringTests {
     @Test
     void retryWithADifferentVersionIsRejectedInsteadOfSwitching() throws Exception {
         String requestId = UUID.randomUUID().toString();
-        scorer = (request, rubricVersion) -> {
+        scorer = (input, rubricVersion) -> {
             throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "临时故障", true, null);
         };
         String taskId = taskIdOf(mockMvc.perform(submit(request(requestId, Attempt.AFTER_HINT, null), 0))
@@ -272,7 +283,10 @@ class AnswerScoringTests {
 
     @Test
     void theShippedFakeProducesAContractValidScore() {
-        assertThat(scorer.score(request(UUID.randomUUID().toString(), Attempt.BEFORE_HINT, null), RUBRIC_VERSION))
+        AnswerScoringInput input = new AnswerScoringInput(QUESTION_ID, "问题原文", "",
+                Attempt.BEFORE_HINT, TEXT, "故事依据", List.of());
+
+        assertThat(scorer.score(input, RUBRIC_VERSION))
                 .satisfies(output -> scoreValidator.validate(output, RUBRIC_VERSION, TEXT));
     }
 
