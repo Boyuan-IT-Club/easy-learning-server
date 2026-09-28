@@ -40,6 +40,21 @@ class RubricCatalogServiceTests {
             "REFERENTIAL_COHESION", "CONJUNCTION_COHESION",
             "QUESTION_REASONING");
 
+    /**
+     * 条目**显示名**也要钉住。
+     *
+     * <p>名字直接出现在报告里，而契约自身在这点上是矛盾的：OpenAPI 的 `/api/ai/rubrics` 示例把
+     * 两个衔接条目都写成「衔接使用」，同一份契约的 AIScore 示例与技术方案「报告结构」表写的是
+     * 「指称衔接 / 连词衔接」。实现取后者；这里把它冻结下来，避免以后又一次静默漂移。
+     */
+    private static final java.util.List<String> EXPECTED_NAMES = java.util.List.of(
+            "事件顺序", "情节结构", "主题体现", "故事连贯性", "因果逻辑",
+            "图1", "图2、3", "图4、5", "图6", "图7",
+            "细节拓展",
+            "叙事产生性（量化的统计）",
+            "词汇丰富度", "心理状态词", "句法复杂度", "指称衔接", "连词衔接",
+            "统一问答推理");
+
     private final RubricCatalogService service = new RubricCatalogService(new RubricProperties(VERSION));
 
     @Test
@@ -48,6 +63,9 @@ class RubricCatalogServiceTests {
 
         assertThat(catalog.items()).extracting(RubricCatalogItem::itemCode)
                 .containsExactlyElementsOf(EXPECTED_CODES);
+
+        assertThat(catalog.items()).extracting(RubricCatalogItem::itemName)
+                .containsExactlyElementsOf(EXPECTED_NAMES);
     }
 
     @Test

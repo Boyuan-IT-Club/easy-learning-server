@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.ai.port;
+package com.earlylearning.early_learning_server.ai.transcribe;
 
 /**
  * 语音识别适配器。

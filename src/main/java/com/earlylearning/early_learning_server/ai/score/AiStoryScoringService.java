@@ -3,10 +3,7 @@ package com.earlylearning.early_learning_server.ai.score;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.earlylearning.early_learning_server.ai.port.StoryScorer;
 import com.earlylearning.early_learning_server.ai.rubric.RubricService;
-import com.earlylearning.early_learning_server.ai.score.ScoreValidator;
-import com.earlylearning.early_learning_server.ai.score.StoryScoringResult;
 import com.earlylearning.early_learning_server.ai.task.AiTask;
 import com.earlylearning.early_learning_server.ai.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.task.AiTaskSubmission;

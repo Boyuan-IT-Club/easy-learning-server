@@ -2,7 +2,7 @@ package com.earlylearning.early_learning_server.ai.adapter.fake;
 
 import java.util.List;
 
-import com.earlylearning.early_learning_server.ai.port.AnswerScorer;
+import com.earlylearning.early_learning_server.ai.score.AnswerScorer;
 import com.earlylearning.early_learning_server.ai.score.AnswerScoringOutput;
 import com.earlylearning.early_learning_server.ai.score.Evidence;
 import com.earlylearning.early_learning_server.ai.score.ModelMeta;

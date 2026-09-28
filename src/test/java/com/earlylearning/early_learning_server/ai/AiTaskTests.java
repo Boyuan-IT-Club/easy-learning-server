@@ -73,10 +73,10 @@ class AiTaskTests {
         AiTask task = register(TaskKind.STORY_SCORING);
 
         task.moveTo(TaskStage.TRANSCRIBING, Instant.now());
-        assertThat(service.query(task.getTaskId()).stage()).isEqualTo(TaskStage.TRANSCRIBING);
+        assertThat(service.query(task.getTaskId()).getStage()).isEqualTo(TaskStage.TRANSCRIBING);
 
         task.moveTo(TaskStage.SCORING, Instant.now());
-        assertThat(service.query(task.getTaskId()).stage()).isEqualTo(TaskStage.SCORING);
+        assertThat(service.query(task.getTaskId()).getStage()).isEqualTo(TaskStage.SCORING);
     }
 
     @Test
@@ -169,11 +169,11 @@ class AiTaskTests {
         register(TaskKind.TRANSCRIPTION);
         register(TaskKind.TRANSCRIPTION);
         // 上限是 3，此时最早的仍在
-        assertThat(service.query(first.getTaskId()).stage()).isEqualTo(TaskStage.QUEUED);
+        assertThat(service.query(first.getTaskId()).getStage()).isEqualTo(TaskStage.QUEUED);
 
         // 第 4 个进来后最早的被清理，查询结果等同于"元数据已被清理"
         AiTask newest = register(TaskKind.TRANSCRIPTION);
-        assertThat(service.query(newest.getTaskId()).stage()).isEqualTo(TaskStage.QUEUED);
+        assertThat(service.query(newest.getTaskId()).getStage()).isEqualTo(TaskStage.QUEUED);
         assertThatThrownBy(() -> service.query(first.getTaskId()))
                 .isInstanceOf(BusinessException.class);
     }

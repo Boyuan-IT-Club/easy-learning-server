@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.earlylearning.early_learning_server.ai.port.SpeechTranscriber;
+import com.earlylearning.early_learning_server.ai.transcribe.SpeechTranscriber;
 import com.earlylearning.early_learning_server.ai.task.AiTask;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.task.AiTaskRunner;

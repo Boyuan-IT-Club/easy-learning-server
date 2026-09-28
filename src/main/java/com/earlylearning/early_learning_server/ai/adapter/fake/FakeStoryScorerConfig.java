@@ -3,7 +3,7 @@ package com.earlylearning.early_learning_server.ai.adapter.fake;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.earlylearning.early_learning_server.ai.port.StoryScorer;
+import com.earlylearning.early_learning_server.ai.score.StoryScorer;
 import com.earlylearning.early_learning_server.ai.rubric.MacroDimensionCode;
 import com.earlylearning.early_learning_server.ai.rubric.MicroDimensionCode;
 import com.earlylearning.early_learning_server.ai.score.AiScore;

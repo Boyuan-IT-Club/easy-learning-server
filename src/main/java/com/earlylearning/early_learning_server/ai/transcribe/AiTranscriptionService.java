@@ -3,7 +3,6 @@ package com.earlylearning.early_learning_server.ai.transcribe;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.earlylearning.early_learning_server.ai.port.SpeechTranscriber;
 import com.earlylearning.early_learning_server.ai.task.AiTask;
 import com.earlylearning.early_learning_server.ai.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.task.AiTaskSubmission;

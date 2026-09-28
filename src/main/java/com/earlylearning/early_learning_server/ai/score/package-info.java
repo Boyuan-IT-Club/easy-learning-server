@@ -4,7 +4,8 @@
  * <p>包含两条提交链路的服务、{@code AIScore v2} 与 {@code QuestionAIScore} 的模型、
  * 以及模型输出的**运行时语义校验**（维度集合、分数范围、证据必须是原文真实片段、图片分组覆盖）。
  *
- * <p>版本与条目在 {@code ai.rubric}；出站端口在 {@code ai.port}；默认假实现在 {@code ai.adapter.fake}。
+ * <p>版本与条目在 {@code ai.rubric}；两个评分端口（{@code StoryScorer} / {@code AnswerScorer}）就在本包，
+ * 默认假实现在 {@code ai.adapter.fake}。
  *
  * <p>关键约定：服务端**不合成"最终分"**——契约规定云端只评分与校验、结果由客户端写入本地；
  * 两次作答各自独立，服务端不建立它们之间的关联。

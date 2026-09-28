@@ -1,6 +1,5 @@
-package com.earlylearning.early_learning_server.ai.port;
+package com.earlylearning.early_learning_server.ai.score;
 
-import com.earlylearning.early_learning_server.ai.score.AiScore;
 import com.earlylearning.early_learning_server.ai.web.StoryScoringRequest;
 
 /**

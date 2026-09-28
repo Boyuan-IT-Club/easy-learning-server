@@ -1,7 +1,7 @@
 package com.earlylearning.early_learning_server.ai.adapter.fake;
 
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
-import com.earlylearning.early_learning_server.ai.port.SpeechTranscriber;
+import com.earlylearning.early_learning_server.ai.transcribe.SpeechTranscriber;
 import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 
 

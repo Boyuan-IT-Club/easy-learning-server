@@ -22,6 +22,6 @@ public class AiTaskController {
 
     @GetMapping("/api/ai/tasks/{task_id}")
     public ApiResponse<AiTaskResponse> get(@PathVariable("task_id") String taskId) {
-        return ApiResponse.ok(aiTaskService.query(taskId));
+        return ApiResponse.ok(AiTaskResponse.from(aiTaskService.query(taskId)));
     }
 }

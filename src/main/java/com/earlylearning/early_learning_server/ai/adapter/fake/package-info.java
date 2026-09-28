@@ -3,8 +3,8 @@
  *
  * <p>行为可控，便于联调与测试：
  * <ul>
- *   <li>{@code ai.fake-transcriber.*} / {@code ai.fake-scorer.*} / {@code ai.fake-answer-scorer.*}
- *       系统属性触发"调用失败"与"输出不合法"两类路径；</li>
+ *   <li>{@code ai.fake-transcriber.*} / {@code ai.fake-scorer.*} / {@code ai.fake-answer-scorer.*} 系统属性触发
+ *       "调用失败"与"输出不合法"两类路径；</li>
  *   <li>"输出不合法"是**故意**的：用来验证契约那句"不合格输出不能变成成功结果"确实被执行。</li>
  * </ul>
  *

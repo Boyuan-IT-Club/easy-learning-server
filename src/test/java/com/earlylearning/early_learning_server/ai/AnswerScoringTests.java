@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.earlylearning.early_learning_server.ai.adapter.fake.FakeAnswerScorerConfig;
-import com.earlylearning.early_learning_server.ai.port.AnswerScorer;
+import com.earlylearning.early_learning_server.ai.score.AnswerScorer;
 import com.earlylearning.early_learning_server.ai.rubric.RubricProperties;
 import com.earlylearning.early_learning_server.ai.rubric.RubricService;
 import com.earlylearning.early_learning_server.ai.score.AiAnswerScoringService;
