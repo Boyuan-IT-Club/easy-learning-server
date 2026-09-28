@@ -1,5 +1,6 @@
 package com.earlylearning.early_learning_server.storage;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
@@ -10,6 +11,7 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -53,6 +55,18 @@ public class OssObjectStorageService implements ObjectStorageService {
             client.deleteObject(properties.bucketName(), objectKey);
         } catch (OSSException | ClientException ex) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "Object deletion failed", ex);
+        }
+    }
+
+    @Override
+    public byte[] read(String objectKey) {
+        Assert.hasText(objectKey, "objectKey must not be blank");
+        try (OSSObject object = client.getObject(properties.bucketName(), objectKey)) {
+            return StreamUtils.copyToByteArray(object.getObjectContent());
+        } catch (IOException ex) {
+            throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "Object read failed", ex);
+        } catch (OSSException | ClientException ex) {
+            throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "Object read failed", ex);
         }
     }
 

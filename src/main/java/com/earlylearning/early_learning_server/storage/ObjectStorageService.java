@@ -21,6 +21,16 @@ public interface ObjectStorageService {
     void delete(String objectKey);
 
     /**
+     * 读回对象内容。
+     *
+     * <p>存在的理由：评分要「按 `file_code` 取回图片内容」交给多模态模型，而服务端此前只会写、不会读。
+     *
+     * <p>**调用方必须先校验大小上限**：这里会把整个对象读进内存（对象大小在 `storage_cloud_file.size_bytes` 里，
+     * 端口层拿不到，也不该由它决定业务上限）。失败抛 {@code BusinessException(DEPENDENCY_UNAVAILABLE)}。
+     */
+    byte[] read(String objectKey);
+
+    /**
      * 签发临时 GET 下载地址，不检查对象是否存在；调用方须先完成访问权限校验。
      *
      * <p>返回**地址与它实际到期的时刻**，而不是只返回地址：契约要求把 `expires_at`（实际到期时间）

@@ -1,6 +1,7 @@
 package com.earlylearning.early_learning_server.storage;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
@@ -8,6 +9,7 @@ import java.time.Instant;
 import java.util.Date;
 
 import com.aliyun.oss.ClientException;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.ObjectMetadata;
@@ -112,5 +114,25 @@ class OssObjectStorageServiceTests {
         when(client.generatePresignedUrl(anyString(), anyString(), any(Date.class))).thenThrow(cause);
         assertSame(cause, assertThrows(BusinessException.class,
                 () -> service.generateDownloadUrl("key")).getCause());
+    }
+
+    @Test
+    void readReturnsObjectBytes() throws Exception {
+        byte[] content = {1, 2, 3, 4};
+        OSSObject object = mock(OSSObject.class);
+        when(object.getObjectContent()).thenReturn(new ByteArrayInputStream(content));
+        when(client.getObject("test-bucket", "图片/a + b.png")).thenReturn(object);
+
+        assertArrayEquals(content, service.read("图片/a + b.png"));
+    }
+
+    @Test
+    void readFailureBecomesDependencyUnavailable() {
+        OSSException cause = new OSSException("boom");
+        when(client.getObject(anyString(), anyString())).thenThrow(cause);
+
+        BusinessException failure = assertThrows(BusinessException.class, () -> service.read("missing.png"));
+
+        assertEquals(ErrorCode.DEPENDENCY_UNAVAILABLE, failure.getErrorCode());
     }
 }
