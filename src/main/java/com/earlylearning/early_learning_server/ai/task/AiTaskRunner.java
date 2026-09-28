@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -62,10 +61,9 @@ public class AiTaskRunner {
     private final long resultTtlSeconds;
     private final long timeoutSeconds;
 
-    public AiTaskRunner(@Value("${ai.task.result-ttl-seconds:1800}") long resultTtlSeconds,
-                        @Value("${ai.task.timeout-seconds:600}") long timeoutSeconds) {
-        this.resultTtlSeconds = resultTtlSeconds;
-        this.timeoutSeconds = timeoutSeconds;
+    public AiTaskRunner(AiTaskProperties properties) {
+        this.resultTtlSeconds = properties.resultTtlSeconds();
+        this.timeoutSeconds = properties.timeoutSeconds();
     }
 
     /**

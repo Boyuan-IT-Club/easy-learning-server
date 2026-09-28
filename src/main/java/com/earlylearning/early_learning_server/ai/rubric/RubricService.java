@@ -40,8 +40,10 @@ public class RubricService {
         }
         if (!current.equals(requestedVersion)) {
             log.info("请求了不可用的评分标准版本 requested={} current={}", requestedVersion, current);
+            // 契约要求 message 是「可展示的脱敏说明，**不包含输入文本**」，
+            // 所以不回显请求里那个版本号；服务端当前版本是服务端自己的信息，可以给。
             throw new BusinessException(ErrorCode.RUBRIC_UNAVAILABLE,
-                    "评分标准版本不可用：" + requestedVersion + "；当前版本为 " + current);
+                    "评分标准版本不可用；当前版本为 " + current);
         }
         return current;
     }
@@ -63,8 +65,9 @@ public class RubricService {
                 && !recordedVersion.equals(requestedVersion)) {
             log.info("重试时请求了与任务记录不同的版本 recorded={} requested={}",
                     recordedVersion, requestedVersion);
+            // 同上：不回显请求里指定的版本号
             throw new BusinessException(ErrorCode.RUBRIC_UNAVAILABLE,
-                    "本任务采用的评分标准版本为 " + recordedVersion + "，请求指定的 " + requestedVersion + " 不可用");
+                    "本任务采用的评分标准版本为 " + recordedVersion + "，请求指定的版本不可用");
         }
         return recordedVersion;
     }

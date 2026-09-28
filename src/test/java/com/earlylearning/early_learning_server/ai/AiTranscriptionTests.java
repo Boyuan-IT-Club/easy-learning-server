@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.earlylearning.early_learning_server.ai.transcribe.SpeechTranscriber;
 import com.earlylearning.early_learning_server.ai.task.AiTask;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.task.AiTaskProperties;
 import com.earlylearning.early_learning_server.ai.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.task.AiTaskStore;
 import com.earlylearning.early_learning_server.ai.task.AiTaskSubmission;
@@ -67,7 +68,7 @@ class AiTranscriptionTests {
     void setUp() {
         transcriptionCalls.set(0);
         // 每次都取当前的 transcriber，便于单个用例替换行为
-        AiTaskRunner runner = new AiTaskRunner(1800, 600);
+        AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
         service = new AiTranscriptionService(new AiTaskSubmission(store), runner,
                 (audio, mimeType) -> transcriber.transcribe(audio, mimeType));
         AudioValidator validator = new AudioValidator(new MediaTypeDetector(), new AudioDurationParser(),
@@ -245,7 +246,7 @@ class AiTranscriptionTests {
         AiTaskStore localStore = new AiTaskStore(MAX_RETAINED);
         CountDownLatch release = new CountDownLatch(1);
         AiTranscriptionService localService = new AiTranscriptionService(new AiTaskSubmission(localStore),
-                new AiTaskRunner(1800, 1), // 超时 1 秒
+                new AiTaskRunner(new AiTaskProperties(1800, 1)), // 超时 1 秒
                 (audio, mimeType) -> {
                     try {
                         release.await(10, TimeUnit.SECONDS);
@@ -276,7 +277,7 @@ class AiTranscriptionTests {
 
     @Test
     void overflowingQueueBecomesARetryableFailureInsteadOfQueueingForever() throws Exception {
-        AiTaskRunner runner = new AiTaskRunner(1800, 600);
+        AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
         CountDownLatch release = new CountDownLatch(1);
         AiTaskStore localStore = new AiTaskStore(MAX_RETAINED);
         Callable<Object> blocking = () -> {

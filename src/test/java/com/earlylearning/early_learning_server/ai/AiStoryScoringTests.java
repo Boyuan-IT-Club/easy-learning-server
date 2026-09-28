@@ -14,6 +14,7 @@ import com.earlylearning.early_learning_server.ai.score.ScoreValidator;
 import com.earlylearning.early_learning_server.ai.score.StoryScoringResult;
 import com.earlylearning.early_learning_server.ai.task.AiTask;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.task.AiTaskProperties;
 import com.earlylearning.early_learning_server.ai.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.task.AiTaskStore;
 import com.earlylearning.early_learning_server.ai.task.AiTaskSubmission;
@@ -25,6 +26,7 @@ import com.earlylearning.early_learning_server.ai.web.ContentItem;
 import com.earlylearning.early_learning_server.ai.web.ImageContext;
 import com.earlylearning.early_learning_server.ai.web.ImageContextValidator;
 import com.earlylearning.early_learning_server.ai.web.StoryScoringRequest;
+import com.earlylearning.early_learning_server.ai.score.ScoringLimits;
 import com.earlylearning.early_learning_server.ai.web.StoryScoringRequestValidator;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -55,7 +57,7 @@ class AiStoryScoringTests {
     private final AiTaskStore store = new AiTaskStore(100);
     private final RubricService rubricService = new RubricService(new RubricProperties(RUBRIC_VERSION));
     private final ScoreValidator scoreValidator = new ScoreValidator(new EvidenceValidator());
-    private final StoryScoringRequestValidator requestValidator = new StoryScoringRequestValidator(new ImageContextValidator());
+    private final StoryScoringRequestValidator requestValidator = new StoryScoringRequestValidator(new ImageContextValidator(), new ScoringLimits(20000, 20));
     private final FakeStoryScorerConfig fakeConfig = new FakeStoryScorerConfig();
 
     private volatile StoryScorer scorer = fakeConfig.fakeStoryScorer();
@@ -64,7 +66,7 @@ class AiStoryScoringTests {
 
     @BeforeEach
     void setUp() {
-        AiTaskRunner runner = new AiTaskRunner(1800, 600);
+        AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
         service = new AiStoryScoringService(new AiTaskSubmission(store), runner, rubricService,
                 (request, rubricVersion) -> scorer.score(request, rubricVersion),
                 scoreValidator, requestValidator);

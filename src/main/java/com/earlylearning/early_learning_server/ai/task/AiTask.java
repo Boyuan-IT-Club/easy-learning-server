@@ -5,8 +5,9 @@ import java.time.Instant;
 /**
  * 内存态任务。
  *
- * <p>状态**不落库**，进程重启即丢失——这是契约要求的：结果只在内存有效期内可读，
- * 重启后客户端应收到 {@code PROCESS_RESTARTED} 并重交材料。
+ * <p>状态**不落库**，进程重启即丢失——这是契约要求的：结果只在内存有效期内可读。
+ * 重启后任务号查不到，客户端会收到 404 {@code TASK_NOT_FOUND}（{@code PROCESS_RESTARTED}
+ * 能表达但触发不了：内存表里没有"曾经存在"的痕迹）。
  *
  * <p>状态转换是 {@code synchronized} 的：一次转换要改多个字段，逐个 volatile 不足以保证读到的是一致快照。
  */
@@ -66,6 +67,16 @@ public class AiTask {
         this.resultExpiresAt = null;
     }
 
+    /**
+     * 结果过期发生在产物生成之后：失败阶段要跟随任务类型。
+     *
+     * <p>原来硬编码 {@code SCORE}，于是转写任务过期时会报 {@code failed_stage=SCORE}——
+     * 客户端按这个字段归因就会归错。
+     */
+    private FailedStage failedStageFor(TaskKind kind) {
+        return kind == TaskKind.TRANSCRIPTION ? FailedStage.TRANSCRIBE : FailedStage.SCORE;
+    }
+
     public synchronized void moveTo(TaskStage next, Instant now) {
         this.stage = next;
         this.updatedAt = now;
@@ -114,7 +125,7 @@ public class AiTask {
         if (stage != TaskStage.SUCCEEDED || resultExpiresAt == null || resultExpiresAt.isAfter(now)) {
             return false;
         }
-        fail(FailedStage.SCORE, TaskFailure.resultExpired(), now);
+        fail(failedStageFor(taskKind), TaskFailure.resultExpired(), now);
         return true;
     }
 

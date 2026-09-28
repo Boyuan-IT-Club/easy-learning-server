@@ -1,6 +1,9 @@
 package com.earlylearning.early_learning_server.ai.web;
 
+import com.earlylearning.early_learning_server.ai.score.ScoringLimits;
+import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import org.springframework.stereotype.Component;
 
 import static com.earlylearning.early_learning_server.ai.web.RequestFieldChecks.invalid;
@@ -21,9 +24,11 @@ import static com.earlylearning.early_learning_server.ai.web.RequestFieldChecks.
 public class AnswerScoringRequestValidator {
 
     private final ImageContextValidator imageContextValidator;
+    private final ScoringLimits limits;
 
-    public AnswerScoringRequestValidator(ImageContextValidator imageContextValidator) {
+    public AnswerScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits limits) {
         this.imageContextValidator = imageContextValidator;
+        this.limits = limits;
     }
 
     public void validate(AnswerScoringRequest request) {
@@ -39,6 +44,9 @@ public class AnswerScoringRequestValidator {
         requireNotNull(request.confirmedText(), "confirmed_text");
         requireText(request.storyContext(), "story_context");
 
+        requireWithinLimit(request.confirmedText(), limits.maxTextLength());
+        requireWithinLimit(request.storyContext(), limits.maxTextLength());
+
         validateQuestion(request.question());
 
         if (request.attempt() == null) {
@@ -47,10 +55,23 @@ public class AnswerScoringRequestValidator {
 
         // 契约的 required 含 images：空数组合法，但字段不能整缺
         requireNotNull(request.images(), "images");
+        if (request.images().size() > limits.maxImageCount()) {
+            throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.IMAGE_COUNT, limits.maxImageCount()));
+        }
         for (int i = 0; i < request.images().size(); i++) {
             imageContextValidator.validate(request.images().get(i), "images/" + i);
         }
     }
+
+    /** 超过部署上限 → 413 + `details.limit`（契约的 PayloadTooLarge 形状）。 */
+    private void requireWithinLimit(String text, int maximum) {
+        if (text != null && text.length() > maximum) {
+            throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.TEXT_LENGTH, maximum));
+        }
+    }
+
 
     private void validateQuestion(ScoringQuestion question) {
         requireNotNull(question, "question");

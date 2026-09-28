@@ -28,8 +28,10 @@ class RubricServiceTests {
     void unavailableVersionIsRejectedAndNeverSilentlySwitched() {
         assertThatThrownBy(() -> service.resolveVersion("RUBRIC_OLD_2025"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("RUBRIC_OLD_2025")
+                // 契约要求 message 是「可展示的脱敏说明，不包含输入文本」：
+                // 服务端自己的当前版本可以写，**请求里带的那个版本号不能回显**。
                 .hasMessageContaining(CURRENT)
+                .hasMessageNotContaining("RUBRIC_OLD_2025")
                 .extracting(ex -> ((BusinessException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.RUBRIC_UNAVAILABLE);
 

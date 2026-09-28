@@ -135,6 +135,20 @@ class AiTaskTests {
     }
 
     @Test
+    void expiredTranscriptionReportsTranscribeStageNotScore() {
+        // 结果过期发生在产物生成之后：失败阶段要跟随任务类型。
+        // 曾经硬编码 SCORE，于是转写任务过期时报 failed_stage=SCORE，客户端按它归因会归错。
+        AiTask task = new AiTask(UUID.randomUUID().toString(), UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), TaskKind.TRANSCRIPTION, 0, null,
+                BusinessType.CLASSROOM, "act_1", Instant.now());
+        task.succeed("识别结果", Instant.now().minusSeconds(1), Instant.now());
+
+        assertThat(task.expireIfNeeded(Instant.now())).isTrue();
+        assertThat(task.getFailure().code()).isEqualTo(TaskFailureCode.RESULT_EXPIRED);
+        assertThat(task.getFailedStage()).isEqualTo(FailedStage.TRANSCRIBE);
+    }
+
+    @Test
     void unknownButWellFormedTaskIs404WithTaskNotFound() throws Exception {
         String unknown = UUID.randomUUID().toString();
 

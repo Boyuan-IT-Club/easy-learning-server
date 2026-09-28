@@ -17,6 +17,7 @@ import com.earlylearning.early_learning_server.ai.score.QuestionAiScore;
 import com.earlylearning.early_learning_server.ai.score.QuestionScoreValidator;
 import com.earlylearning.early_learning_server.ai.task.AiTask;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.task.AiTaskProperties;
 import com.earlylearning.early_learning_server.ai.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.task.AiTaskStore;
 import com.earlylearning.early_learning_server.ai.task.AiTaskSubmission;
@@ -26,10 +27,12 @@ import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.web.AiAnswerScoringController;
 import com.earlylearning.early_learning_server.ai.web.AnswerScoringRequest;
+import com.earlylearning.early_learning_server.ai.score.ScoringLimits;
 import com.earlylearning.early_learning_server.ai.web.AnswerScoringRequestValidator;
 import com.earlylearning.early_learning_server.ai.web.ImageContext;
 import com.earlylearning.early_learning_server.ai.web.ImageContextValidator;
 import com.earlylearning.early_learning_server.ai.web.ScoringQuestion;
+import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
@@ -62,7 +65,7 @@ class AnswerScoringTests {
     private final QuestionScoreValidator scoreValidator =
             new QuestionScoreValidator(new EvidenceValidator());
     private final AnswerScoringRequestValidator requestValidator =
-            new AnswerScoringRequestValidator(new ImageContextValidator());
+            new AnswerScoringRequestValidator(new ImageContextValidator(), new ScoringLimits(20000, 20));
     private final FakeAnswerScorerConfig fakeConfig = new FakeAnswerScorerConfig();
 
     private volatile AnswerScorer scorer = fakeConfig.fakeAnswerScorer();
@@ -71,7 +74,7 @@ class AnswerScoringTests {
 
     @BeforeEach
     void setUp() {
-        AiTaskRunner runner = new AiTaskRunner(1800, 600);
+        AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
         service = new AiAnswerScoringService(new AiTaskSubmission(store), runner, rubricService,
                 (request, rubricVersion) -> scorer.score(request, rubricVersion),
                 scoreValidator, requestValidator);
@@ -217,6 +220,26 @@ class AnswerScoringTests {
         mockMvc.perform(postJson(bodyWithoutHint()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void textBeyondTheDeploymentLimitIs413WithTheLimitName() {
+        // 契约把 text_length 列为部署上限（按 UTF-16 code unit），必须真的执行——
+        // 曾经只存在于错误详情的枚举里，30 万字的文本被直接受理并评分成功。
+        String tooLong = "小".repeat(20001);
+        AnswerScoringRequest request = new AnswerScoringRequest(UUID.randomUUID().toString(),
+                revisionFor("z"), BusinessType.ASSESSMENT, "ACT_1", null, tooLong, true, "故事依据",
+                new ScoringQuestion(QUESTION_ID, "问题原文", ""), Attempt.BEFORE_HINT, List.of());
+
+        assertThatThrownBy(() -> requestValidator.validate(request))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException business = (BusinessException) ex;
+                    assertThat(business.getErrorCode()).isEqualTo(ErrorCode.PAYLOAD_TOO_LARGE);
+                    assertThat(business.getDetails().limit().name())
+                            .isEqualTo(ApiErrorDetails.LimitName.TEXT_LENGTH);
+                    assertThat(business.getDetails().limit().maximum()).isEqualTo(20000L);
+                });
     }
 
     @Test

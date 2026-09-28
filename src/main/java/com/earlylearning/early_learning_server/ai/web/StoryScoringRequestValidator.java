@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
+import com.earlylearning.early_learning_server.ai.score.ScoringLimits;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import org.springframework.stereotype.Component;
@@ -24,9 +25,11 @@ import static com.earlylearning.early_learning_server.ai.web.RequestFieldChecks.
 public class StoryScoringRequestValidator {
 
     private final ImageContextValidator imageContextValidator;
+    private final ScoringLimits limits;
 
-    public StoryScoringRequestValidator(ImageContextValidator imageContextValidator) {
+    public StoryScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits limits) {
         this.imageContextValidator = imageContextValidator;
+        this.limits = limits;
     }
 
     public void validate(StoryScoringRequest request) {
@@ -41,6 +44,10 @@ public class StoryScoringRequestValidator {
         // 空字符串是合法的：它表示"已确认无回应"，与缺失不同
         requireNotNull(request.confirmedText(), "confirmed_text");
         requireText(request.storyContext(), "story_context");
+
+        // 契约把 text_length / image_count 列为部署上限，要真的执行；按「一次定位首个失败」只报第一个
+        requireWithinLimit(request.confirmedText(), limits.maxTextLength());
+        requireWithinLimit(request.storyContext(), limits.maxTextLength());
 
         Set<String> referencedImages = validateContentItems(request.contentItems());
         validateImages(request.images(), referencedImages);
@@ -76,6 +83,14 @@ public class StoryScoringRequestValidator {
     }
 
     /** images 必须**恰好覆盖**分组引用的全部图片，且每条都要有真实内容或确认说明。 */
+    /** 超过部署上限 → 413 + `details.limit`（契约的 PayloadTooLarge 形状）。 */
+    private void requireWithinLimit(String text, int maximum) {
+        if (text != null && text.length() > maximum) {
+            throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.TEXT_LENGTH, maximum));
+        }
+    }
+
     private void validateImages(List<ImageContext> images, Set<String> referencedImages) {
         if (images == null || images.isEmpty()) {
             throw invalid("images");
@@ -88,6 +103,10 @@ public class StoryScoringRequestValidator {
             if (!provided.add(image.fileCode())) {
                 throw invalid(path + "/file_code");
             }
+        }
+        if (provided.size() > limits.maxImageCount()) {
+            throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.IMAGE_COUNT, limits.maxImageCount()));
         }
         if (!provided.equals(referencedImages)) {
             // 多给、少给、或只发了编号没给内容，都在这里被挡下
