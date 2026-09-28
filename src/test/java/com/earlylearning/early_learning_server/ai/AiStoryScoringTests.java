@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.UUID;
 
 import com.earlylearning.early_learning_server.ai.adapter.fake.FakeStoryScorerConfig;
+import com.earlylearning.early_learning_server.ai.score.ScoringImage;
+import com.earlylearning.early_learning_server.ai.score.ScoringImageResolver;
 import com.earlylearning.early_learning_server.ai.score.StoryScorer;
+import com.earlylearning.early_learning_server.ai.score.StoryScoringInput;
 import com.earlylearning.early_learning_server.ai.rubric.RubricProperties;
 import com.earlylearning.early_learning_server.ai.rubric.RubricService;
 import com.earlylearning.early_learning_server.ai.score.AiScore;
@@ -26,6 +29,8 @@ import com.earlylearning.early_learning_server.ai.web.ContentItem;
 import com.earlylearning.early_learning_server.ai.web.ImageContext;
 import com.earlylearning.early_learning_server.ai.web.ImageContextValidator;
 import com.earlylearning.early_learning_server.ai.web.StoryScoringRequest;
+import com.earlylearning.early_learning_server.storage.CloudFileQueryService;
+import com.earlylearning.early_learning_server.storage.ObjectStorageService;
 import com.earlylearning.early_learning_server.ai.score.ScoringLimits;
 import com.earlylearning.early_learning_server.ai.web.StoryScoringRequestValidator;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
@@ -43,6 +48,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.mock;
 
 /**
  * 故事评分：版本语义、输出校验、以及请求的语义校验。
@@ -67,9 +73,13 @@ class AiStoryScoringTests {
     @BeforeEach
     void setUp() {
         AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
+        // 图片在提交路径上解析；本测试的请求都是内联图片与确认说明，不需要碰存储
+        ScoringImageResolver imageResolver = new ScoringImageResolver(
+                mock(CloudFileQueryService.class), mock(ObjectStorageService.class),
+                new ScoringLimits(20000, 20, 5242880));
         service = new AiStoryScoringService(new AiTaskSubmission(store), runner, rubricService,
-                (request, rubricVersion) -> scorer.score(request, rubricVersion),
-                scoreValidator, requestValidator);
+                (input, rubricVersion) -> scorer.score(input, rubricVersion),
+                scoreValidator, requestValidator, imageResolver);
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new AiStoryScoringController(service))
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -101,11 +111,9 @@ class AiStoryScoringTests {
 
     @Test
     void invalidModelOutputBecomesAFailedTaskNotASuccessfulScore() throws Exception {
-        scorer = (request, rubricVersion) -> new FakeStoryScorerConfig().fakeStoryScorer()
-                .score(request, rubricVersion);
         // 用一个"少一个维度"的输出，模拟模型返回不合格结果
-        scorer = (request, rubricVersion) -> dropOneDimension(
-                fakeConfig.fakeStoryScorer().score(request, rubricVersion));
+        scorer = (input, rubricVersion) -> dropOneDimension(
+                fakeConfig.fakeStoryScorer().score(input, rubricVersion));
 
         String taskId = taskIdOf(mockMvc.perform(submit(request(UUID.randomUUID().toString(), null), 0))
                 .andReturn().getResponse().getContentAsString());
@@ -119,7 +127,7 @@ class AiStoryScoringTests {
     void retryContinuesWithTheVersionRecordedOnTheTask() throws Exception {
         String requestId = UUID.randomUUID().toString();
         // 首次调用失败（可重试）
-        scorer = (request, rubricVersion) -> {
+        scorer = (input, rubricVersion) -> {
             throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "临时故障", true, null);
         };
         String taskId = taskIdOf(mockMvc.perform(submit(request(requestId, null), 0))
@@ -141,7 +149,7 @@ class AiStoryScoringTests {
     @Test
     void retryWithADifferentVersionIsRejectedInsteadOfSwitching() throws Exception {
         String requestId = UUID.randomUUID().toString();
-        scorer = (request, rubricVersion) -> {
+        scorer = (input, rubricVersion) -> {
             throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "临时故障", true, null);
         };
         String taskId = taskIdOf(mockMvc.perform(submit(request(requestId, null), 0))
@@ -181,10 +189,35 @@ class AiStoryScoringTests {
     }
 
     @Test
+    void aFileCodeOnlyImageIsRejectedBecauseTheContractForbidsIt() {
+        // 契约：故事评分「必须为所有分组引用的图片逐一提供真实图片或确认说明；不得仅发送 file_code」。
+        // 单题评分可以用 SERVER_FETCH（服务端按编号取图），故事评分不行——放进来模型就收不到图。
+        StoryScoringRequest fileCodeOnly = new StoryScoringRequest(UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), BusinessType.ASSESSMENT, "ACT_1", null,
+                TEXT, true, "故事依据", groups(),
+                List.of(new ImageContext(ImageContext.ImageKind.SERVER_FETCH, "CF_A", null, null, null, null),
+                        images().get(1)));
+
+        assertThatThrownBy(() -> requestValidator.validate(fileCodeOnly))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST);
+                    assertThat(((BusinessException) ex).getDetails().fieldPath()).isEqualTo("/images/0/kind");
+                });
+    }
+
+    @Test
     void theShippedFakeProducesAContractValidScore() {
         // 假实现本身也要经得起校验，否则联调时会被自己的校验器挡住
-        assertThat(scorer.score(request(UUID.randomUUID().toString(), null), RUBRIC_VERSION))
+        assertThat(scorer.score(input(request(UUID.randomUUID().toString(), null)), RUBRIC_VERSION))
                 .satisfies(score -> scoreValidator.validate(score, RUBRIC_VERSION, TEXT, groups()));
+    }
+
+    /** 与 {@code images()} 对应的已解析图片：内联的那张解出 3 字节，说明的那张只带文字。 */
+    private StoryScoringInput input(StoryScoringRequest request) {
+        return new StoryScoringInput(request.confirmedText(), request.storyContext(), request.contentItems(),
+                List.of(new ScoringImage("CF_A", "image/png", new byte[] {0, 0, 0}, null),
+                        new ScoringImage("CF_B", null, null, "图片已确认")));
     }
 
     private AiScore dropOneDimension(AiScore score) {

@@ -1,12 +1,13 @@
 package com.earlylearning.early_learning_server.ai.score;
 
-import com.earlylearning.early_learning_server.ai.web.StoryScoringRequest;
+
 
 /**
  * 故事评分适配器。
  *
  * <p>实现可替换：接口只声明契约，不关心谁来实现。
- * 入参直接复用请求模型——它是扁平的数据载体，再包一层领域对象只会多一份需要同步的结构。
+ * 入参是 {@link StoryScoringInput}：图片在**提交的同步路径**上就已解析好，评分实现不需要碰存储，
+ * 也不会把"图片编号不可读"这类请求问题拖成任务失败（与单题评分同一形状）。
  *
  * <p>返回的 {@link AiScore} **会经过 {@code ScoreValidator} 的运行时语义校验**，
  * 不合格会被落成 {@code MODEL_OUTPUT_INVALID} 任务失败，而不是返回一个看起来成功的分数。
@@ -22,5 +23,5 @@ public interface StoryScorer {
      * @param rubricVersion 实际采用的评分标准版本；由服务端决定，不由请求决定
      * @throws AiTaskFailedException 调用模型失败
      */
-    AiScore score(StoryScoringRequest request, String rubricVersion);
+    AiScore score(StoryScoringInput input, String rubricVersion);
 }

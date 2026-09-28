@@ -100,6 +100,13 @@ public class StoryScoringRequestValidator {
             ImageContext image = images.get(i);
             String path = "images/" + i;
             imageContextValidator.validate(image, path);
+            if (image.kind() == ImageContext.ImageKind.SERVER_FETCH) {
+                // 契约：「必须为所有分组引用的图片逐一提供真实图片或确认说明；**不得仅发送 file_code**」。
+                // 单题评分可以用 SERVER_FETCH（服务端按编号取图），故事评分不行。
+                throw new BusinessException(ErrorCode.INVALID_REQUEST,
+                        "故事评分的图片必须提供内容或确认说明，不能只给 file_code",
+                        ApiErrorDetails.atField("/" + path + "/kind"));
+            }
             if (!provided.add(image.fileCode())) {
                 throw invalid(path + "/file_code");
             }

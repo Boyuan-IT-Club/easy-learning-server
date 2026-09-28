@@ -51,6 +51,52 @@ class ScoringImageResolverTests {
     }
 
     @Test
+    void inlineImageIsDecodedAndNeedsNoStorageAtAll() {
+        // 内联图片此前会被静默丢掉（只能识别取回与说明两种形态）：模型收不到图，分数却照样出
+        List<ScoringImage> resolved = resolver.resolve(List.of(new ImageContext(
+                ImageContext.ImageKind.INLINE_IMAGE, "CF_IMG_8", "image/png", "5Zu+54mH", null, null)));
+
+        assertThat(resolved).hasSize(1);
+        assertThat(resolved.get(0).mimeType()).isEqualTo("image/png");
+        assertThat(resolved.get(0).content()).isEqualTo("图片".getBytes(StandardCharsets.UTF_8));
+        verify(files, never()).requireReadable(anyString());
+        verify(storage, never()).read(anyString());
+    }
+
+    @Test
+    void inlineImageThatDecodesToNothingIsRejectedAsARequestError() {
+        // 空 base64 解出 0 字节：它不是图片，也不会被当成"有字节"，
+        // 放过去最后会变成提示词里的一句 "CF_IMG_8：null"
+        assertThatThrownBy(() -> resolver.resolve(List.of(new ImageContext(
+                ImageContext.ImageKind.INLINE_IMAGE, "CF_IMG_8", "image/png", "", null, null))))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_REQUEST));
+    }
+
+    @Test
+    void malformedInlineBase64IsRejectedAsARequestError() {
+        // 客户端传的内容不合法 → 提交时就该 400，而不是落成"模型输出不合法"的任务失败
+        assertThatThrownBy(() -> resolver.resolve(List.of(new ImageContext(
+                ImageContext.ImageKind.INLINE_IMAGE, "CF_IMG_8", "image/png", "这不是 base64!!", null, null))))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_REQUEST));
+    }
+
+    @Test
+    void oversizedInlineImageIsRejectedBeforeDecoding() {
+        // 上限 4096 字节：base64 长度先挡一道，避免先解出一份大数组再被拒
+        String oversized = "A".repeat(8192);
+
+        assertThatThrownBy(() -> resolver.resolve(List.of(new ImageContext(
+                ImageContext.ImageKind.INLINE_IMAGE, "CF_IMG_8", "image/png", oversized, null, null))))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.PAYLOAD_TOO_LARGE));
+    }
+
+    @Test
     void confirmedDescriptionNeedsNoStorageAtAll() {
         List<ScoringImage> resolved = resolver.resolve(List.of(new ImageContext(
                 ImageContext.ImageKind.CONFIRMED_DESCRIPTION, "CF_IMG_9", null, null, "图里有一只小狗", true)));

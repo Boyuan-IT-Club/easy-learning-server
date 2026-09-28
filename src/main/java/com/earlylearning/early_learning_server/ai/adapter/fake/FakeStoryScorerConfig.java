@@ -17,9 +17,11 @@ import com.earlylearning.early_learning_server.ai.score.ScoreDimension;
 import com.earlylearning.early_learning_server.ai.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.web.ContentItem;
-import com.earlylearning.early_learning_server.ai.web.StoryScoringRequest;
+import com.earlylearning.early_learning_server.ai.score.ScoringImage;
+import com.earlylearning.early_learning_server.ai.score.StoryScoringInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,9 +35,11 @@ import org.springframework.context.annotation.Configuration;
  *       用来验证"不合格输出不会变成成功结果"这条路径</li>
  * </ul>
  *
- * <p>接入真实实现时，提供自己的 {@link StoryScorer} Bean 并标注 {@code @Primary} 即可覆盖。
+ * <p>与真实实现按 {@code ai.llm.provider} 互斥：{@code fake} 或缺省时用这个，
+ * 配了厂商（如 {@code ecnu}）时让位给真实实现。
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(name = "ai.llm.provider", havingValue = "fake", matchIfMissing = true)
 public class FakeStoryScorerConfig {
 
     private static final Logger log = LoggerFactory.getLogger(FakeStoryScorerConfig.class);
@@ -47,24 +51,26 @@ public class FakeStoryScorerConfig {
 
     @Bean
     public StoryScorer fakeStoryScorer() {
-        return (request, rubricVersion) -> {
+        return (input, rubricVersion) -> {
             if (Boolean.getBoolean("ai.fake-scorer.fail")) {
                 throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT, "示例：模型调用超时", true, null);
             }
-            AiScore score = buildValidScore(request, rubricVersion);
+            AiScore score = buildValidScore(input, rubricVersion);
             if (Boolean.getBoolean("ai.fake-scorer.invalid-output")) {
                 // 故意漏掉一个维度：ScoreValidator 必须拒收，并落成 MODEL_OUTPUT_INVALID
                 log.info("假评分器按要求产出非法输出");
                 return dropOneDimension(score);
             }
-            log.info("假评分器被调用 groups={} rubricVersion={}",
-                    request.contentItems().size(), rubricVersion);
+            // 把"真的收到了图"打出来：图片解析发生在提交路径上，这里能看到解析结果
+            log.info("假故事评分器被调用 分组={} 图片={}张 其中带字节={}张 rubricVersion={}",
+                    input.contentItems().size(), input.images().size(),
+                    input.images().stream().filter(ScoringImage::hasBytes).count(), rubricVersion);
             return score;
         };
     }
 
-    private AiScore buildValidScore(StoryScoringRequest request, String rubricVersion) {
-        List<Evidence> evidence = sampleEvidence(request.confirmedText());
+    private AiScore buildValidScore(StoryScoringInput input, String rubricVersion) {
+        List<Evidence> evidence = sampleEvidence(input.confirmedText());
 
         List<ScoreDimension> macro = new ArrayList<>();
         for (MacroDimensionCode code : MacroDimensionCode.values()) {
@@ -80,7 +86,7 @@ public class FakeStoryScorerConfig {
                 "示例理由：假实现固定输出", evidence, ProductivityStat.ITEM_CODE);
 
         List<ScoreContentItem> contentItems = new ArrayList<>();
-        for (ContentItem item : request.contentItems()) {
+        for (ContentItem item : input.contentItems()) {
             contentItems.add(new ScoreContentItem(SAMPLE_SCORE, MAX_SCORE, "示例理由", evidence,
                     item.contentItemId(), item.rubricItemCode()));
         }

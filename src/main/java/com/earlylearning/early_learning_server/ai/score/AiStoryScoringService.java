@@ -44,19 +44,22 @@ public class AiStoryScoringService {
     private final StoryScorer scorer;
     private final ScoreValidator scoreValidator;
     private final StoryScoringRequestValidator requestValidator;
+    private final ScoringImageResolver imageResolver;
 
     public AiStoryScoringService(AiTaskSubmission submission,
                                  AiTaskRunner runner,
                                  RubricService rubricService,
                                  StoryScorer scorer,
                                  ScoreValidator scoreValidator,
-                                 StoryScoringRequestValidator requestValidator) {
+                                 StoryScoringRequestValidator requestValidator,
+                                 ScoringImageResolver imageResolver) {
         this.submission = submission;
         this.runner = runner;
         this.rubricService = rubricService;
         this.scorer = scorer;
         this.scoreValidator = scoreValidator;
         this.requestValidator = requestValidator;
+        this.imageResolver = imageResolver;
     }
 
     public TaskHandleResponse submit(StoryScoringRequest request, int retryAttempt) {
@@ -67,7 +70,7 @@ public class AiStoryScoringService {
         AiTaskSubmission.Outcome outcome = submission.resolveAndRegister(request.requestId(), fingerprint,
                 retryAttempt, () -> newTask(request, resolvedVersion));
         AiTask task = switch (outcome.action()) {
-            case CREATE -> runScoring(outcome.task(), request, resolvedVersion);
+            case CREATE -> runScoring(outcome.task(), toInput(request), resolvedVersion);
             case RESTART -> restart(outcome.task(), request);
             case REPLAY -> outcome.task();
         };
@@ -92,14 +95,26 @@ public class AiStoryScoringService {
     private AiTask restart(AiTask task, StoryScoringRequest request) {
         String recordedVersion = rubricService.versionForRetry(task.getRubricVersion(), request.rubricVersion());
         task.restart(Instant.now());
-        return runScoring(task, request, recordedVersion);
+        return runScoring(task, toInput(request), recordedVersion);
     }
 
-    private AiTask runScoring(AiTask task, StoryScoringRequest request, String rubricVersion) {
+    /**
+     * 把请求解析成适配器的领域输入：**在这里把图片解析好**（内联的解码、要取回的取回）。
+     *
+     * <p>放在提交的同步路径上而不是任务里：图片有问题就让 400/413 立刻出现，
+     * 语义与请求校验一致；落成任务失败的话，"base64 非法"会被表达成模型输出不合法，
+     * 与单题评分（同样在提交时解析）也保持一致。
+     */
+    private StoryScoringInput toInput(StoryScoringRequest request) {
+        return new StoryScoringInput(request.confirmedText(), request.storyContext(),
+                request.contentItems(), imageResolver.resolve(request.images()));
+    }
+
+    private AiTask runScoring(AiTask task, StoryScoringInput input, String rubricVersion) {
         runner.run(task, TaskStage.SCORING, FailedStage.SCORE, TaskFailureCode.MODEL_OUTPUT_INVALID, () -> {
-            var score = scorer.score(request, rubricVersion);
+            var score = scorer.score(input, rubricVersion);
             // 模型输出必须过运行时语义校验，不合格就不能变成"成功结果"
-            scoreValidator.validate(score, rubricVersion, request.confirmedText(), request.contentItems());
+            scoreValidator.validate(score, rubricVersion, input.confirmedText(), input.contentItems());
             return new StoryScoringResult(score);
         });
         return task;

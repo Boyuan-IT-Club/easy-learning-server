@@ -42,6 +42,11 @@ public class ImageContextValidator {
                     throw invalid(path + "/confirmed");
                 }
             }
+            case SERVER_FETCH -> {
+                // 只给编号：必填的就是上面已校验的 file_code，内容由服务端取回。
+                // 显式写出来而不是让它落到 switch 之外——"哪些形态在哪个接口允许"不该靠隐式行为表达：
+                // 单题评分允许它，故事评分由 StoryScoringRequestValidator 拒绝。
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.earlylearning.early_learning_server.ai.score;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import com.earlylearning.early_learning_server.ai.web.ImageContext;
@@ -21,7 +22,10 @@ import org.springframework.stereotype.Component;
  * <p>两种形态各自处理：
  * <ul>
  *   <li>{@code SERVER_FETCH} —— 按 {@code file_code} 取回字节（这正是本次需求要的能力）；
- *       取之前校验状态与大小，校验语义与签发/元数据接口一致，避免"下载拿不到、评分却能拿到"；</li>
+ *       取之前校验状态与大小，校验语义与签发/元数据接口一致，避免"下载拿不到、评分却能拿到"。
+ *       **这一形态只服务单题评分**：故事评分的契约禁止"只发 file_code"，
+ *       那边由 {@code StoryScoringRequestValidator} 在提交时就拒掉，走不到这个分支。</li>
+ *   <li>{@code INLINE_IMAGE} —— 请求里带的 base64 图片，解码后交给模型（校验边界在这一步）；</li>
  *   <li>{@code CONFIRMED_DESCRIPTION} —— 教师确认过的说明，直接作为文字给模型。</li>
  * </ul>
  *
@@ -48,11 +52,45 @@ public class ScoringImageResolver {
         }
         List<ScoringImage> resolved = new ArrayList<>(images.size());
         for (ImageContext image : images) {
-            resolved.add(image.kind() == ImageContext.ImageKind.SERVER_FETCH
-                    ? fetch(image.fileCode())
-                    : new ScoringImage(image.fileCode(), null, null, image.description()));
+            resolved.add(switch (image.kind()) {
+                case SERVER_FETCH -> fetch(image.fileCode());
+                case INLINE_IMAGE -> decodeInline(image);
+                case CONFIRMED_DESCRIPTION -> new ScoringImage(image.fileCode(), null, null, image.description());
+            });
         }
         return List.copyOf(resolved);
+    }
+
+    /**
+     * 内联图片：请求里直接带 base64。**校验边界就在这里**——解不出来、超过字节上限都是请求的问题，
+     * 该在提交时以 400 / 413 回给客户端。
+     *
+     * <p>先按 base64 长度估算再用上限挡一道：这样超限的请求不会先解出一份大数组再被拒。
+     */
+    private ScoringImage decodeInline(ImageContext image) {
+        String base64 = image.contentBase64();
+        // 4 个 base64 字符 = 3 字节，末尾可能有填充
+        if (base64.length() / 4L * 3 > limits.maxImageBytes()) {
+            throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxImageBytes()));
+        }
+        byte[] content;
+        try {
+            content = Base64.getDecoder().decode(base64);
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "content_base64 不是合法的 Base64",
+                    ApiErrorDetails.atField("/images"));
+        }
+        if (content.length == 0) {
+            // 解出来是空的：既不是图片，也不会被当成"有字节"，最后会变成提示词里的一句 "CF_X：null"
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "content_base64 解出来是空图片",
+                    ApiErrorDetails.atField("/images"));
+        }
+        if (content.length > limits.maxImageBytes()) {
+            throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxImageBytes()));
+        }
+        return new ScoringImage(image.fileCode(), image.mimeType(), content, null);
     }
 
     /** 按编号取回图片字节：先看状态与大小，再读内容。 */
