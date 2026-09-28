@@ -18,6 +18,9 @@ import org.springframework.context.annotation.Configuration;
  *   <li>{@code ai.fake-transcriber.fail=true} → 抛出可重试的识别失败</li>
  *   <li>{@code ai.fake-transcriber.fail-permanently=true} → 抛出不可重试的识别失败</li>
  *   <li>{@code ai.fake-transcriber.empty=true} → 返回空文本（"没有识别到内容"，不是失败）</li>
+ *   <li>{@code ai.fake-transcriber.delay-ms=300} → 每次识别先睡这么久。
+ *       用途是让**任务停在"进行中"形态**可被观察到：假实现瞬间返回时，
+ *       查询接口永远只看得到终态，五种形态里少一种就没法比对契约示例。</li>
  * </ul>
  *
  * <p>接入真实实现时，提供自己的 {@link SpeechTranscriber} Bean 并标注 {@code @Primary} 即可覆盖。
@@ -32,6 +35,14 @@ public class FakeTranscriberConfig {
     @Bean
     public SpeechTranscriber fakeSpeechTranscriber() {
         return (audio, mimeType) -> {
+            long delayMs = Long.getLong("ai.fake-transcriber.delay-ms", 0L);
+            if (delayMs > 0) {
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+            }
             if (Boolean.getBoolean("ai.fake-transcriber.fail-permanently")) {
                 throw new AiTaskFailedException(TaskFailureCode.ASR_FAILED, "示例：录音无法识别", false, null);
             }
