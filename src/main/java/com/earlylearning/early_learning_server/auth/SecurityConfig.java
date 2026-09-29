@@ -32,16 +32,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * <p>注意：自己定义 {@code SecurityFilterChain} 会让 Boot 的默认安全配置退让，
  * 所以浏览器侧这条必须显式写出 formLogin 与 httpBasic，否则会连登录页一起丢掉。
  *
- * <p>CORS：客户端联调(浏览器模拟器直连本服务)需要跨域放行。放行的来源由
- * {@code app.cors.allowed-origin-patterns} 配置,默认本机任意端口;凭据不跨域
- * (客户端用 Authorization 头携带令牌,不用 Cookie)。
+ * <p>CORS:客户端联调(浏览器模拟器、Apifox 浏览器模式等直连本服务)需要跨域放行。
+ * 来源由 {@code app.cors.allowed-origin-patterns} 配置,开发默认放行全部来源
+ * (凭据不跨域,令牌走 Authorization 头);生产部署应收紧为具体域名。
  */
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*}")
+            @Value("${app.cors.allowed-origin-patterns:*}")
             List<String> allowedOriginPatterns) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(allowedOriginPatterns);

@@ -50,5 +50,6 @@ storage:
 
 app:
   cors:
-    # 跨域放行的来源(浏览器模拟器直连联调用);生产按需收紧为管理端域名
-    allowed-origin-patterns: http://localhost:*,http://127.0.0.1:*
+    # 跨域放行的来源;开发默认全放行(凭据不跨域,令牌走 Authorization 头)。
+    # 生产示例:https://admin.example.edu,http://localhost:*
+    allowed-origin-patterns: "*"
