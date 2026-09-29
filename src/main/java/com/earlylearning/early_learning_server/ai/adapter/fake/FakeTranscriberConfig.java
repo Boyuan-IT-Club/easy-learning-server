@@ -34,6 +34,9 @@ public class FakeTranscriberConfig {
 
     @Bean
     public SpeechTranscriber fakeSpeechTranscriber() {
+        // 转写目前只有这一份实现（没有 provider 开关，也还没有真实适配器）：
+        // 把这件事写进启动日志，免得"配了环境变量就该走真实识别"被默认成立
+        log.info("语音转写使用**假实现**：返回固定文本，不会调用任何识别服务（转写侧尚无真实适配器）");
         return (audio, mimeType) -> {
             long delayMs = Long.getLong("ai.fake-transcriber.delay-ms", 0L);
             if (delayMs > 0) {

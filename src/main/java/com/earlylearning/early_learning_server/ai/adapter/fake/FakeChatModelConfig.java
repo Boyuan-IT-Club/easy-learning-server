@@ -36,6 +36,9 @@ public class FakeChatModelConfig {
 
     @Bean
     public ChatModel fakeChatModel() {
+        // 启动就把"当前用的是假实现"喊出来：这一条缺失时，配了变量却没生效只能靠看返回内容猜
+        log.info("AI 评分使用**假实现**（ai.llm.provider=fake）：返回固定内容，不会调用任何模型服务。"
+                + "要接真实模型请设置 AI_LLM_PROVIDER=ecnu 并填好 AI_LLM_ECNU_* 变量");
         AtomicInteger calls = new AtomicInteger();
         return new ChatModel() {
             @Override
