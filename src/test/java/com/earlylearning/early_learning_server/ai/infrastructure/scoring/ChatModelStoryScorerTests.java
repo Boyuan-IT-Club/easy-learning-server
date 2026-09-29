@@ -106,8 +106,7 @@ class ChatModelStoryScorerTests {
         AiScore score = scorer.score(input(), RUBRIC_VERSION);
 
         assertThat(score.macrostructure().dimensions()).extracting(ScoreDimension::itemCode)
-                .containsExactly("EVENT_SEQUENCE", "PLOT_STRUCTURE", "THEME", "COHERENCE", "CAUSAL_LOGIC",
-                        "DETAIL_EXPANSION");
+                .containsExactly("EVENT_SEQUENCE", "PLOT_STRUCTURE", "THEME", "COHERENCE", "CAUSAL_LOGIC");
     }
 
     @Test

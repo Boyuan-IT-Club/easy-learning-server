@@ -45,13 +45,12 @@ class RubricServiceTests {
 
     @Test
     void dimensionSetsAreCompleteAndOrdered() {
-        assertThat(service.macroDimensions()).hasSize(6)
+        assertThat(service.macroDimensions()).hasSize(5)
                 .containsExactly(MacroDimensionCode.EVENT_SEQUENCE,
                         MacroDimensionCode.PLOT_STRUCTURE,
                         MacroDimensionCode.THEME,
                         MacroDimensionCode.COHERENCE,
-                        MacroDimensionCode.CAUSAL_LOGIC,
-                        MacroDimensionCode.DETAIL_EXPANSION);
+                        MacroDimensionCode.CAUSAL_LOGIC);
         assertThat(service.microDimensions()).hasSize(5)
                 .containsExactly(MicroDimensionCode.VOCABULARY_DIVERSITY,
                         MicroDimensionCode.MENTAL_STATE_WORDS,

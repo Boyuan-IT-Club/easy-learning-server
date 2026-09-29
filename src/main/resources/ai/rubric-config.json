@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "rubric_version": "narrative-assessment-v1",
+  "rubric_version": "narrative-assessment-v2",
   "macrostructure": [
     {
       "item": "事件顺序",
@@ -174,7 +174,7 @@
       "item_code": "NARRATIVE_CONTENT_04"
     },
     {
-      "item": "图7",
+      "item": "图7-1",
       "criterion": "叙事内容",
       "score_levels": [
         {
@@ -193,7 +193,7 @@
       "item_code": "NARRATIVE_CONTENT_05"
     },
     {
-      "item": "细节拓展",
+      "item": "图7-2",
       "criterion": "细节拓展",
       "score_levels": [
         {
@@ -209,7 +209,7 @@
           "description": "无任何细节拓展或完全错误的拓展。"
         }
       ],
-      "item_code": "DETAIL_EXPANSION"
+      "item_code": "NARRATIVE_CONTENT_06"
     }
   ],
   "microstructure": [

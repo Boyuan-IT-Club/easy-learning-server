@@ -55,12 +55,12 @@ class ScoreValidatorTests {
 
     @Test
     void rejectsMissingOrDuplicatedDimension() {
-        // 真正的重复：EVENT_SEQUENCE 出现两次、DETAIL_EXPANSION 缺失
+        // 真正的重复：EVENT_SEQUENCE 出现两次、COHERENCY 缺失
         List<ScoreDimension> duplicated = new ArrayList<>();
         duplicated.add(dimension("EVENT_SEQUENCE"));
         duplicated.add(dimension("EVENT_SEQUENCE"));
         for (MacroDimensionCode code : MacroDimensionCode.values()) {
-            if (code != MacroDimensionCode.EVENT_SEQUENCE && code != MacroDimensionCode.DETAIL_EXPANSION) {
+            if (code != MacroDimensionCode.EVENT_SEQUENCE && code != MacroDimensionCode.COHERENCE) {
                 duplicated.add(dimension(code.name()));
             }
         }
@@ -70,9 +70,9 @@ class ScoreValidatorTests {
                 .hasMessageContaining("重复或缺失");
 
         // 数量不足
-        List<ScoreDimension> short6 = macroDimensions().subList(0, 5);
+        List<ScoreDimension> shortList = macroDimensions().subList(0, 4);
         assertThatThrownBy(() -> validator.validate(
-                withMacro(validScore(), short6, validMacroContentItems()), RUBRIC_VERSION, TEXT, requestedItems))
+                withMacro(validScore(), shortList, validMacroContentItems()), RUBRIC_VERSION, TEXT, requestedItems))
                 .isInstanceOf(InvalidModelOutputException.class)
                 .hasMessageContaining("维度数量");
     }

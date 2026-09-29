@@ -13,5 +13,5 @@ import org.springframework.validation.annotation.Validated;
  */
 @Validated
 @ConfigurationProperties(prefix = "ai.rubric")
-public record RubricProperties(@DefaultValue("narrative-assessment-v1") @NotBlank @Size(max = 128) String version) {
+public record RubricProperties(@DefaultValue("narrative-assessment-v2") @NotBlank @Size(max = 128) String version) {
 }

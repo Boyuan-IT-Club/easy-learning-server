@@ -42,17 +42,16 @@ public class RubricCatalogService {
     private static final String QUESTION_REASONING_NAME = "统一问答推理";
 
     /**
-     * 标准七图材料的图片分组条目。
-     *
-     * <p>名称按标准材料给出（图 2、3 与图 4、5 各是一个条目）；材料编排固定，
-     * 所以不做成配置——真要换材料，条目本身也要跟着重新定义。
+     * 标准七图材料的图片分组条目(依据《多图叙事评分细则》):图 2、3 与图 4、5 各是一个条目,
+     * 图 7 拆两行——图7-1 评叙事内容、图7-2 评细节拓展。材料编排固定,不做成配置。
      */
     private static final List<ContentItemSpec> STANDARD_CONTENT_ITEMS = List.of(
             new ContentItemSpec("NARRATIVE_CONTENT_01", "图1"),
             new ContentItemSpec("NARRATIVE_CONTENT_02", "图2、3"),
             new ContentItemSpec("NARRATIVE_CONTENT_03", "图4、5"),
             new ContentItemSpec("NARRATIVE_CONTENT_04", "图6"),
-            new ContentItemSpec("NARRATIVE_CONTENT_05", "图7"));
+            new ContentItemSpec("NARRATIVE_CONTENT_05", "图7-1"),
+            new ContentItemSpec("NARRATIVE_CONTENT_06", "图7-2"));
 
     private final RubricProperties properties;
 
@@ -87,7 +86,6 @@ public class RubricCatalogService {
         for (ContentItemSpec spec : STANDARD_CONTENT_ITEMS) {
             items.add(new RubricCatalogEntry(spec.code(), spec.name(), TaskKind.STORY_SCORING, CONTENT_APPLICABILITY));
         }
-        items.add(shared(MacroDimensionCode.DETAIL_EXPANSION.name(), MacroDimensionCode.DETAIL_EXPANSION.displayName()));
         items.add(shared(ProductivityStat.ITEM_CODE, PRODUCTIVITY_NAME));
         for (MicroDimensionCode code : MicroDimensionCode.values()) {
             items.add(shared(code.name(), code.displayName()));

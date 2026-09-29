@@ -36,8 +36,7 @@ class RubricCatalogServiceTests {
     private static final List<String> EXPECTED_CODES = List.of(
             "EVENT_SEQUENCE", "PLOT_STRUCTURE", "THEME", "COHERENCE", "CAUSAL_LOGIC",
             "NARRATIVE_CONTENT_01", "NARRATIVE_CONTENT_02", "NARRATIVE_CONTENT_03",
-            "NARRATIVE_CONTENT_04", "NARRATIVE_CONTENT_05",
-            "DETAIL_EXPANSION",
+            "NARRATIVE_CONTENT_04", "NARRATIVE_CONTENT_05", "NARRATIVE_CONTENT_06",
             "NARRATIVE_PRODUCTIVITY",
             "VOCABULARY_DIVERSITY", "MENTAL_STATE_WORDS", "SYNTACTIC_COMPLEXITY",
             "REFERENTIAL_COHESION", "CONJUNCTION_COHESION",
@@ -52,8 +51,7 @@ class RubricCatalogServiceTests {
      */
     private static final java.util.List<String> EXPECTED_NAMES = java.util.List.of(
             "事件顺序", "情节结构", "主题体现", "故事连贯性", "因果逻辑",
-            "图1", "图2、3", "图4、5", "图6", "图7",
-            "细节拓展",
+            "图1", "图2、3", "图4、5", "图6", "图7-1", "图7-2",
             "叙事产生性（量化的统计）",
             "词汇丰富度", "心理状态词", "句法复杂度", "指称衔接", "连词衔接",
             "统一问答推理");
@@ -86,7 +84,7 @@ class RubricCatalogServiceTests {
         // 两个维度枚举必须全部出现在目录里
         assertThat(itemCodes).containsAll(dimensionCodes);
         // 加上图片分组、叙事产生性与问答推理，不多不少
-        assertThat(itemCodes).hasSize(dimensionCodes.size() + 5 + 1 + 1);
+        assertThat(itemCodes).hasSize(dimensionCodes.size() + 6 + 1 + 1);
         assertThat(itemCodes).contains(ProductivityStat.ITEM_CODE, "QUESTION_REASONING");
     }
 
