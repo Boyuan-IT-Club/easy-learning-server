@@ -7,7 +7,13 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * 安全链：客户端 API 与浏览器侧分开切。
@@ -25,14 +31,34 @@ import org.springframework.security.web.SecurityFilterChain;
  *
  * <p>注意：自己定义 {@code SecurityFilterChain} 会让 Boot 的默认安全配置退让，
  * 所以浏览器侧这条必须显式写出 formLogin 与 httpBasic，否则会连登录页一起丢掉。
+ *
+ * <p>CORS：客户端联调(浏览器模拟器直连本服务)需要跨域放行。放行的来源由
+ * {@code app.cors.allowed-origin-patterns} 配置,默认本机任意端口;凭据不跨域
+ * (客户端用 Authorization 头携带令牌,不用 Cookie)。
  */
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
 
     @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origin-patterns:http://localhost:*,http://127.0.0.1:*}")
+            List<String> allowedOriginPatterns) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(allowedOriginPatterns);
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        config.setAllowCredentials(false);
+        config.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    @Bean
     @Order(1)
     SecurityFilterChain statelessApiChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/api/**", "/admin/**")
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(AbstractHttpConfigurer::disable)

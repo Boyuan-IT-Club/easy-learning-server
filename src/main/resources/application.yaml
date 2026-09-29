@@ -47,3 +47,8 @@ storage:
     # 业务侧单文件上限。413 PAYLOAD_TOO_LARGE 的 details.limit.maximum 用的就是这个值，
     # 所以它必须比 spring.servlet.multipart 的上限低——否则超限会先被 Spring 拦下，带不出 details。
     max-size-bytes: ${UPLOAD_MAX_SIZE_BYTES:524288000}
+
+app:
+  cors:
+    # 跨域放行的来源(浏览器模拟器直连联调用);生产按需收紧为管理端域名
+    allowed-origin-patterns: http://localhost:*,http://127.0.0.1:*
