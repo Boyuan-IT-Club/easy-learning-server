@@ -14,10 +14,10 @@ import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 安全链的对外行为 —— 走**真实 HTTP**，不是 MockMvc standalone。
+ * 安全链的对外行为 —— 走真实 HTTP，不是 MockMvc standalone。
  *
- * <p>这条测试守的是一个真实踩过的坑：Spring Security 默认开启 CSRF，`CsrfFilter` 会在认证之前
- * 拒掉不安全方法，于是 `/api/**` 的 **POST 一律 401 而 GET 正常**；而契约里的调用方是非浏览器
+ * <p>这条测试守的是一个真实踩过的坑：Spring Security 默认开启 CSRF，{@code CsrfFilter} 会在认证之前
+ * 拒掉不安全方法，于是 {@code /api/} 的 POST 一律 401 而 GET 正常；而契约里的调用方是非浏览器
  * 客户端，没有取 CSRF 令牌这一步。用 standalone MockMvc 测不出来——那套不带安全过滤器。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

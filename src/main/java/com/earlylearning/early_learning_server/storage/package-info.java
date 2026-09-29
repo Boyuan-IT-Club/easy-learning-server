@@ -1,13 +1,7 @@
 /**
- * 云端文件与对象存储。
+ * 官方资源文件目录模块（限界上下文）：上传、查询、签发、标记删除。组织规范见 {@code reference/adr/0008}。
  *
- * <p>负责官方文件上传、元数据、file_code 映射、SHA256 校验、文件状态、下载地址签发和允许的清理。通过统一存储抽象封装 OSS；引用是否允许删除由所属业务模块协作判断。</p>
- *
- * <p>数据边界：storage_cloud_file。</p>
- * <p>依据：<a href="https://boyuanclub.feishu.cn/wiki/XTvkwj6pHimslckweHKcaxmQngh">06_文件同步与AI，3.14 文件</a>；
- * 表结构和 JSON 契约以 docs/技术方案.md 为准。</p>
- *
- * <p>Controller、DTO、Service、Mapper、Entity 及子包按实际功能需要创建。</p>
+ * <p>四层解剖（依赖单向 {@code interfaces → application → domain ← infrastructure}）：
+ * application 与 domain 通过 @NamedInterface 对外暴露，别的模块（如 ai 取评分图片）只走这两处。
  */
 package com.earlylearning.early_learning_server.storage;
-

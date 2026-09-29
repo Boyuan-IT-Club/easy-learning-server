@@ -31,47 +31,35 @@
 
 ## 3. 模块组织
 
-代码优先按照业务模块组织，例如：
+完整规范见外层仓库 `reference/adr/0008-repo-code-organization.md`，并由 `ArchitectureTests` 强制执行（违反即测试红）。要点：
+
+**第一轴：顶层包 = 限界上下文（业务模块）。** 当前实际存在的模块：
 
 ```text
-auth/
-license/
-teacher/
-course/
-assessment/
-dictionary/
-sync/
-ai/
-usage/
-storage/
-common/
+ai/        ← 录音转写与评分
+storage/   ← 官方资源文件目录（对象存储）
+auth/      ← 安全配置（简单模块，只有根包）
+common/    ← 共享能力：web（响应信封）/ error / idempotency / logging / media（MIME 探测与音频时长），
+             每个子包都是 @NamedInterface 暴露的对外 API；只被依赖、不依赖任何模块
 ```
 
-业务代码应留在所属业务模块。
+业务代码应留在所属业务模块；跨业务复用的机械能力才抽成公共模块。不要建立一个掌握所有课程、评估、字典规则的巨大 `contentimport` 模块——将来做 `course/importer/`、`assessment/importer/` 时，各自负责对应资源的解析和业务校验。
 
-例如：
+**第二轴：模块内部统一四层，依赖单向 `interfaces → application → domain ← infrastructure`：**
 
 ```text
-course/importer/
-assessment/importer/
-dictionary/importer/
+<module>/
+├── interfaces/       Controller + 请求/响应 DTO + 请求形状校验；HTTP 是这一层的事
+├── application/      应用服务（XxxService）：编排、幂等、任务提交；返回领域对象，不返回 DTO
+├── domain/           Entity（允许带 MyBatis 注解）+ 领域规则 + 端口（接口定义在这）
+└── infrastructure/   Mapper + 对外适配器（OSS / ECNU / fake）+ 字节级解析；实现 domain 的端口
 ```
 
-分别负责对应资源的解析和业务校验。
-
-不要建立一个掌握所有课程、评估、字典规则的巨大 `contentimport` 模块。
-
-只有真正与业务无关的公共能力才允许抽离，例如：
-
-```text
-importsupport/
-storage/
-common/
-```
-
-原则：
-
-> 业务知识留在业务模块；跨业务复用的机械能力才抽成公共模块。
+- 小模块（如 `auth`）允许只有根包的简单模块；一旦分层，必须用标准四层。
+- 跨模块只走对方**根包或 @NamedInterface 暴露的子包**里的类型（Spring Modulith verify 强制，
+  违反即 `ArchitectureTests` 红）。storage 的 `application`/`domain` 即由此暴露给 ai 取评分图片。
+- 接口与实现的判据：**存在第二个真实实现才立端口**（如 `ChatModel`：ecnu + fake）。不做一实现一接口的仪式。
+- 服务返回**领域对象**（如 `CloudFile`、`AiTask`），HTTP 形状（状态码、信封、DTO）只在 interfaces 层出现。
 
 ---
 

@@ -3,7 +3,6 @@ package com.earlylearning.early_learning_server.common.idempotency;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import java.util.Optional;
 
-import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.dao.DuplicateKeyException;
@@ -18,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
  *   Optional&lt;StoredResponse&gt; replayed = idempotency.claim(scope, key, fingerprint);
  *   if (replayed.isPresent()) { return replayed.get(); }   // 重试：原样返回首次结果
  *   … 执行业务写入 …
- *   String body = idempotency.record(scope, key, 201, response);
+ *   idempotency.record(scope, key, 201, domainSnapshot);   // 快照是任意可序列化对象，不必是 HTTP 响应
  * </pre>
  *
  * <p>两个方法都要求调用方已开启事务（{@code MANDATORY}），占用与回填才会一起提交或一起回滚。
@@ -63,7 +62,7 @@ public class IdempotencyService {
     /**
      * 只读探测：键是否已被占用，且是否同一输入。
      *
-     * <p>存在的意义是**省掉一次无谓的重活**：上传重试时，若已能判定这是重放，就不必把 500MB 再传一遍。
+     * <p>存在的意义是省掉一次无谓的重活：上传重试时，若已能判定这是重放，就不必把 500MB 再传一遍。
      * 它不参与正确性——真正的判定仍在 {@link #claim} 里，那个是原子的、在事务内的。
      *
      * @return 与 {@link #claim} 同语义：命中返回首次响应，未占用返回 {@code empty}
@@ -77,14 +76,17 @@ public class IdempotencyService {
     }
 
     /**
-     * 回填首次响应快照。
+     * 回填首次结果的快照。
      *
-     * @return 序列化后的响应体，调用方直接作为 HTTP body 返回——与重放路径逐字节一致
+     * <p>快照是调用方领域里的任意可序列化对象：幂等只负责"同一键同输入得到同一结果"，
+     * 不关心结果长什么样；把它变回 HTTP 响应是调用方 web 层的事，重放时按同样的方式映射即可。
+     *
+     * @return 序列化后的快照 JSON，调用方需要时可用它还原结果
      */
     @Transactional(propagation = Propagation.MANDATORY)
-    public String record(IdempotencyScope scope, String key, int httpStatus, ApiResponse<?> response) {
-        // Jackson 3 的 JacksonException 是非受检异常：包络不可序列化属于编程错误，直接上抛由兜底处理器记堆栈。
-        String body = objectMapper.writeValueAsString(response);
+    public String record(IdempotencyScope scope, String key, int httpStatus, Object snapshot) {
+        // Jackson 3 的 JacksonException 是非受检异常：快照不可序列化属于编程错误，直接上抛由兜底处理器记堆栈。
+        String body = objectMapper.writeValueAsString(snapshot);
         int updated = mapper.completeResponse(scope.value(), key, httpStatus, body);
         if (updated != 1) {
             throw new IllegalStateException(
