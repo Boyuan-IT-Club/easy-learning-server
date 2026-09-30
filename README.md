@@ -49,7 +49,7 @@ CREATE DATABASE IF NOT EXISTS early_learning
 | `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET` | OSS 访问凭证 |
 | `OSS_DOWNLOAD_URL_TTL_SECONDS` | 签名下载地址有效秒数，默认 `900`，范围 `1～604800` |
 | `OSS_REAL_TEST` | 默认 `false`；仅显式设为 `true` 时执行真实 Bucket 测试 |
-| `AI_LLM_PROVIDER` | **AI 评分用哪套实现**。缺省（不填）是 `fake`：假实现，返回固定内容、不调用任何模型服务；填 `ecnu` 用真实模型。详见下文「接真实大模型（ECNU）」一节 |
+| `AI_LLM_PROVIDER` | **AI 评分用哪套实现**。默认 `ecnu`（`.env.example`、镜像与 compose 的缺省一致）：真实模型，需填好 API Key，缺 Key 启动期报错；填 `fake` 用离线假实现（返回固定内容，不调用模型服务）。详见下文「接真实大模型（ECNU）」一节 |
 | `AI_LLM_ECNU_BASE_URL` / `AI_LLM_ECNU_API_KEY` | `AI_LLM_PROVIDER=ecnu` 时必填；令牌留空会在**启动期**报错，不会静默降级 |
 | `AI_LLM_ECNU_MODEL_TEXT` / `AI_LLM_ECNU_MODEL_VISION` | 文本与多模态模型名，默认 `ecnu-max` / `ecnu-plus` |
 | `AI_LLM_ECNU_*`（其余） | 是否开启思考、超时、单图字节上限等，见 [`.env.example`](.env.example) |

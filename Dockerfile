@@ -18,5 +18,8 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /build/target/*.jar app.jar
 EXPOSE 8080
+# 镜像默认真实模型：docker run 不带任何环境变量也是 ecnu（缺 Key 启动报错并提示去申请）。
+# 离线调试显式传 -e AI_LLM_PROVIDER=fake。
+ENV AI_LLM_PROVIDER=ecnu
 # 只用 exec 形式：容器要能收到 SIGTERM 才会优雅停机。
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

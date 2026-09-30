@@ -54,10 +54,10 @@ services:
       OSS_ACCESS_KEY_ID: ${OSS_ACCESS_KEY_ID:-}
       OSS_ACCESS_KEY_SECRET: ${OSS_ACCESS_KEY_SECRET:-}
       OSS_DOWNLOAD_URL_TTL_SECONDS: ${OSS_DOWNLOAD_URL_TTL_SECONDS:-900}
-      # 大模型同样是"缺省可用、配了就真跑"：缺省 fake（不联网也能把链路跑通），
-      # 配 AI_LLM_PROVIDER=ecnu 就用真实模型。此前这几项没传给容器，
-      # 结果是浏览器里点出来的分数其实来自假实现——排查时极易误判。
-      AI_LLM_PROVIDER: ${AI_LLM_PROVIDER:-fake}
+      # 大模型默认走真实 ECNU：缺 Key 时启动期报错，不会静默降级成假实现。
+      # 离线跑通链路（不需要 Key）时显式设 AI_LLM_PROVIDER=fake。
+      # 此前这几项没传给容器，浏览器里点出来的分数其实来自假实现——排查时极易误判。
+      AI_LLM_PROVIDER: ${AI_LLM_PROVIDER:-ecnu}
       AI_LLM_ECNU_BASE_URL: ${AI_LLM_ECNU_BASE_URL:-}
       AI_LLM_ECNU_API_KEY: ${AI_LLM_ECNU_API_KEY:-}
       AI_LLM_ECNU_MODEL_TEXT: ${AI_LLM_ECNU_MODEL_TEXT:-ecnu-max}
