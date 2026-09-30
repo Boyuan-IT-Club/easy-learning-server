@@ -211,6 +211,30 @@ class AiStoryScoringTests {
     }
 
     @Test
+    void onePictureMayServeTwoGroupsButNotTwiceWithinOneGroup() {
+        // 细则 v2：图7 同时进两个分组（图7-1 与 图7-2），跨分组复用同一编号必须放行
+        List<ContentItem> shared = List.of(
+                new ContentItem("GROUP_1", List.of("CF_A", "CF_C"), "IMG_ITEM_1"),
+                new ContentItem("GROUP_2", List.of("CF_C"), "IMG_ITEM_2"));
+        List<ImageContext> covering = List.of(
+                new ImageContext(ImageKind.SERVER_FETCH, "CF_A", null, null, null, null),
+                new ImageContext(ImageKind.SERVER_FETCH, "CF_C", null, null, null, null));
+        requestValidator.validate(new StoryScoringRequest(UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), BusinessType.ASSESSMENT, "ACT_1", null,
+                TEXT, true, "故事依据", shared, covering));
+
+        // 同一分组里把同一张图列两遍没有意义，仍然拒收
+        List<ContentItem> repeated = List.of(
+                new ContentItem("GROUP_1", List.of("CF_A", "CF_A"), "IMG_ITEM_1"));
+        assertThatThrownBy(() -> requestValidator.validate(new StoryScoringRequest(UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(), BusinessType.ASSESSMENT, "ACT_1", null,
+                TEXT, true, "故事依据", repeated, images())))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getDetails().fieldPath())
+                        .isEqualTo("/content_items/0/image_file_codes"));
+    }
+
+    @Test
     void theShippedFakeProducesAContractValidScore() {
         // 假实现本身也要经得起校验，否则联调时会被自己的校验器挡住
         assertThat(scorer.score(input(request(UUID.randomUUID().toString(), null)), RUBRIC_VERSION))

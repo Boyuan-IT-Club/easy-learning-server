@@ -24,7 +24,8 @@ import static com.earlylearning.early_learning_server.ai.interfaces.validation.R
  * 故事评分请求的语义校验。
  *
  * <p>「完整校验维度、分组、版本后」才受理，其中最容易漏的是图片与分组的对应关系：
- * 「必须为所有分组引用的图片逐一提供真实图片或确认说明；不得仅发送 file_code」。
+ * images 必须恰好覆盖分组引用的全部编号，形态可以是内联图片、服务端按编号取图
+ * （SERVER_FETCH）或教师确认过的图片说明（CONFIRMED_DESCRIPTION）。
  */
 @Component
 public class StoryScoringRequestValidator {
@@ -77,11 +78,15 @@ public class StoryScoringRequestValidator {
             if (item.imageFileCodes() == null || item.imageFileCodes().isEmpty()) {
                 throw invalid(path + "/image_file_codes");
             }
+            Set<String> imagesOfItem = new HashSet<>();
             for (String fileCode : item.imageFileCodes()) {
                 requireText(fileCode, path + "/image_file_codes");
-                if (!referencedImages.add(fileCode)) {
+                // 同一编号在多个分组出现是合法的（细则 v2：图7 进两个分组）；
+                // 同一分组里重复列同一张图没有意义，仍然拒收。
+                if (!imagesOfItem.add(fileCode)) {
                     throw invalid(path + "/image_file_codes");
                 }
+                referencedImages.add(fileCode);
             }
         }
         return referencedImages;
