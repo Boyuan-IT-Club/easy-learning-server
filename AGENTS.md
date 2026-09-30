@@ -37,6 +37,7 @@
 
 ```text
 ai/        ← 录音转写与评分
+material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
 storage/   ← 官方资源文件目录（对象存储）
 auth/      ← 安全配置（简单模块，只有根包）
 common/    ← 共享能力：web（响应信封）/ error / idempotency / logging / media（MIME 探测与音频时长），
