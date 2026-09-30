@@ -31,6 +31,9 @@ public class TraceIdFilter extends OncePerRequestFilter {
     /** 日志 pattern 里通过 %X{traceId} 引用。 */
     public static final String MDC_KEY = "traceId";
 
+    /** 来源 IP，供审计与限流读取（见 {@link RequestOrigin}）；不进日志 pattern。 */
+    public static final String CLIENT_IP_MDC_KEY = "clientIp";
+
     /**
      * 只接受安全字符且限长。
      *
@@ -45,12 +48,14 @@ public class TraceIdFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String traceId = resolveTraceId(request.getHeader(TRACE_ID_HEADER));
         MDC.put(MDC_KEY, traceId);
+        MDC.put(CLIENT_IP_MDC_KEY, request.getRemoteAddr());
         response.setHeader(TRACE_ID_HEADER, traceId);
         try {
             filterChain.doFilter(request, response);
         } finally {
             // 线程池会复用线程，不清理会导致下一个请求串上本次的 traceId
             MDC.remove(MDC_KEY);
+            MDC.remove(CLIENT_IP_MDC_KEY);
         }
     }
 

@@ -1,78 +1,104 @@
 package com.earlylearning.early_learning_server.auth;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
+import static com.earlylearning.early_learning_server.support.HttpApi.headers;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.context.WebServerApplicationContext;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.earlylearning.early_learning_server.support.HttpApi;
+import com.earlylearning.early_learning_server.support.TestAccounts;
 
 /**
- * 安全链的对外行为 —— 走真实 HTTP，不是 MockMvc standalone。
+ * 安全链的对外行为 —— 走真实 HTTP，不是 MockMvc standalone（那套不带安全过滤器，测不出这里的问题）。
  *
- * <p>这条测试守的是一个真实踩过的坑：Spring Security 默认开启 CSRF，{@code CsrfFilter} 会在认证之前
- * 拒掉不安全方法，于是 {@code /api/} 的 POST 一律 401 而 GET 正常；而契约里的调用方是非浏览器
- * 客户端，没有取 CSRF 令牌这一步。用 standalone MockMvc 测不出来——那套不带安全过滤器。
+ * <p>守的坑：Spring Security 默认开启 CSRF，会在认证之前拒掉不安全方法，于是 POST 一律 401 而 GET 正常；
+ * 调用方是非浏览器客户端，没有取 CSRF 令牌这一步。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ApiSecurityTests {
 
-    private static final String VALID_SCORE_BODY = """
-            {"request_id":"11111111-1111-1111-1111-111111111111",
-             "input_revision":"22222222-2222-2222-2222-222222222222",
-             "business_type":"ASSESSMENT","activity_id":"ACT_SEC","confirmed_text":"它是一只小狗。",
-             "text_confirmed":true,"story_context":"故事依据",
-             "question":{"question_id":"Q_1","text":"问题","hint":""},"attempt":"BEFORE_HINT","images":[]}""";
-
     @Autowired
     private WebServerApplicationContext context;
 
-    private final HttpClient client = HttpClient.newHttpClient();
+    @Autowired
+    private TestAccounts accounts;
 
-    @Test
-    void apiPostReachesTheControllerWithoutACsrfToken() throws Exception {
-        assertThat(post("/api/ai/score-answer", VALID_SCORE_BODY)).isEqualTo(202);
+    private HttpApi api;
+
+    @BeforeEach
+    void setUp() {
+        api = new HttpApi(context.getWebServer().getPort());
+        accounts.resetRateLimits();
     }
 
     @Test
-    void apiGetDoesNotRequireAuthentication() throws Exception {
-        assertThat(get("/api/ai/tasks/33333333-3333-3333-3333-333333333333")).isEqualTo(404);
+    void 教师接口不带Token返回401_TOKEN_MISSING() {
+        HttpApi.Response response = api.get("/api/ai/tasks/33333333-3333-3333-3333-333333333333", Map.of());
+        assertThat(response.status()).isEqualTo(401);
+        assertThat(response.code()).isEqualTo("TOKEN_MISSING");
     }
 
     @Test
-    void adminEndpointsReachTheControllerWithoutAuthentication() throws Exception {
-        // 与 /api/** 同链：Controller 本身不校验权限（全局约定），所以这里不该再被安全层挡住
-        assertThat(get("/admin/files")).isEqualTo(200);
+    void 管理接口不带Token返回401() {
+        assertThat(api.get("/admin/files", Map.of()).status()).isEqualTo(401);
     }
 
     @Test
-    void pathsOutsideThoseChainsStillRequireAuthentication() throws Exception {
-        // 其余路径保留默认的会话 + CSRF
-        assertThat(get("/something-else")).isEqualTo(401);
+    void 伪造的Token返回401_TOKEN_INVALID() {
+        HttpApi.Response response = api.get("/admin/files", headers("Authorization", "Bearer adt_forged"));
+        assertThat(response.status()).isEqualTo(401);
+        assertThat(response.code()).isEqualTo("TOKEN_INVALID");
     }
 
-    private int get(String path) throws Exception {
-        return send(HttpRequest.newBuilder(uri(path)).GET().build());
+    @Test
+    void 无人认领的前缀返回401_TOKEN_INVALID() {
+        HttpApi.Response response = api.get("/admin/files", headers("Authorization", "Bearer rt_refresh-used-as-access"));
+        assertThat(response.status()).isEqualTo(401);
+        assertThat(response.code()).isEqualTo("TOKEN_INVALID");
     }
 
-    private int post(String path, String body) throws Exception {
-        return send(HttpRequest.newBuilder(uri(path))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
-                .build());
+    @Test
+    void 管理员Token可以访问管理接口_且POST不被CSRF拦下() {
+        String token = accounts.adminToken();
+        assertThat(api.get("/admin/files", headers("Authorization", "Bearer " + token)).status()).isEqualTo(200);
+        // POST 能走到控制器（这里因缺少 Idempotency-Key 回 400），而不是被 CSRF 挡成 401/403
+        HttpApi.Response post = api.post("/admin/licenses/batch", Map.of("count", 1),
+                headers("Authorization", "Bearer " + token));
+        assertThat(post.status()).isEqualTo(400);
     }
 
-    private int send(HttpRequest request) throws Exception {
-        return client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+    @Test
+    void 管理员Token访问教师接口返回403_AUTH_ROLE_MISMATCH() {
+        HttpApi.Response response = api.get("/api/auth/me",
+                headers("Authorization", "Bearer " + accounts.adminToken()));
+        assertThat(response.status()).isEqualTo(403);
+        assertThat(response.code()).isEqualTo("AUTH_ROLE_MISMATCH");
     }
 
-    private URI uri(String path) {
-        return URI.create("http://localhost:" + context.getWebServer().getPort() + path);
+    @Test
+    void 评分目录允许管理员访问() {
+        HttpApi.Response response = api.get("/api/ai/rubrics",
+                headers("Authorization", "Bearer " + accounts.adminToken()));
+        assertThat(response.status()).isEqualTo(200);
+    }
+
+    @Test
+    void 免登录接口即使带着过期或伪造的Bearer也不被拦() {
+        // 平板在 access 过期后调刷新接口时可能还带着旧 Bearer，不能因此把刷新本身拒掉
+        HttpApi.Response response = api.post("/api/auth/refresh", Map.of("refresh_token", "rt_unknown"),
+                headers("Authorization", "Bearer at_expired", "X-Device-Id", TestAccounts.newDeviceId()));
+        assertThat(response.status()).isEqualTo(401);
+        assertThat(response.code()).isEqualTo("REFRESH_TOKEN_INVALID");
+    }
+
+    @Test
+    void 两条链之外的路径一律拒绝() {
+        assertThat(api.get("/something-else", Map.of()).status()).isEqualTo(401);
     }
 }

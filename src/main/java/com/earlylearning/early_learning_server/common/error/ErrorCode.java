@@ -27,12 +27,14 @@ public enum ErrorCode {
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "凭证已过期"),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "账号密码不正确"),
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "刷新凭证无效"),
+    RECOVERY_CODE_INVALID(HttpStatus.UNAUTHORIZED, "恢复码无效"),
 
     // ---------- 403 ----------
     ACCOUNT_DISABLED(HttpStatus.FORBIDDEN, "账号不可用"),
     LICENSE_REVOKED(HttpStatus.FORBIDDEN, "激活码已被撤销"),
     AUTH_ROLE_MISMATCH(HttpStatus.FORBIDDEN, "凭证类型错误"),
     RESOURCE_FORBIDDEN(HttpStatus.FORBIDDEN, "无资源权限"),
+    DEVICE_MISMATCH(HttpStatus.FORBIDDEN, "设备与账号绑定不一致"),
 
     // ---------- 404 ----------
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "资源不存在"),
@@ -41,6 +43,8 @@ public enum ErrorCode {
     // ---------- 409 ----------
     USERNAME_EXISTS(HttpStatus.CONFLICT, "用户名已存在"),
     LICENSE_UNAVAILABLE(HttpStatus.CONFLICT, "激活码不可用"),
+    DEVICE_ALREADY_BOUND(HttpStatus.CONFLICT, "设备或账号已绑定"),
+    ADMIN_LAST_ACTIVE(HttpStatus.CONFLICT, "至少保留一个可用管理员"),
     CONTENT_VERSION_EXISTS(HttpStatus.CONFLICT, "内容版本已存在"),
     VERSION_CONFLICT(HttpStatus.CONFLICT, "版本冲突"),
     RESOURCE_IN_USE(HttpStatus.CONFLICT, "资源被引用，不能删除"),

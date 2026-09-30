@@ -1,0 +1,25 @@
+package com.earlylearning.early_learning_server.audit.domain;
+
+/** 审计动作代码。枚举名即落库值，改名会让历史记录查不到。 */
+public enum AuditAction {
+
+    ADMIN_BOOTSTRAPPED,
+    ADMIN_LOGIN,
+    ADMIN_LOGIN_FAILED,
+    ADMIN_PASSWORD_CHANGED,
+    ADMIN_CREATED,
+    ADMIN_DISABLED,
+    ADMIN_ENABLED,
+    ADMIN_PASSWORD_RESET,
+
+    LICENSE_BATCH_CREATED,
+    LICENSE_REVOKED,
+
+    TEACHER_REGISTERED,
+    TEACHER_DISABLED,
+    TEACHER_ENABLED,
+    TEACHER_DEVICE_UNBOUND,
+    TEACHER_RECOVERY_CODE_ISSUED,
+    TEACHER_RECOVERED,
+    TEACHER_RECOVERY_FAILED
+}

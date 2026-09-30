@@ -59,5 +59,9 @@
 
     <!-- 本项目代码开到 DEBUG 便于排查；第三方保持 INFO -->
     <logger name="com.earlylearning" level="DEBUG"/>
+    <!-- 账号相关 Mapper 的 SQL 参数里有密码哈希、Token 与激活码的哈希：哈希不可逆，但管理员密码哈希可被离线穷举，不进日志 -->
+    <logger name="com.earlylearning.early_learning_server.admin.infrastructure" level="INFO"/>
+    <logger name="com.earlylearning.early_learning_server.teacher.infrastructure" level="INFO"/>
+    <logger name="com.earlylearning.early_learning_server.license.infrastructure" level="INFO"/>
 
 </configuration>

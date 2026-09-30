@@ -2,7 +2,7 @@
 
 早期学习项目的 Java 服务端，负责云端账号、课程、评估、字典及资源存储等能力。业务规则与数据协议以 [技术方案](docs/技术方案.md) 和 [功能细则入口](docs/参考资料.md) 为准。
 
-当前已包含云端数据库迁移、公共 Code 校验和 OSS 存储服务；其余业务包主要为模块占位，尚未提供完整业务接口或正式鉴权流程。
+当前已包含云端数据库迁移、OSS 存储服务、AI 转写与评分，以及账号与鉴权（管理员、激活码、教师注册/刷新/恢复、Bearer Token 鉴权，设计见 01_账号与鉴权 v0.2）。
 
 ## 环境准备
 
@@ -12,8 +12,9 @@
 | Maven | 使用仓库自带 Maven Wrapper，无需单独安装；首次运行需要联网下载 |
 | MySQL | 使用 MySQL 8，需支持迁移中的 `utf8mb4_0900_bin` 排序规则和 `CHECK` 约束 |
 | 阿里云 OSS | 启动应用需填写 OSS 配置；资源联调需已有 Bucket 及具备上传、读取、删除权限的凭证 |
+| Redis | Redis 7，**必须关闭持久化**（`--save "" --appendonly no`）并设置密码；`docker compose up -d redis` 即可 |
 
-主要依赖：Spring Boot 4.1.1、MyBatis-Plus 3.5.17、Flyway、阿里云 OSS SDK。具体版本见 [pom.xml](pom.xml)。
+主要依赖：Spring Boot 4.1.1、MyBatis-Plus 3.5.17、Flyway、Spring Data Redis、阿里云 OSS SDK。具体版本见 [pom.xml](pom.xml)。
 
 ## 开发配置
 
@@ -26,7 +27,7 @@ CREATE DATABASE IF NOT EXISTS early_learning
     CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
 ```
 
-配置的数据库账号需要具备该库的建表、索引、外键及数据读写权限。应用启动时由 Flyway 执行 `src/main/resources/db/migration/` 下的迁移，不需要手动执行 SQL 文件。迁移只建表，不创建初始管理员账号。
+配置的数据库账号需要具备该库的建表、索引、外键及数据读写权限。应用启动时由 Flyway 执行 `src/main/resources/db/migration/` 下的迁移，不需要手动执行 SQL 文件。迁移只建表，不创建管理员；第一个管理员由 `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD` 在 `admin_account` 为空时自动创建，创建后请删除密码变量。
 
 ### 2. 在 IDEA 中配置环境变量
 
@@ -53,6 +54,9 @@ CREATE DATABASE IF NOT EXISTS early_learning
 | `AI_LLM_ECNU_BASE_URL` / `AI_LLM_ECNU_API_KEY` | `AI_LLM_PROVIDER=ecnu` 时必填；令牌留空会在**启动期**报错，不会静默降级 |
 | `AI_LLM_ECNU_MODEL_TEXT` / `AI_LLM_ECNU_MODEL_VISION` | 文本与多模态模型名，默认 `ecnu-max` / `ecnu-plus` |
 | `AI_LLM_ECNU_*`（其余） | 是否开启思考、超时、单图字节上限等，见 [`.env.example`](.env.example) |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | 鉴权用 Redis；Redis 不可用时需要登录的接口返回 503 |
+| `AUTH_CODE_PEPPER` | **必填**，至少 32 字符（`openssl rand -hex 32`）。激活码与恢复码的 HMAC 密钥，**上线后不得更换**，否则已发出的码全部失效 |
+| `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD` | 初始管理员，仅在没有任何管理员时生效；密码 10–72 字节 |
 
 真实凭证只保存在本地运行配置中，不写入 `.env.example` 或提交到仓库。OSS 配置细节见 [OSS 接入说明](docs/OSS接入.md)。
 

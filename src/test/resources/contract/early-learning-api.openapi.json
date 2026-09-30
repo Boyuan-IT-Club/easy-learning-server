@@ -4434,7 +4434,9 @@
               "SENSITIVE_RESULT_EXPIRED",
               "TASK_RETRY_CONFLICT",
               "VERSION_CONFLICT",
-              "RESOURCE_NOT_READY"
+              "RESOURCE_NOT_READY",
+              "DEVICE_ALREADY_BOUND",
+              "ADMIN_LAST_ACTIVE"
             ],
             "description": "该 HTTP 状态下的稳定错误码。"
           },
@@ -5096,7 +5098,8 @@
               "TOKEN_INVALID",
               "TOKEN_EXPIRED",
               "INVALID_CREDENTIALS",
-              "REFRESH_TOKEN_INVALID"
+              "REFRESH_TOKEN_INVALID",
+              "RECOVERY_CODE_INVALID"
             ],
             "description": "该 HTTP 状态下的稳定错误码。"
           },
@@ -5135,7 +5138,8 @@
               "ACCOUNT_DISABLED",
               "LICENSE_REVOKED",
               "AUTH_ROLE_MISMATCH",
-              "RESOURCE_FORBIDDEN"
+              "RESOURCE_FORBIDDEN",
+              "DEVICE_MISMATCH"
             ],
             "description": "该 HTTP 状态下的稳定错误码。"
           },

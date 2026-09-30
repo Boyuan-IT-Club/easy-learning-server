@@ -1,7 +1,7 @@
 # 本地开发用的依赖服务。
 #
-# 三个服务：mysql（数据库）、app（后端）、web（管理端前端，nginx 托管构建产物并反代后端接口）。
-# 默认只起 MySQL，应用仍在 IDE / ./mvnw 里跑——改一行代码不用重建镜像，这是最快的循环。
+# 四个服务：mysql（数据库）、redis（鉴权缓存）、app（后端）、web（管理端前端，nginx 托管构建产物并反代后端接口）。
+# 默认只起 MySQL 与 Redis（docker compose up -d mysql redis），应用仍在 IDE / ./mvnw 里跑——改一行代码不用重建镜像，这是最快的循环。
 # 看完整效果（含前端页面）：docker compose up -d --build
 #
 # 服务器部署在这份之上叠加 compose.server.yaml，差异只有「暴露面」与「重启策略」：
@@ -35,11 +35,29 @@ services:
       retries: 30
       start_period: 20s
 
+  redis:
+    image: redis:7-alpine
+    container_name: early-learning-redis
+    # 必须关闭持久化：刷新宽限与敏感结果重放缓存里有 Token、激活码明文，契约要求只在内存中短时保留。
+    command: ["redis-server", "--save", "", "--appendonly", "no",
+              "--requirepass", "${REDIS_PASSWORD:?请在 .env 中设置 REDIS_PASSWORD，模板见 .env.example}"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
   app:
     build: .
     image: early-learning-server:local
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
@@ -66,6 +84,13 @@ services:
       AI_LLM_ECNU_REASONING_EFFORT: ${AI_LLM_ECNU_REASONING_EFFORT:-}
       AI_LLM_ECNU_TIMEOUT_SECONDS: ${AI_LLM_ECNU_TIMEOUT_SECONDS:-120}
       AI_LLM_ECNU_MAX_IMAGE_BYTES: ${AI_LLM_ECNU_MAX_IMAGE_BYTES:-5242880}
+      # 01 账号与鉴权
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?请在 .env 中设置 REDIS_PASSWORD，模板见 .env.example}
+      AUTH_CODE_PEPPER: ${AUTH_CODE_PEPPER:?请在 .env 中设置 AUTH_CODE_PEPPER，模板见 .env.example}
+      ADMIN_BOOTSTRAP_USERNAME: ${ADMIN_BOOTSTRAP_USERNAME:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
     ports:
       - "127.0.0.1:8080:8080"
 

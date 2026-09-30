@@ -1,13 +1,11 @@
 /**
- * 教师注册激活与云端访问鉴权。
+ * 鉴权模块（限界上下文）：Spring Security 衔接、不透明 Token 的签发与校验、刷新宽限。组织规范见 {@code reference/adr/0008}。
  *
- * <p>负责注册流程编排、激活码绑定、Access Token 签发与校验、Refresh Token 轮换和云端账号状态校验。注册时协调 teacher 与 license，在同一事务内创建账号并完成绑定。教师密码和离线登录留在移动端。</p>
+ * <p>本模块<b>不认识</b>教师与管理员：它定义 {@code BearerAuthenticator} 端口，由 teacher、admin 模块各自实现，
+ * 过滤器在运行时按 Token 前缀选择实现。这样依赖只有一个方向（teacher/admin → auth）。
  *
- * <p>数据边界：通过 teacher、license 协调账号与许可证；维护 user_account.refresh_token_hash。</p>
- * <p>依据：<a href="https://boyuanclub.feishu.cn/wiki/NU4zwM5tZiQQw4kXbiXcYjKuncf">01_账号与鉴权，3.3 用户与鉴权</a>；
- * 表结构和 JSON 契约以 docs/技术方案.md 为准。</p>
- *
- * <p>Controller、DTO、Service、Mapper、Entity 及子包按实际功能需要创建。</p>
+ * <p>数据边界：Token 只存哈希，放在 Redis（关闭持久化）；refresh_token 哈希在 teacher 模块的 user_account 表里。
+ * application 与 domain 通过 @NamedInterface 对外暴露。
+ * 依据：01_账号与鉴权 v0.2。
  */
 package com.earlylearning.early_learning_server.auth;
-

@@ -61,3 +61,34 @@ app:
     # 跨域放行的来源;开发默认全放行(凭据不跨域,令牌走 Authorization 头)。
     # 生产示例:https://admin.example.edu,http://localhost:*
     allowed-origin-patterns: "*"
+
+# ---------- 01 账号与鉴权 ----------
+# Redis 存 Token、刷新宽限、敏感结果重放与限流计数。必须关闭持久化（--save "" --appendonly no）：
+# 宽限与重放缓存里是 Token、激活码明文，契约要求只在内存中短时保留。
+spring.data.redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  password: ${REDIS_PASSWORD:}
+  timeout: 2s
+
+secret:
+  # 激活码与恢复码 HMAC 的 pepper：必填、至少 32 字符、上线后不得更换（换了已发出的码全部失效）。
+  code-pepper: ${AUTH_CODE_PEPPER:}
+
+auth:
+  access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:2h}
+  admin-token-ttl: ${AUTH_ADMIN_TOKEN_TTL:8h}
+  refresh-grace: 30s
+
+teacher:
+  recovery-code-ttl: 24h
+  recovery-max-failures: 5
+
+idempotency:
+  sensitive-replay-ttl: 10m
+
+admin:
+  bootstrap:
+    # 只在 admin_account 为空时创建初始管理员；首次启动后删除密码变量。
+    username: ${ADMIN_BOOTSTRAP_USERNAME:}
+    password: ${ADMIN_BOOTSTRAP_PASSWORD:}
