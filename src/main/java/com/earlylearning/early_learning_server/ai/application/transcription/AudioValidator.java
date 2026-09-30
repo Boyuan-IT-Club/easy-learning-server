@@ -55,7 +55,8 @@ public class AudioValidator {
     public long validate(byte[] audio, String declaredMime) {
         String detected = detect(audio);
         if (detected == null) {
-            log.info("音频格式无法识别 declaredMime={} sizeBytes={}", declaredMime, audio.length);
+            log.info("音频格式无法识别 declaredMime={} sizeBytes={} head={}",
+                    declaredMime, audio.length, headPreview(audio));
             throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE,
                     "无法识别音频格式，支持 m4a/mp3/wav");
         }
@@ -112,5 +113,17 @@ public class AudioValidator {
         return audio.length <= MediaTypeDetector.HEAD_BYTES
                 ? audio
                 : java.util.Arrays.copyOf(audio, MediaTypeDetector.HEAD_BYTES);
+    }
+
+    /** 拒收时打出内容的开头：上传端把占位文本当文件发过来时，靠它一眼定位。 */
+    private String headPreview(byte[] audio) {
+        int limit = Math.min(audio.length, 32);
+        StringBuilder hex = new StringBuilder();
+        for (int i = 0; i < limit; i++) {
+            hex.append(String.format("%02x", audio[i]));
+        }
+        String text = new String(audio, 0, limit, java.nio.charset.StandardCharsets.UTF_8)
+                .replaceAll("\\p{Cntrl}", ".");
+        return hex.length() == 0 ? "(empty)" : "hex[" + hex + "] text[" + text + "]";
     }
 }
