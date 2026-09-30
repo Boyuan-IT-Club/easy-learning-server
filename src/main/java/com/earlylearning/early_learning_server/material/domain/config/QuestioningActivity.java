@@ -2,10 +2,11 @@ package com.earlylearning.early_learning_server.material.domain.config;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * 问题问答活动。grammar 是题目挂的语法编号数组，指向语法要素的当前定义；
+ * 问题问答活动。hint 与 grammar 可省略；grammar 是题目挂的语法编号数组，指向语法要素的当前定义；
  * 发布时校验编号存在，下载时随依赖展开语法条目与图标。
  */
 public record QuestioningActivity(
@@ -28,9 +29,9 @@ public record QuestioningActivity(
 
                 String text,
 
-                String hint,
+                @JsonInclude(JsonInclude.Include.NON_NULL) String hint,
 
-                List<String> grammar) {
+                @JsonInclude(JsonInclude.Include.NON_NULL) List<String> grammar) {
         }
     }
 }
