@@ -44,8 +44,10 @@ public class MaterialConfigValidator {
     private static final Set<String> SORTING_KEYS = Set.of("items", "correct_order");
     private static final Set<String> SORTING_ITEM_KEYS = Set.of("item_id", "file_name");
     private static final Set<String> QUESTIONING_KEYS = Set.of("questions");
-    private static final Set<String> QUESTION_KEYS = Set.of("question_id", "text", "hint", "grammar");
-    private static final Set<String> NARRATION_KEYS = Set.of("audio_file_name", "content_items");
+    private static final Set<String> QUESTION_KEYS = Set.of("question_id", "text");
+    private static final Set<String> OPTIONAL_QUESTION_KEYS = Set.of("hint", "grammar");
+    private static final Set<String> NARRATION_KEYS = Set.of("content_items");
+    private static final Set<String> OPTIONAL_NARRATION_KEYS = Set.of("audio_file_name");
     private static final Set<String> CONTENT_ITEM_KEYS = Set.of("content_item_id", "image_file_names", "rubric_item_code");
 
     private static final String CODE_PATTERN = "^[A-Za-z0-9_-]+$";
@@ -78,7 +80,7 @@ public class MaterialConfigValidator {
         if (!schemaVersion.isIntegralNumber() || schemaVersion.asInt() != ActivityConfig.SCHEMA_VERSION) {
             throw configError("/schema_version", "schema_version 必须为 " + ActivityConfig.SCHEMA_VERSION);
         }
-        String storyContext = requireNonBlankText(root, "story_context", "");
+        String storyContext = requireText(root, "story_context", "");
 
         List<com.earlylearning.early_learning_server.material.domain.config.Activity> activities =
                 buildActivities(root.get("activities"), packageFileNames, rubricItemCodes, knownGrammarCodes, resolver);
@@ -113,7 +115,10 @@ public class MaterialConfigValidator {
                     codes.add(item.path("file_code").asString());
                 }
             } else if (NarrationActivity.TYPE.equals(type)) {
-                codes.add(activity.path("config").path("audio_file_code").asString());
+                JsonNode config = activity.path("config");
+                if (config.has("audio_file_code")) {
+                    codes.add(config.get("audio_file_code").asString());
+                }
                 for (JsonNode contentItem : activity.path("config").path("content_items")) {
                     for (JsonNode fileCode : contentItem.path("image_file_codes")) {
                         codes.add(fileCode.asString());
@@ -231,42 +236,43 @@ public class MaterialConfigValidator {
             JsonNode question = questions.get(i);
             String questionPath = path + "/config/questions/" + i;
             requireObject(question, questionPath);
-            requireExactKeys(question, QUESTION_KEYS, questionPath);
+            requireExactKeys(question, QUESTION_KEYS, OPTIONAL_QUESTION_KEYS, questionPath);
             String questionId = requireNonBlankText(question, "question_id", questionPath);
             if (!questionIds.add(questionId)) {
                 throw configError(questionPath + "/question_id", "question_id 不得重复");
             }
             String text = requireNonBlankText(question, "text", questionPath);
-            JsonNode hintNode = question.get("hint");
-            if (!hintNode.isTextual()) {
-                throw configError(questionPath + "/hint", "hint 必须是字符串，允许为空");
+            String hint = question.has("hint") ? requireText(question, "hint", questionPath) : null;
+            List<String> grammarCodes = null;
+            if (question.has("grammar")) {
+                JsonNode grammar = question.get("grammar");
+                if (!grammar.isArray()) {
+                    throw configError(questionPath + "/grammar", "grammar 必须是数组");
+                }
+                Set<String> grammarSeen = new HashSet<>();
+                grammarCodes = new ArrayList<>();
+                for (int j = 0; j < grammar.size(); j++) {
+                    JsonNode entry = grammar.get(j);
+                    if (!entry.isTextual()) {
+                        throw configError(questionPath + "/grammar", "grammar 元素必须是字符串");
+                    }
+                    String grammarCode = entry.asString();
+                    if (!grammarCode.matches(CODE_PATTERN) || grammarCode.length() > CODE_MAX) {
+                        throw configError(questionPath + "/grammar", "语法编号格式不合法");
+                    }
+                    if (!grammarSeen.add(grammarCode)) {
+                        throw configError(questionPath + "/grammar", "grammar 不得重复");
+                    }
+                    if (!knownGrammarCodes.contains(grammarCode)) {
+                        throw new BusinessException(ErrorCode.INVALID_GRAMMAR_REFERENCE,
+                                "配置引用的语法不存在",
+                                new ApiErrorDetails(questionPath + "/grammar", null, null, null, null, null, null));
+                    }
+                    grammarCodes.add(grammarCode);
+                }
+                grammarCodes = List.copyOf(grammarCodes);
             }
-            JsonNode grammar = question.get("grammar");
-            if (!grammar.isArray()) {
-                throw configError(questionPath + "/grammar", "grammar 必须是数组");
-            }
-            Set<String> grammarSeen = new HashSet<>();
-            List<String> grammarCodes = new ArrayList<>();
-            for (int j = 0; j < grammar.size(); j++) {
-                JsonNode entry = grammar.get(j);
-                if (!entry.isTextual()) {
-                    throw configError(questionPath + "/grammar", "grammar 元素必须是字符串");
-                }
-                String grammarCode = entry.asString();
-                if (!grammarCode.matches(CODE_PATTERN) || grammarCode.length() > CODE_MAX) {
-                    throw configError(questionPath + "/grammar", "语法编号格式不合法");
-                }
-                if (!grammarSeen.add(grammarCode)) {
-                    throw configError(questionPath + "/grammar", "grammar 不得重复");
-                }
-                if (!knownGrammarCodes.contains(grammarCode)) {
-                    throw new BusinessException(ErrorCode.INVALID_GRAMMAR_REFERENCE,
-                            "配置引用的语法不存在",
-                            new ApiErrorDetails(questionPath + "/grammar", null, null, null, null, null, null));
-                }
-            }
-            built.add(new QuestioningActivity.Config.Question(questionId, text, hintNode.asString(),
-                    List.copyOf(grammarCodes)));
+            built.add(new QuestioningActivity.Config.Question(questionId, text, hint, grammarCodes));
         }
         return new QuestioningActivity(activityId, QuestioningActivity.TYPE,
                 new QuestioningActivity.Config(List.copyOf(built)));
@@ -275,9 +281,12 @@ public class MaterialConfigValidator {
     private NarrationActivity buildNarration(String activityId, JsonNode config, String path,
                                               Set<String> packageFileNames, Set<String> rubricItemCodes,
                                               FileRefResolver resolver) {
-        requireExactKeys(config, NARRATION_KEYS, path + "/config");
-        String audioName = requireNonBlankText(config, "audio_file_name", path + "/config");
-        String audioCode = resolver.fileCodeOf(audioName, path + "/config/audio_file_name");
+        requireExactKeys(config, NARRATION_KEYS, OPTIONAL_NARRATION_KEYS, path + "/config");
+        String audioCode = null;
+        if (config.has("audio_file_name")) {
+            String audioName = requireNonBlankText(config, "audio_file_name", path + "/config");
+            audioCode = resolver.fileCodeOf(audioName, path + "/config/audio_file_name");
+        }
 
         JsonNode contentItems = config.get("content_items");
         if (!contentItems.isArray() || contentItems.isEmpty()) {
@@ -331,12 +340,16 @@ public class MaterialConfigValidator {
     }
 
     private void requireExactKeys(JsonNode object, Set<String> expected, String path) {
+        requireExactKeys(object, expected, Set.of(), path);
+    }
+
+    private void requireExactKeys(JsonNode object, Set<String> required, Set<String> optional, String path) {
         for (String field : object.propertyNames()) {
-            if (!expected.contains(field)) {
+            if (!required.contains(field) && !optional.contains(field)) {
                 throw configError(path + "/" + field, "字段不在契约中");
             }
         }
-        for (String field : expected) {
+        for (String field : required) {
             if (object.get(field) == null || object.get(field).isMissingNode()) {
                 throw configError(path + "/" + field, "缺少必填字段");
             }
@@ -372,6 +385,14 @@ public class MaterialConfigValidator {
         String fieldPath = path + "/" + field;
         if (node == null || !node.isTextual() || node.asString().isBlank()) {
             throw configError(fieldPath, "必须是字符串且不能为空");
+        }
+        return node.asString();
+    }
+
+    private String requireText(JsonNode object, String field, String path) {
+        JsonNode node = object.get(field);
+        if (node == null || !node.isTextual()) {
+            throw configError(path + "/" + field, "必须是字符串，允许为空");
         }
         return node.asString();
     }

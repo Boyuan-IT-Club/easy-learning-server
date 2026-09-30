@@ -197,6 +197,64 @@ class AssessmentMaterialFlowTests {
     }
 
     @Test
+    void publishesReplaysAndDownloadsWithoutOptionalFields() throws Exception {
+        byte[] zip = zipBytes("""
+                {
+                  "official_material_code":"ZTESTM_OPTIONAL", "content_version":"v1", "name":"可选配置",
+                  "schema_version":2, "story_context":"",
+                  "activities":[
+                    {"activity_id":"act_q","type":"QUESTION_ANSWERING","config":{
+                      "questions":[{"question_id":"q1","text":"谁打碎了玻璃？"}]}},
+                    {"activity_id":"act_story","type":"STORY_NARRATION","config":{
+                      "content_items":[{"content_item_id":"c1","image_file_names":["ztestm-img1.png"],
+                                        "rubric_item_code":"NARRATIVE_CONTENT_01"}]}}
+                  ]
+                }
+                """, java.util.Map.of("ztestm-img1.png", PNG));
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mockMvc.perform(multipart("/admin/assessment-materials").file(file(zip))
+                            .header("Idempotency-Key", "ZTESTM-KEY-OPTIONAL"))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.data.activity_configs_json.story_context").value(""))
+                    .andExpect(jsonPath("$.data.activity_configs_json.activities[0].config.questions[0].hint")
+                            .doesNotHaveJsonPath())
+                    .andExpect(jsonPath("$.data.activity_configs_json.activities[0].config.questions[0].grammar")
+                            .doesNotHaveJsonPath())
+                    .andExpect(jsonPath("$.data.activity_configs_json.activities[1].config.audio_file_code")
+                            .doesNotHaveJsonPath());
+        }
+        verify(storage).upload(anyString(), any(), anyLong(), anyString());
+
+        mockMvc.perform(get("/api/assessment-materials/ZTESTM_OPTIONAL/v1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.activity_configs_json.story_context").value(""))
+                .andExpect(jsonPath("$.data.content.activity_configs_json.activities[0].config.questions[0].hint")
+                        .doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.content.activity_configs_json.activities[0].config.questions[0].grammar")
+                        .doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.content.activity_configs_json.activities[1].config.audio_file_code")
+                        .doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.dependencies.length()").value(1))
+                .andExpect(jsonPath("$.data.dependencies[0].file_kind").value("IMAGE"))
+                .andExpect(jsonPath("$.data.grammars.length()").value(0));
+    }
+
+    @Test
+    void providedAudioReferenceMustExistBeforeAnyUpload() throws Exception {
+        byte[] zip = zipBytes(java.util.Map.of("official_material_code", "ZTESTM_MISSING_AUDIO"),
+                java.util.Map.of("ztestm-img1.png", PNG, "ztestm-img2.png", PNG));
+        mockMvc.perform(multipart("/admin/assessment-materials").file(file(zip))
+                        .header("Idempotency-Key", "ZTESTM-KEY-MISSING-AUDIO"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("INVALID_RESOURCE_REFERENCE"))
+                .andExpect(jsonPath("$.details.field_path").value("/activities/2/config/audio_file_name"));
+        verify(storage, never()).upload(anyString(), any(), anyLong(), anyString());
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM assessment_material WHERE official_material_code = 'ZTESTM_MISSING_AUDIO'",
+                Integer.class)).isZero();
+    }
+
+    @Test
     void downloadUnknownOrMalformedIdentifiers() throws Exception {
         mockMvc.perform(get("/api/assessment-materials/ZTESTM_NONE/v9"))
                 .andExpect(status().isNotFound())
@@ -288,17 +346,10 @@ class AssessmentMaterialFlowTests {
         meta.put("official_material_code", code);
         meta.put("content_version", version);
         meta.put("rubric", rubricCode);
-        byte[] zip = zipBytes(meta, java.util.Map.of(
+        return zipBytes(meta, java.util.Map.of(
                 "ztestm-img1.png", PNG,
                 "ztestm-img2.png", PNG,
                 "ztestm-story.wav", tinyWav()));
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(zip);
-            mediaKeyPrefixes.add(HexFormat.of().formatHex(digest).substring(0, 24));
-        } catch (java.security.NoSuchAlgorithmException ex) {
-            throw new IllegalStateException(ex);
-        }
-        return zip;
     }
 
     private byte[] zipBytes(java.util.Map<String, String> meta, java.util.Map<String, byte[]> files) {
@@ -327,6 +378,10 @@ class AssessmentMaterialFlowTests {
                   ]
                 }
                 """.formatted(code, version, version, rubric);
+        return zipBytes(config, files);
+    }
+
+    private byte[] zipBytes(String config, java.util.Map<String, byte[]> files) {
         java.util.Map<String, byte[]> entries = new java.util.LinkedHashMap<>(files);
         entries.put("config.json", config.getBytes(StandardCharsets.UTF_8));
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -339,7 +394,14 @@ class AssessmentMaterialFlowTests {
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
-        return buffer.toByteArray();
+        byte[] bytes = buffer.toByteArray();
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(bytes);
+            mediaKeyPrefixes.add(HexFormat.of().formatHex(digest).substring(0, 24));
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
+        return bytes;
     }
 
     /** 44 字节头的单声道 8kHz PCM WAV，内容为静音；WAV 字段是小端序。 */

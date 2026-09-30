@@ -8,6 +8,9 @@ import com.earlylearning.early_learning_server.material.domain.config.NarrationA
 import com.earlylearning.early_learning_server.material.domain.config.QuestioningActivity;
 import com.earlylearning.early_learning_server.material.domain.config.SortingActivity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -44,6 +47,97 @@ class MaterialConfigValidatorTests {
         NarrationActivity narration = (NarrationActivity) config.activities().get(2);
         assertThat(narration.config().audioFileCode()).isEqualTo("CF_STORY_WAV");
         assertThat(narration.config().contentItems().get(0).rubricItemCode()).isEqualTo("NARRATIVE_CONTENT_01");
+    }
+
+    @Test
+    void acceptsEmptyStoryContextButRequiresTheField() {
+        var config = validConfig().put("story_context", "");
+        ValidatedMaterial material = validator.build(config, FILES, RUBRIC, GRAMMAR, noopResolver());
+        assertThat(material.activityConfig().storyContext()).isEmpty();
+        assertThat(JSON.readTree(JSON.writeValueAsString(material.activityConfig()))
+                .get("story_context").asString()).isEmpty();
+
+        config.remove("story_context");
+        assertThatThrownBy(() -> validator.build(config, FILES, RUBRIC, GRAMMAR, noopResolver()))
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode().name()).isEqualTo("INVALID_ACTIVITY_CONFIG");
+                    assertThat(ex.getDetails().fieldPath()).isEqualTo("/story_context");
+                });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"audio_file_name", "hint", "grammar", "all"})
+    void omittedOptionalFieldsStayAbsentAndDoNotCreateDependencies(String omitted) {
+        var config = validConfig();
+        var question = (tools.jackson.databind.node.ObjectNode) config.at("/activities/1/config/questions/0");
+        var narration = (tools.jackson.databind.node.ObjectNode) config.at("/activities/2/config");
+        boolean omitAudio = omitted.equals("audio_file_name") || omitted.equals("all");
+        boolean omitHint = omitted.equals("hint") || omitted.equals("all");
+        boolean omitGrammar = omitted.equals("grammar") || omitted.equals("all");
+        if (omitAudio) {
+            narration.remove("audio_file_name");
+        }
+        if (omitHint) {
+            question.remove("hint");
+        }
+        if (omitGrammar) {
+            question.remove("grammar");
+        }
+        Set<String> files = omitAudio ? Set.of("img1.png", "img2.png") : FILES;
+        ValidatedMaterial material = validator.build(config, files, RUBRIC, Set.of(),
+                (fileName, fieldPath) -> {
+                    assertThat(files).contains(fileName);
+                    return "CF_" + fileName;
+                });
+        JsonNode frozen = JSON.readTree(JSON.writeValueAsString(material.activityConfig()));
+        assertThat(frozen.at("/activities/2/config").has("audio_file_code")).isEqualTo(!omitAudio);
+        assertThat(frozen.at("/activities/1/config/questions/0").has("hint")).isEqualTo(!omitHint);
+        assertThat(frozen.at("/activities/1/config/questions/0").has("grammar")).isEqualTo(!omitGrammar);
+        assertThat(validator.referencedGrammarCodes(frozen)).isEmpty();
+        assertThat(validator.referencedFileCodes(frozen))
+                .containsExactlyInAnyOrderElementsOf(files.stream().map(name -> "CF_" + name).toList());
+    }
+
+    @Test
+    void preservesProvidedHintAndGrammarReferences() {
+        var config = validConfig();
+        var question = (tools.jackson.databind.node.ObjectNode) config.at("/activities/1/config/questions/0");
+        question.put("hint", "看看踢球的同学。");
+        question.putArray("grammar").add("G_PAST");
+
+        ValidatedMaterial material = validator.build(config, FILES, RUBRIC, GRAMMAR, noopResolver());
+        QuestioningActivity activity = (QuestioningActivity) material.activityConfig().activities().get(1);
+        assertThat(activity.config().questions().get(0).hint()).isEqualTo("看看踢球的同学。");
+        assertThat(activity.config().questions().get(0).grammar()).containsExactly("G_PAST");
+        JsonNode frozen = JSON.readTree(JSON.writeValueAsString(material.activityConfig()));
+        assertThat(validator.referencedGrammarCodes(frozen)).containsExactly("G_PAST");
+    }
+
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+            /story_context, null
+            /story_context, 42
+            /story_context, []
+            /activities/2/config/audio_file_name, null
+            /activities/2/config/audio_file_name, 42
+            /activities/2/config/audio_file_name, '""'
+            /activities/1/config/questions/0/hint, null
+            /activities/1/config/questions/0/hint, 42
+            /activities/1/config/questions/0/grammar, null
+            /activities/1/config/questions/0/grammar, 42
+            /activities/1/config/questions/0/grammar, '""'
+            """)
+    void rejectsInvalidProvidedFields(String pointer, String value) {
+        var config = validConfig();
+        int lastSlash = pointer.lastIndexOf('/');
+        var parent = (tools.jackson.databind.node.ObjectNode) config.at(pointer.substring(0, lastSlash));
+        parent.set(pointer.substring(lastSlash + 1), JSON.readTree(value));
+
+        assertThatThrownBy(() -> validator.build(config, FILES, RUBRIC, GRAMMAR, noopResolver()))
+                .isInstanceOfSatisfying(BusinessException.class, ex -> {
+                    assertThat(ex.getErrorCode().name()).isEqualTo("INVALID_ACTIVITY_CONFIG");
+                    assertThat(ex.getDetails().fieldPath()).isEqualTo(pointer);
+                });
     }
 
     @Test

@@ -5524,9 +5524,7 @@
           },
           "story_context": {
             "type": "string",
-            "description": "经确认的故事依据。占位内容禁止正式发布或评分。",
-            "minLength": 1,
-            "pattern": "\\S"
+            "description": "故事依据。评估材料发布时字段必填，允许空字符串；实际 AI 评分仍须提供经确认的故事依据。"
           },
           "activities": {
             "type": "array",
@@ -5910,22 +5908,20 @@
           },
           "hint": {
             "type": "string",
-            "description": "预设提示，允许空字符串；不得混入评分规则。"
+            "description": "预设提示，评估材料中可省略，允许空字符串；不得混入评分规则。"
           },
           "grammar": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Code"
             },
-            "description": "语法编号数组；不得重复。",
+            "description": "语法编号数组，评估材料中可省略；允许空数组，不得重复。",
             "uniqueItems": true
           }
         },
         "required": [
           "question_id",
-          "text",
-          "hint",
-          "grammar"
+          "text"
         ]
       },
       "QuestionAnsweringActivity": {
@@ -5988,6 +5984,7 @@
           "config": {
             "type": "object",
             "additionalProperties": false,
+            "description": "评估材料的标准故事音频可省略；导入时未提供 audio_file_name，则配置中不生成 audio_file_code。",
             "properties": {
               "audio_file_code": {
                 "$ref": "#/components/schemas/FileCode"
@@ -6001,7 +5998,6 @@
               }
             },
             "required": [
-              "audio_file_code",
               "content_items"
             ]
           }
