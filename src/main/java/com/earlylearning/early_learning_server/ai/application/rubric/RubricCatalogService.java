@@ -60,6 +60,16 @@ public class RubricCatalogService {
     }
 
     /**
+     * 图片分组可映射的评分条目编号。评估材料发布时校验 content_items 的
+     * rubric_item_code 是否在统一规则里，编号集合与目录一致。
+     */
+    public java.util.Set<String> contentItemCodes() {
+        return STANDARD_CONTENT_ITEMS.stream()
+                .map(ContentItemSpec::code)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    /**
      * @return 领域对象；转成 HTTP 形状是 interfaces 层的事
      * @throws BusinessException 服务端统一评分配置缺失或不可用（503 {@code RUBRIC_UNAVAILABLE}）
      */

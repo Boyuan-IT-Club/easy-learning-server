@@ -28,10 +28,11 @@ class ArchitectureTests {
 
     @ArchTest
     ArchRule domain不依赖模块内外层与SpringWeb =
-            noClasses().that().resideInAnyPackage("..ai.domain..", "..storage.domain..")
+            noClasses().that().resideInAnyPackage("..ai.domain..", "..storage.domain..", "..material.domain..")
                     .should().dependOnClassesThat().resideInAnyPackage(
                             "..ai.interfaces..", "..ai.application..", "..ai.infrastructure..",
                             "..storage.interfaces..", "..storage.application..", "..storage.infrastructure..",
+                            "..material.interfaces..", "..material.application..", "..material.infrastructure..",
                             "org.springframework.web..", "jakarta.servlet..");
 
     @ArchTest

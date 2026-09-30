@@ -42,6 +42,14 @@ aliyun:
     max-connections: ${OSS_MAX_CONNECTIONS:64}
     max-error-retry: ${OSS_MAX_ERROR_RETRY:2}
 
+material:
+  publish:
+    # ZIP 发布的部署上限:压缩包、解压总量与包内条目数。业务上限要低于 multipart 上限,
+    # 超限才能带着 details.limit 返回 413 而不是被 servlet 提前拦截。
+    max-zip-bytes: ${MATERIAL_MAX_ZIP_BYTES:524288000}
+    max-uncompressed-bytes: ${MATERIAL_MAX_UNCOMPRESSED_BYTES:1073741824}
+    max-file-count: ${MATERIAL_MAX_FILE_COUNT:200}
+
 storage:
   upload:
     # 业务侧单文件上限。413 PAYLOAD_TOO_LARGE 的 details.limit.maximum 用的就是这个值，
