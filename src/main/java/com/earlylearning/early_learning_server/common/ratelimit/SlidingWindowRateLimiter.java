@@ -39,11 +39,11 @@ public class SlidingWindowRateLimiter {
             return 1
             """, Long.class);
 
-    private final StringRedisTemplate redis;
+    private final StringRedisTemplate stringRedisTemplate;
     private final Clock clock;
 
-    public SlidingWindowRateLimiter(StringRedisTemplate redis, Clock clock) {
-        this.redis = redis;
+    public SlidingWindowRateLimiter(StringRedisTemplate stringRedisTemplate, Clock clock) {
+        this.stringRedisTemplate = stringRedisTemplate;
         this.clock = clock;
     }
 
@@ -54,7 +54,7 @@ public class SlidingWindowRateLimiter {
      */
     public boolean tryAcquire(RateLimitRule rule, String subject) {
         try {
-            Long allowed = redis.execute(SCRIPT, List.of(key(rule, subject)),
+            Long allowed = stringRedisTemplate.execute(SCRIPT, List.of(key(rule, subject)),
                     Long.toString(clock.millis()),
                     Long.toString(rule.window().toMillis()),
                     Integer.toString(rule.limit()),
@@ -69,7 +69,7 @@ public class SlidingWindowRateLimiter {
     /** @return 当前窗口内已记录的次数；Redis 故障时为 0 */
     public long countInWindow(RateLimitRule rule, String subject) {
         try {
-            Long count = redis.opsForZSet().count(key(rule, subject),
+            Long count = stringRedisTemplate.opsForZSet().count(key(rule, subject),
                     clock.millis() - rule.window().toMillis(), Double.POSITIVE_INFINITY);
             return count == null ? 0 : count;
         } catch (DataAccessException e) {
@@ -81,7 +81,7 @@ public class SlidingWindowRateLimiter {
     /** 清空某个主体在该规则下的记录，例如登录成功后清零失败计数。 */
     public void reset(RateLimitRule rule, String subject) {
         try {
-            redis.delete(key(rule, subject));
+            stringRedisTemplate.delete(key(rule, subject));
         } catch (DataAccessException e) {
             log.warn("限流记录清理失败 rule={} cause={}", rule.name(), e.getClass().getSimpleName());
         }

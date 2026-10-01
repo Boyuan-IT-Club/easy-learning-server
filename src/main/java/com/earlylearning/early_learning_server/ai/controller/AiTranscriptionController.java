@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,21 +28,22 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  * <p>权限：按教师隔离任务；本模块不校验。
  */
 @RestController
+@RequestMapping("/api/ai")
 public class AiTranscriptionController {
 
     private final AudioValidator audioValidator;
-    private final AiTranscriptionService transcriptionService;
+    private final AiTranscriptionService aiTranscriptionService;
 
     public AiTranscriptionController(AudioValidator audioValidator,
-                                     AiTranscriptionService transcriptionService) {
+                                     AiTranscriptionService aiTranscriptionService) {
         this.audioValidator = audioValidator;
-        this.transcriptionService = transcriptionService;
+        this.aiTranscriptionService = aiTranscriptionService;
     }
 
     /**
      * 提交一段录音。音频只读进内存（不写临时文件），校验通过后登记任务并立即返回凭据。
      */
-    @PostMapping(path = "/api/ai/transcribe", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = "/transcribe", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<TaskHandleResponse>> transcribe(
             @RequestParam(name = "retry_attempt", defaultValue = "0") int retryAttempt,
             @RequestPart("audio") MultipartFile audio,
@@ -50,7 +52,7 @@ public class AiTranscriptionController {
         String detectedMime = audioValidator.detect(content);
         audioValidator.validate(content, audio.getContentType());
 
-        AiTask task = transcriptionService.submit(content, detectedMime, toCommand(context), retryAttempt);
+        AiTask task = aiTranscriptionService.submit(content, detectedMime, toCommand(context), retryAttempt);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(TaskHandleResponse.from(task)));
     }
 

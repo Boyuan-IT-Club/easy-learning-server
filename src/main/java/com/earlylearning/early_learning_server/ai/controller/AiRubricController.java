@@ -1,6 +1,7 @@
 package com.earlylearning.early_learning_server.ai.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.earlylearning.early_learning_server.ai.dto.RubricCatalogResponse;
@@ -13,16 +14,17 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  * <p>权限：按教师隔离任务；本模块不校验。
  */
 @RestController
+@RequestMapping("/api/ai")
 public class AiRubricController {
 
-    private final RubricCatalogService catalogService;
+    private final RubricCatalogService rubricCatalogService;
 
-    public AiRubricController(RubricCatalogService catalogService) {
-        this.catalogService = catalogService;
+    public AiRubricController(RubricCatalogService rubricCatalogService) {
+        this.rubricCatalogService = rubricCatalogService;
     }
 
-    @GetMapping("/api/ai/rubrics")
+    @GetMapping("/rubrics")
     public ApiResponse<RubricCatalogResponse> catalog() {
-        return ApiResponse.ok(RubricCatalogResponse.from(catalogService.catalog()));
+        return ApiResponse.ok(RubricCatalogResponse.from(rubricCatalogService.catalog()));
     }
 }

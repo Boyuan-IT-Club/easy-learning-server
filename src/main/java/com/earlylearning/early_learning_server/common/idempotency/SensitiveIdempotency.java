@@ -43,19 +43,19 @@ public class SensitiveIdempotency {
 
     static final String KEY_PREFIX = "el:idem:sensitive:";
 
-    private final IdempotencyService idempotency;
-    private final StringRedisTemplate redis;
+    private final IdempotencyService idempotencyService;
+    private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transaction;
     private final Duration replayTtl;
 
-    public SensitiveIdempotency(IdempotencyService idempotency,
-                                StringRedisTemplate redis,
+    public SensitiveIdempotency(IdempotencyService idempotencyService,
+                                StringRedisTemplate stringRedisTemplate,
                                 ObjectMapper objectMapper,
                                 PlatformTransactionManager transactionManager,
                                 SensitiveIdempotencyProperties properties) {
-        this.idempotency = idempotency;
-        this.redis = redis;
+        this.idempotencyService = idempotencyService;
+        this.stringRedisTemplate = stringRedisTemplate;
         this.objectMapper = objectMapper;
         this.transaction = new TransactionTemplate(transactionManager);
         this.replayTtl = properties.sensitiveReplayTtl();
@@ -76,7 +76,7 @@ public class SensitiveIdempotency {
                             Function<S, ApiErrorDetails> expiredDetails,
                             Consumer<T> replayGuard) {
         return transaction.execute(status -> {
-            Optional<StoredResponse> replayed = idempotency.claim(scope, key, fingerprint);
+            Optional<StoredResponse> replayed = idempotencyService.claim(scope, key, fingerprint);
             if (replayed.isPresent()) {
                 T full = readReplay(scope, key, resultType).orElseThrow(() -> new BusinessException(
                         ErrorCode.SENSITIVE_RESULT_EXPIRED,
@@ -85,7 +85,7 @@ public class SensitiveIdempotency {
                 return full;
             }
             T result = action.get();
-            idempotency.record(scope, key, httpStatus, snapshot.apply(result));
+            idempotencyService.record(scope, key, httpStatus, snapshot.apply(result));
             String json = objectMapper.writeValueAsString(result);
             AfterCommit.run("sensitive-replay", () -> writeReplay(scope, key, json));
             return result;
@@ -103,7 +103,7 @@ public class SensitiveIdempotency {
     private <T> Optional<T> readReplay(IdempotencyScope scope, String key, Class<T> type) {
         String json;
         try {
-            json = redis.opsForValue().get(redisKey(scope, key));
+            json = stringRedisTemplate.opsForValue().get(redisKey(scope, key));
         } catch (DataAccessException e) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "缓存暂不可用", e);
         }
@@ -112,7 +112,7 @@ public class SensitiveIdempotency {
 
     private void writeReplay(IdempotencyScope scope, String key, String json) {
         try {
-            redis.opsForValue().set(redisKey(scope, key), json, replayTtl);
+            stringRedisTemplate.opsForValue().set(redisKey(scope, key), json, replayTtl);
         } catch (DataAccessException e) {
             // 首次结果照常返回；只是之后的重放会得到 SENSITIVE_RESULT_EXPIRED
             log.error("敏感结果重放缓存写入失败 scope={} cause={}", scope.value(), e.getClass().getSimpleName());

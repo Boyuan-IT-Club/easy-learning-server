@@ -27,11 +27,11 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class IdempotencyService {
 
-    private final IdempotencyRecordMapper mapper;
+    private final IdempotencyRecordMapper idempotencyRecordMapper;
     private final ObjectMapper objectMapper;
 
-    public IdempotencyService(IdempotencyRecordMapper mapper, ObjectMapper objectMapper) {
-        this.mapper = mapper;
+    public IdempotencyService(IdempotencyRecordMapper idempotencyRecordMapper, ObjectMapper objectMapper) {
+        this.idempotencyRecordMapper = idempotencyRecordMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -43,16 +43,16 @@ public class IdempotencyService {
      */
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<StoredResponse> claim(IdempotencyScope scope, String key, String inputFingerprint) {
-        IdempotencyRecord existing = mapper.find(scope.value(), key);
+        IdempotencyRecord existing = idempotencyRecordMapper.find(scope.value(), key);
         if (existing != null) {
             return Optional.of(replay(scope, key, existing, inputFingerprint));
         }
 
         try {
-            mapper.insert(IdempotencyRecord.claimed(scope.value(), key, inputFingerprint));
+            idempotencyRecordMapper.insert(IdempotencyRecord.claimed(scope.value(), key, inputFingerprint));
         } catch (DuplicateKeyException e) {
             // 并发同键：对方先占了位。它的占用与响应同事务提交，所以等它提交后按当前读取回胜者。
-            IdempotencyRecord winner = mapper.findForUpdate(scope.value(), key);
+            IdempotencyRecord winner = idempotencyRecordMapper.findForUpdate(scope.value(), key);
             if (winner == null) {
                 throw e;
             }
@@ -71,7 +71,7 @@ public class IdempotencyService {
      * @throws BusinessException 该键已存在但输入不同
      */
     public Optional<StoredResponse> peek(IdempotencyScope scope, String key, String inputFingerprint) {
-        IdempotencyRecord existing = mapper.find(scope.value(), key);
+        IdempotencyRecord existing = idempotencyRecordMapper.find(scope.value(), key);
         return existing == null
                 ? Optional.empty()
                 : Optional.of(replay(scope, key, existing, inputFingerprint));
@@ -89,7 +89,7 @@ public class IdempotencyService {
     public String record(IdempotencyScope scope, String key, int httpStatus, Object snapshot) {
         // Jackson 3 的 JacksonException 是非受检异常：快照不可序列化属于编程错误，直接上抛由兜底处理器记堆栈。
         String body = objectMapper.writeValueAsString(snapshot);
-        int updated = mapper.completeResponse(scope.value(), key, httpStatus, body);
+        int updated = idempotencyRecordMapper.completeResponse(scope.value(), key, httpStatus, body);
         if (updated != 1) {
             throw new IllegalStateException(
                     "幂等记录回填失败：占用行不存在 scope=" + scope.value() + " key=" + key);

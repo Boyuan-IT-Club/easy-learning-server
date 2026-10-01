@@ -20,38 +20,38 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
 @Service
 public class TokenServiceImpl implements TokenService {
 
-    private final RedisTokenStore store;
-    private final AuthProperties properties;
+    private final RedisTokenStore redisTokenStore;
+    private final AuthProperties authProperties;
     private final Clock clock;
 
-    public TokenServiceImpl(RedisTokenStore store, AuthProperties properties, Clock clock) {
-        this.store = store;
-        this.properties = properties;
+    public TokenServiceImpl(RedisTokenStore redisTokenStore, AuthProperties authProperties, Clock clock) {
+        this.redisTokenStore = redisTokenStore;
+        this.authProperties = authProperties;
         this.clock = clock;
     }
 
     @Override
     public TeacherTokens issueTeacher(int userId) {
-        IssuedToken access = issue(TokenType.ACCESS, clock.instant().plus(properties.accessTokenTtl()));
+        IssuedToken access = issue(TokenType.ACCESS, clock.instant().plus(authProperties.accessTokenTtl()));
         IssuedToken refresh = issue(TokenType.REFRESH, null);
         RedisTokenStore.TeacherGrant grant = new RedisTokenStore.TeacherGrant(userId, access.expiresAt());
-        AfterCommit.run("save-teacher-access", () -> store.saveTeacher(access.hash(), grant,
-                properties.accessTokenTtl().plus(properties.expiredRetention())));
+        AfterCommit.run("save-teacher-access", () -> redisTokenStore.saveTeacher(access.hash(), grant,
+                authProperties.accessTokenTtl().plus(authProperties.expiredRetention())));
         return new TeacherTokens(access, refresh);
     }
 
     @Override
     public IssuedToken issueAdmin(int adminId) {
-        IssuedToken token = issue(TokenType.ADMIN, clock.instant().plus(properties.adminTokenTtl()));
+        IssuedToken token = issue(TokenType.ADMIN, clock.instant().plus(authProperties.adminTokenTtl()));
         RedisTokenStore.AdminGrant grant = new RedisTokenStore.AdminGrant(adminId, token.expiresAt());
-        AfterCommit.run("save-admin-token", () -> store.saveAdmin(token.hash(), grant,
-                properties.adminTokenTtl().plus(properties.expiredRetention())));
+        AfterCommit.run("save-admin-token", () -> redisTokenStore.saveAdmin(token.hash(), grant,
+                authProperties.adminTokenTtl().plus(authProperties.expiredRetention())));
         return token;
     }
 
     @Override
     public int requireTeacher(String token) {
-        RedisTokenStore.TeacherGrant grant = store.findTeacher(Tokens.sha256Hex(token))
+        RedisTokenStore.TeacherGrant grant = redisTokenStore.findTeacher(Tokens.sha256Hex(token))
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
         ensureNotExpired(grant.expiresAt());
         return grant.userId();
@@ -59,7 +59,7 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public int requireAdmin(String token) {
-        RedisTokenStore.AdminGrant grant = store.findAdmin(Tokens.sha256Hex(token))
+        RedisTokenStore.AdminGrant grant = redisTokenStore.findAdmin(Tokens.sha256Hex(token))
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
         ensureNotExpired(grant.expiresAt());
         return grant.adminId();
@@ -67,7 +67,7 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public void revokeAdminAfterCommit(int adminId) {
-        AfterCommit.run("revoke-admin", () -> store.deleteAllForAdmin(adminId));
+        AfterCommit.run("revoke-admin", () -> redisTokenStore.deleteAllForAdmin(adminId));
     }
 
     private IssuedToken issue(TokenType type, Instant expiresAt) {

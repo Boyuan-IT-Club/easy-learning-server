@@ -21,11 +21,11 @@ public class RefreshGraceStore {
 
     private static final String KEY = "el:auth:rt-grace:";
 
-    private final StringRedisTemplate redis;
+    private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    public RefreshGraceStore(StringRedisTemplate redis, ObjectMapper objectMapper) {
-        this.redis = redis;
+    public RefreshGraceStore(StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
+        this.stringRedisTemplate = stringRedisTemplate;
         this.objectMapper = objectMapper;
     }
 
@@ -33,7 +33,7 @@ public class RefreshGraceStore {
     public void remember(String oldRefreshHash, RefreshGrace grace) {
         String json = objectMapper.writeValueAsString(grace);
         try {
-            redis.opsForValue().set(KEY + oldRefreshHash, json, RefreshGrace.WINDOW);
+            stringRedisTemplate.opsForValue().set(KEY + oldRefreshHash, json, RefreshGrace.WINDOW);
         } catch (DataAccessException e) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "鉴权存储暂不可用", e);
         }
@@ -42,7 +42,7 @@ public class RefreshGraceStore {
     public Optional<RefreshGrace> find(String oldRefreshHash) {
         String json;
         try {
-            json = redis.opsForValue().get(KEY + oldRefreshHash);
+            json = stringRedisTemplate.opsForValue().get(KEY + oldRefreshHash);
         } catch (DataAccessException e) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "鉴权存储暂不可用", e);
         }

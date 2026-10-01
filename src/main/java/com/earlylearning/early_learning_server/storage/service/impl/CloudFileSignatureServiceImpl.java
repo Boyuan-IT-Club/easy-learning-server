@@ -29,12 +29,12 @@ public class CloudFileSignatureServiceImpl implements CloudFileSignatureService 
     /** 云端编号的命名空间。{@code LF_} 是平板本地自产文件，云端不存在，契约明令不可请求。 */
     private static final String CLOUD_CODE_PREFIX = "CF_";
 
-    private final CloudFileMapper mapper;
-    private final ObjectStorageService storage;
+    private final CloudFileMapper cloudFileMapper;
+    private final ObjectStorageService objectStorageService;
 
-    public CloudFileSignatureServiceImpl(CloudFileMapper mapper, ObjectStorageService storage) {
-        this.mapper = mapper;
-        this.storage = storage;
+    public CloudFileSignatureServiceImpl(CloudFileMapper cloudFileMapper, ObjectStorageService objectStorageService) {
+        this.cloudFileMapper = cloudFileMapper;
+        this.objectStorageService = objectStorageService;
     }
 
     @Override
@@ -86,7 +86,7 @@ public class CloudFileSignatureServiceImpl implements CloudFileSignatureService 
         if (fileCodes.isEmpty()) {
             return byCode;
         }
-        for (CloudFile file : mapper.selectList(
+        for (CloudFile file : cloudFileMapper.selectList(
                 new QueryWrapper<CloudFile>().in("file_code", fileCodes))) {
             byCode.put(file.getFileCode(), file);
         }
@@ -116,7 +116,7 @@ public class CloudFileSignatureServiceImpl implements CloudFileSignatureService 
     }
 
     private DownloadSignature signOne(CloudFile file) {
-        ObjectStorageService.DownloadUrl signed = storage.generateDownloadUrl(file.getObjectKey());
+        ObjectStorageService.DownloadUrl signed = objectStorageService.generateDownloadUrl(file.getObjectKey());
         return new DownloadSignature(
                 file.getFileCode(),
                 signed.url().toString(),

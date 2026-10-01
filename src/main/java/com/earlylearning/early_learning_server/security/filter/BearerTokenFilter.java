@@ -44,18 +44,18 @@ public final class BearerTokenFilter extends OncePerRequestFilter {
 
     private final Map<TokenType, BearerAuthenticator> authenticators = new EnumMap<>(TokenType.class);
     private final RequestMatcher publicEndpoints;
-    private final SecurityErrorWriter errorWriter;
+    private final SecurityErrorWriter securityErrorWriter;
 
     public BearerTokenFilter(List<BearerAuthenticator> authenticators,
                              RequestMatcher publicEndpoints,
-                             SecurityErrorWriter errorWriter) {
+                             SecurityErrorWriter securityErrorWriter) {
         for (BearerAuthenticator authenticator : authenticators) {
             if (this.authenticators.put(authenticator.type(), authenticator) != null) {
                 throw new IllegalStateException("同一种 Token 有多个认证实现: " + authenticator.type());
             }
         }
         this.publicEndpoints = publicEndpoints;
-        this.errorWriter = errorWriter;
+        this.securityErrorWriter = securityErrorWriter;
     }
 
     @Override
@@ -75,7 +75,7 @@ public final class BearerTokenFilter extends OncePerRequestFilter {
         String token = header.substring(BEARER.length()).trim();
         Optional<BearerAuthenticator> authenticator = TokenType.of(token).map(authenticators::get);
         if (authenticator.isEmpty()) {
-            errorWriter.write(response, ErrorCode.TOKEN_INVALID);
+            securityErrorWriter.write(response, ErrorCode.TOKEN_INVALID);
             return;
         }
 
@@ -83,7 +83,7 @@ public final class BearerTokenFilter extends OncePerRequestFilter {
         try {
             principal = authenticator.get().authenticate(token);
         } catch (BusinessException e) {
-            errorWriter.write(response, e);
+            securityErrorWriter.write(response, e);
             return;
         }
 

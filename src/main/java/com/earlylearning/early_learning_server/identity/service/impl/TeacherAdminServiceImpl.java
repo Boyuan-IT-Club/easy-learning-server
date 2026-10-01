@@ -1,5 +1,6 @@
 package com.earlylearning.early_learning_server.identity.service.impl;
 
+import java.util.List;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
@@ -20,12 +21,12 @@ import com.earlylearning.early_learning_server.identity.service.TeacherAdminServ
 @Service
 public class TeacherAdminServiceImpl implements TeacherAdminService {
 
-    private final TeacherAccountMapper teachers;
-    private final LicenseMapper licenses;
+    private final TeacherAccountMapper teacherAccountMapper;
+    private final LicenseMapper licenseMapper;
 
-    public TeacherAdminServiceImpl(TeacherAccountMapper teachers, LicenseMapper licenses) {
-        this.teachers = teachers;
-        this.licenses = licenses;
+    public TeacherAdminServiceImpl(TeacherAccountMapper teacherAccountMapper, LicenseMapper licenseMapper) {
+        this.teacherAccountMapper = teacherAccountMapper;
+        this.licenseMapper = licenseMapper;
     }
 
     @Override
@@ -33,14 +34,15 @@ public class TeacherAdminServiceImpl implements TeacherAdminService {
         String pattern = username == null || username.isEmpty()
                 ? null : PageQuery.containsPattern(username.toLowerCase(Locale.ROOT));
         Integer statusValue = status == null ? null : status.value();
-        return PageResponse.of(page, teachers.selectPage(pattern, statusValue, page.pageSize(), page.offset()),
-                teachers.countMatching(pattern, statusValue), UserAccountResponse::from);
+        List<TeacherAccount> rows = teacherAccountMapper.selectPage(pattern, statusValue, page.pageSize(), page.offset());
+        return PageResponse.of(page, rows, teacherAccountMapper.countMatching(pattern, statusValue),
+                UserAccountResponse::from);
     }
 
     @Override
     @Transactional
     public UserAccountResponse updateStatus(int id, TeacherStatus target) {
-        TeacherAccount account = teachers.selectForUpdate(id);
+        TeacherAccount account = teacherAccountMapper.selectForUpdate(id);
         if (account == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
@@ -48,9 +50,9 @@ public class TeacherAdminServiceImpl implements TeacherAdminService {
             return UserAccountResponse.from(account);
         }
         if (target == TeacherStatus.ENABLED) {
-            account.ensureCanEnable(licenses.selectByUserId(id));
+            account.ensureCanEnable(licenseMapper.selectByUserId(id));
         }
-        teachers.updateStatus(id, target.value());
+        teacherAccountMapper.updateStatus(id, target.value());
         account.setStatus(target);
         return UserAccountResponse.from(account);
     }

@@ -41,10 +41,10 @@ public class MaterialZipReader {
     private static final String NAME_PATTERN = "^(?!\\.{1,2}$)[^<>:\"/\\\\|?*\\x00-\\x1F\\x7F]+$";
     private static final int MAX_NAME_LENGTH = 128;
 
-    private final MaterialPublishLimits limits;
+    private final MaterialPublishLimits materialPublishLimits;
 
-    public MaterialZipReader(MaterialPublishLimits limits) {
-        this.limits = limits;
+    public MaterialZipReader(MaterialPublishLimits materialPublishLimits) {
+        this.materialPublishLimits = materialPublishLimits;
     }
 
     /**
@@ -71,9 +71,9 @@ public class MaterialZipReader {
                             "包内文件名忽略大小写不得重复",
                             new ApiErrorDetails(null, null, null, null, null, null, name));
                 }
-                if (namesByLower.size() > limits.maxFileCount()) {
+                if (namesByLower.size() > materialPublishLimits.maxFileCount()) {
                     throw new BusinessException(ErrorCode.INVALID_REQUEST,
-                            "包内文件数超过上限 " + limits.maxFileCount());
+                            "包内文件数超过上限 " + materialPublishLimits.maxFileCount());
                 }
                 if (CONFIG_ENTRY_NAME.equals(name)) {
                     configJson = zip.getInputStream(entry).readAllBytes();
@@ -84,10 +84,10 @@ public class MaterialZipReader {
                     totalUncompressed += size;
                     spooled.add(new ZipPackage.PackagedFile(name, staged, size));
                 }
-                if (totalUncompressed > limits.maxUncompressedBytes()) {
+                if (totalUncompressed > materialPublishLimits.maxUncompressedBytes()) {
                     throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE, null,
                             ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES,
-                                    limits.maxUncompressedBytes()));
+                                    materialPublishLimits.maxUncompressedBytes()));
                 }
             }
 

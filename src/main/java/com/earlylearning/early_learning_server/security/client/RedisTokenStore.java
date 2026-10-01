@@ -38,11 +38,11 @@ public class RedisTokenStore {
     private static final String ADMIN_KEY = "el:auth:adt:";
     private static final String ADMIN_INDEX = "el:auth:adt-admin:";
 
-    private final StringRedisTemplate redis;
+    private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    public RedisTokenStore(StringRedisTemplate redis, ObjectMapper objectMapper) {
-        this.redis = redis;
+    public RedisTokenStore(StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
+        this.stringRedisTemplate = stringRedisTemplate;
         this.objectMapper = objectMapper;
     }
 
@@ -55,7 +55,7 @@ public class RedisTokenStore {
     public void saveTeacher(String hash, TeacherGrant grant, Duration keyTtl) {
         String json = objectMapper.writeValueAsString(grant);
         call(() -> {
-            redis.opsForValue().set(TEACHER_KEY + hash, json, keyTtl);
+            stringRedisTemplate.opsForValue().set(TEACHER_KEY + hash, json, keyTtl);
             return null;
         });
     }
@@ -68,10 +68,10 @@ public class RedisTokenStore {
         String json = objectMapper.writeValueAsString(grant);
         String index = ADMIN_INDEX + grant.adminId();
         call(() -> {
-            redis.opsForValue().set(ADMIN_KEY + hash, json, keyTtl);
-            redis.opsForSet().add(index, hash);
+            stringRedisTemplate.opsForValue().set(ADMIN_KEY + hash, json, keyTtl);
+            stringRedisTemplate.opsForSet().add(index, hash);
             // 索引跟着最新一枚 Token 续期；已过期的成员删除时找不到对应键，无害
-            redis.expire(index, keyTtl);
+            stringRedisTemplate.expire(index, keyTtl);
             return null;
         });
     }
@@ -83,19 +83,19 @@ public class RedisTokenStore {
     public void deleteAllForAdmin(int adminId) {
         String index = ADMIN_INDEX + adminId;
         call(() -> {
-            Set<String> hashes = redis.opsForSet().members(index);
+            Set<String> hashes = stringRedisTemplate.opsForSet().members(index);
             if (hashes != null && !hashes.isEmpty()) {
                 List<String> keys = new ArrayList<>();
                 hashes.forEach(hash -> keys.add(ADMIN_KEY + hash));
-                redis.delete(keys);
+                stringRedisTemplate.delete(keys);
             }
-            redis.delete(index);
+            stringRedisTemplate.delete(index);
             return null;
         });
     }
 
     private <T> Optional<T> read(String key, Class<T> type) {
-        String json = call(() -> redis.opsForValue().get(key));
+        String json = call(() -> stringRedisTemplate.opsForValue().get(key));
         return json == null ? Optional.empty() : Optional.of(objectMapper.readValue(json, type));
     }
 

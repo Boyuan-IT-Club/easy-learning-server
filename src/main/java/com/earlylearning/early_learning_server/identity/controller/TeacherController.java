@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,27 +18,28 @@ import com.earlylearning.early_learning_server.identity.service.TeacherAdminServ
 
 /** 教师云端账号管理（契约 listTeachers、updateTeacherStatus）。权限：管理员。 */
 @RestController
+@RequestMapping("/admin/users")
 public class TeacherController {
 
-    private final TeacherAdminService adminService;
+    private final TeacherAdminService teacherAdminService;
 
-    public TeacherController(TeacherAdminService adminService) {
-        this.adminService = adminService;
+    public TeacherController(TeacherAdminService teacherAdminService) {
+        this.teacherAdminService = teacherAdminService;
     }
 
-    @GetMapping("/admin/users")
+    @GetMapping
     public ApiResponse<PageResponse<UserAccountResponse>> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) Integer status) {
         TeacherStatus filter = status == null ? null : TeacherStatus.of(status, "/parameters/status");
-        return ApiResponse.ok(adminService.list(PageQuery.of(page, pageSize), username, filter));
+        return ApiResponse.ok(teacherAdminService.list(PageQuery.of(page, pageSize), username, filter));
     }
 
-    @PatchMapping("/admin/users/{id}/status")
+    @PatchMapping("/{id}/status")
     public ApiResponse<UserAccountResponse> updateStatus(@PathVariable int id,
                                                          @RequestBody UpdateTeacherStatusRequest request) {
-        return ApiResponse.ok(adminService.updateStatus(id, TeacherStatus.of(request.status(), "/status")));
+        return ApiResponse.ok(teacherAdminService.updateStatus(id, TeacherStatus.of(request.status(), "/status")));
     }
 }

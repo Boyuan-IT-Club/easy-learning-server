@@ -28,22 +28,22 @@ public class AiTranscriptionServiceImpl implements AiTranscriptionService {
 
     private static final String CONTEXT_FIELD_PREFIX = "/context/";
 
-    private final AiTaskSubmission submission;
-    private final AiTaskRunner runner;
-    private final SpeechTranscriber transcriber;
+    private final AiTaskSubmission aiTaskSubmission;
+    private final AiTaskRunner aiTaskRunner;
+    private final SpeechTranscriber speechTranscriber;
 
-    public AiTranscriptionServiceImpl(AiTaskSubmission submission,
-                                      AiTaskRunner runner,
-                                      SpeechTranscriber transcriber) {
-        this.submission = submission;
-        this.runner = runner;
-        this.transcriber = transcriber;
+    public AiTranscriptionServiceImpl(AiTaskSubmission aiTaskSubmission,
+                                      AiTaskRunner aiTaskRunner,
+                                      SpeechTranscriber speechTranscriber) {
+        this.aiTaskSubmission = aiTaskSubmission;
+        this.aiTaskRunner = aiTaskRunner;
+        this.speechTranscriber = speechTranscriber;
     }
 
     @Override
     public AiTask submit(byte[] audio, String mimeType, TranscriptionCommand command, int retryAttempt) {
         requireValidContext(command);
-        return submission.submitAndRun(command.requestId(), fingerprintOf(command, audio), retryAttempt,
+        return aiTaskSubmission.submitAndRun(command.requestId(), fingerprintOf(command, audio), retryAttempt,
                 () -> newTask(command),
                 task -> runTranscription(task, audio, mimeType));
     }
@@ -63,8 +63,8 @@ public class AiTranscriptionServiceImpl implements AiTranscriptionService {
     }
 
     private AiTask runTranscription(AiTask task, byte[] audio, String mimeType) {
-        runner.run(task, TaskStage.TRANSCRIBING, FailedStage.TRANSCRIBE, TaskFailureCode.ASR_FAILED,
-                () -> new TranscriptionResult(transcriber.transcribe(audio, mimeType)));
+        aiTaskRunner.run(task, TaskStage.TRANSCRIBING, FailedStage.TRANSCRIBE, TaskFailureCode.ASR_FAILED,
+                () -> new TranscriptionResult(speechTranscriber.transcribe(audio, mimeType)));
         return task;
     }
 

@@ -71,35 +71,35 @@ public class CloudFileServiceImpl implements CloudFileService {
 
     private static final int MAX_DISPLAY_NAME_LENGTH = 255;
 
-    private final CloudFileMapper mapper;
-    private final ObjectStorageService storage;
-    private final IdempotencyService idempotency;
+    private final CloudFileMapper cloudFileMapper;
+    private final ObjectStorageService objectStorageService;
+    private final IdempotencyService idempotencyService;
     private final MediaTypeDetector mediaTypeDetector;
     private final AudioDurationReader audioDurationReader;
-    private final CloudFileCodeGenerator codeGenerator;
+    private final CloudFileCodeGenerator cloudFileCodeGenerator;
     private final ObjectKeyGenerator objectKeyGenerator;
-    private final UploadLimits limits;
+    private final UploadLimits uploadLimits;
     private final TransactionTemplate transaction;
     private final ObjectMapper objectMapper;
 
-    public CloudFileServiceImpl(CloudFileMapper mapper,
-                                ObjectStorageService storage,
-                                IdempotencyService idempotency,
+    public CloudFileServiceImpl(CloudFileMapper cloudFileMapper,
+                                ObjectStorageService objectStorageService,
+                                IdempotencyService idempotencyService,
                                 MediaTypeDetector mediaTypeDetector,
                                 AudioDurationReader audioDurationReader,
-                                CloudFileCodeGenerator codeGenerator,
+                                CloudFileCodeGenerator cloudFileCodeGenerator,
                                 ObjectKeyGenerator objectKeyGenerator,
-                                UploadLimits limits,
+                                UploadLimits uploadLimits,
                                 org.springframework.transaction.PlatformTransactionManager transactionManager,
                                 ObjectMapper objectMapper) {
-        this.mapper = mapper;
-        this.storage = storage;
-        this.idempotency = idempotency;
+        this.cloudFileMapper = cloudFileMapper;
+        this.objectStorageService = objectStorageService;
+        this.idempotencyService = idempotencyService;
         this.mediaTypeDetector = mediaTypeDetector;
         this.audioDurationReader = audioDurationReader;
-        this.codeGenerator = codeGenerator;
+        this.cloudFileCodeGenerator = cloudFileCodeGenerator;
         this.objectKeyGenerator = objectKeyGenerator;
-        this.limits = limits;
+        this.uploadLimits = uploadLimits;
         this.transaction = new TransactionTemplate(transactionManager);
         this.objectMapper = objectMapper;
     }
@@ -114,10 +114,10 @@ public class CloudFileServiceImpl implements CloudFileService {
         if (size <= 0) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        if (size > limits.maxSizeBytes()) {
+        if (size > uploadLimits.maxSizeBytes()) {
             // 只给 details、不自定义 message：错误码自带的说明（"文件/音频/图片超出部署允许上限"）就是契约要的措辞。
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE, null,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxSizeBytes()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, uploadLimits.maxSizeBytes()));
         }
 
         Path staged = null;
@@ -134,7 +134,7 @@ public class CloudFileServiceImpl implements CloudFileService {
             String sha256 = sha256Hex(staged);
             String fingerprint = InputFingerprint.of(sha256, displayName, declaredKind.name());
 
-            Optional<StoredResponse> replayed = idempotency.peek(SCOPE, idempotencyKey, fingerprint);
+            Optional<StoredResponse> replayed = idempotencyService.peek(SCOPE, idempotencyKey, fingerprint);
             if (replayed.isPresent()) {
                 return fromSnapshot(replayed.get().body());
             }
@@ -145,22 +145,22 @@ public class CloudFileServiceImpl implements CloudFileService {
                     : null;
 
             try (InputStream content = Files.newInputStream(staged)) {
-                storage.upload(objectKey, content, size, detectedMime);
+                objectStorageService.upload(objectKey, content, size, detectedMime);
             }
 
             AtomicBoolean rowWritten = new AtomicBoolean(false);
             try {
                 CloudFile stored = transaction.execute(status -> {
-                    Optional<StoredResponse> claimed = idempotency.claim(SCOPE, idempotencyKey, fingerprint);
+                    Optional<StoredResponse> claimed = idempotencyService.claim(SCOPE, idempotencyKey, fingerprint);
                     if (claimed.isPresent()) {
                         return fromSnapshot(claimed.get().body());
                     }
-                    CloudFile entity = newFile(codeGenerator.next(), objectKey, declaredKind,
+                    CloudFile entity = newFile(cloudFileCodeGenerator.next(), objectKey, declaredKind,
                             displayName, detectedMime, size, durationMs, sha256);
-                    mapper.insert(entity);
+                    cloudFileMapper.insert(entity);
                     rowWritten.set(true);
-                    CloudFile saved = mapper.selectById(entity.getId());
-                    idempotency.record(SCOPE, idempotencyKey, 201, saved);
+                    CloudFile saved = cloudFileMapper.selectById(entity.getId());
+                    idempotencyService.record(SCOPE, idempotencyKey, 201, saved);
                     return saved;
                 });
                 if (!rowWritten.get()) {
@@ -268,7 +268,7 @@ public class CloudFileServiceImpl implements CloudFileService {
      */
     private void deleteUploadedObject(String objectKey, RuntimeException primaryFailure) {
         try {
-            storage.delete(objectKey);
+            objectStorageService.delete(objectKey);
         } catch (RuntimeException compensationFailure) {
             log.error("补偿删除失败，对象成为孤儿 objectKey={}，需人工清理", objectKey, compensationFailure);
             if (primaryFailure == null) {

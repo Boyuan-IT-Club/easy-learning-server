@@ -16,25 +16,26 @@ public class AdminBootstrap implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
-    private final AdminAccountService accounts;
-    private final AdminBootstrapProperties properties;
+    private final AdminAccountService adminAccountService;
+    private final AdminBootstrapProperties adminBootstrapProperties;
 
-    public AdminBootstrap(AdminAccountService accounts, AdminBootstrapProperties properties) {
-        this.accounts = accounts;
-        this.properties = properties;
+    public AdminBootstrap(AdminAccountService adminAccountService, AdminBootstrapProperties adminBootstrapProperties) {
+        this.adminAccountService = adminAccountService;
+        this.adminBootstrapProperties = adminBootstrapProperties;
     }
 
     @Override
     public void run(ApplicationArguments args) {
-        if (accounts.anyExists()) {
+        if (adminAccountService.anyExists()) {
             return;
         }
-        if (!properties.configured()) {
+        if (!adminBootstrapProperties.configured()) {
             log.warn("尚无管理员，且未配置 ADMIN_BOOTSTRAP_USERNAME / ADMIN_BOOTSTRAP_PASSWORD，管理端暂无法登录");
             return;
         }
         try {
-            AdminAccountResponse created = accounts.bootstrap(properties.username(), properties.password());
+            AdminAccountResponse created = adminAccountService.bootstrap(adminBootstrapProperties.username(),
+                    adminBootstrapProperties.password());
             log.info("已初始化首个管理员 id={} username={}", created.id(), created.username());
         } catch (BusinessException e) {
             // 多实例同时启动时，另一个实例可能已经建好；配置不合法时也只告警，不阻止启动

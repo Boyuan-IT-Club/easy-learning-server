@@ -28,10 +28,10 @@ public class AiTaskSubmission {
     /** 首次提交的序号。三个提交服务共用，写在这里避免各自再抄一份。 */
     public static final int FIRST_ATTEMPT = 0;
 
-    private final AiTaskStore store;
+    private final AiTaskStore aiTaskStore;
 
-    public AiTaskSubmission(AiTaskStore store) {
-        this.store = store;
+    public AiTaskSubmission(AiTaskStore aiTaskStore) {
+        this.aiTaskStore = aiTaskStore;
     }
 
     /**
@@ -41,7 +41,7 @@ public class AiTaskSubmission {
      * @throws BusinessException 输入改变、序号不合法，或任务已被清理
      */
     public Outcome resolve(String requestId, String inputFingerprint, int retryAttempt) {
-        Optional<AiTaskStore.Submission> existing = store.findSubmission(requestId);
+        Optional<AiTaskStore.Submission> existing = aiTaskStore.findSubmission(requestId);
         if (existing.isEmpty()) {
             if (retryAttempt != FIRST_ATTEMPT) {
                 // 没有这个 request_id 的历史，却报了非 0 的序号——跳号
@@ -54,7 +54,7 @@ public class AiTaskSubmission {
         if (!submission.inputFingerprint().equals(inputFingerprint)) {
             throw new BusinessException(ErrorCode.IDEMPOTENCY_CONFLICT);
         }
-        AiTask task = store.find(submission.taskId());
+        AiTask task = aiTaskStore.find(submission.taskId());
         if (task == null) {
             throw new BusinessException(ErrorCode.TASK_NOT_FOUND);
         }
@@ -89,8 +89,8 @@ public class AiTaskSubmission {
             return outcome;
         }
         AiTask task = newTask.get();
-        store.save(task);
-        store.rememberSubmission(requestId, task.getTaskId(), inputFingerprint);
+        aiTaskStore.save(task);
+        aiTaskStore.rememberSubmission(requestId, task.getTaskId(), inputFingerprint);
         return new Outcome(task, Action.CREATE);
     }
 

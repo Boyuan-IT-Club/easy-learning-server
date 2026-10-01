@@ -39,33 +39,33 @@ public class TeacherRegistrationServiceImpl implements TeacherRegistrationServic
     /** 同一 IP 每分钟最多 10 次注册请求。 */
     public static final RateLimitRule PER_IP = new RateLimitRule("register", Duration.ofMinutes(1), 10);
 
-    private final LicenseMapper licenses;
-    private final TeacherAccountMapper teachers;
+    private final LicenseMapper licenseMapper;
+    private final TeacherAccountMapper teacherAccountMapper;
     private final TokenService tokenService;
     private final SensitiveIdempotency sensitiveIdempotency;
-    private final SlidingWindowRateLimiter rateLimiter;
-    private final KeyedHasher hasher;
+    private final SlidingWindowRateLimiter slidingWindowRateLimiter;
+    private final KeyedHasher keyedHasher;
     private final Clock clock;
 
-    public TeacherRegistrationServiceImpl(LicenseMapper licenses,
-                                          TeacherAccountMapper teachers,
+    public TeacherRegistrationServiceImpl(LicenseMapper licenseMapper,
+                                          TeacherAccountMapper teacherAccountMapper,
                                           TokenService tokenService,
                                           SensitiveIdempotency sensitiveIdempotency,
-                                          SlidingWindowRateLimiter rateLimiter,
-                                          KeyedHasher hasher,
+                                          SlidingWindowRateLimiter slidingWindowRateLimiter,
+                                          KeyedHasher keyedHasher,
                                           Clock clock) {
-        this.licenses = licenses;
-        this.teachers = teachers;
+        this.licenseMapper = licenseMapper;
+        this.teacherAccountMapper = teacherAccountMapper;
         this.tokenService = tokenService;
         this.sensitiveIdempotency = sensitiveIdempotency;
-        this.rateLimiter = rateLimiter;
-        this.hasher = hasher;
+        this.slidingWindowRateLimiter = slidingWindowRateLimiter;
+        this.keyedHasher = keyedHasher;
         this.clock = clock;
     }
 
     @Override
     public TokenPairResponse register(String activationCode, String rawUsername, String idempotencyKey) {
-        if (!rateLimiter.tryAcquire(PER_IP, RequestOrigin.clientIp())) {
+        if (!slidingWindowRateLimiter.tryAcquire(PER_IP, RequestOrigin.clientIp())) {
             throw new BusinessException(ErrorCode.RATE_LIMITED);
         }
         if (activationCode == null || activationCode.isBlank()) {
@@ -73,7 +73,7 @@ public class TeacherRegistrationServiceImpl implements TeacherRegistrationServic
         }
         String username = Usernames.normalize(rawUsername, "/username");
         // 指纹里放码的 HMAC 而不是原码：idempotency_record 会落库
-        String fingerprint = InputFingerprint.of(hasher.hash(activationCode), username);
+        String fingerprint = InputFingerprint.of(keyedHasher.hash(activationCode), username);
         return sensitiveIdempotency.execute(IdempotencyScope.AUTH_REGISTER, idempotencyKey, fingerprint, 201,
                 TokenPairResponse.class, () -> createAccount(activationCode, username),
                 UserAccountResponse.class, TokenPairResponse::user);
@@ -81,7 +81,7 @@ public class TeacherRegistrationServiceImpl implements TeacherRegistrationServic
 
     private TokenPairResponse createAccount(String activationCode, String username) {
         // 锁码：并发注册同一个码时串行，后到者看到的已是 ACTIVE。激活码原样核对，不做规范化（契约）
-        License license = licenses.selectByHashForUpdate(hasher.hash(activationCode));
+        License license = licenseMapper.selectByHashForUpdate(keyedHasher.hash(activationCode));
         if (license == null) {
             throw new BusinessException(ErrorCode.LICENSE_UNAVAILABLE);
         }
@@ -89,29 +89,29 @@ public class TeacherRegistrationServiceImpl implements TeacherRegistrationServic
 
         TeacherAccount account = insertTeacher(username);
         license.claimBy(account.getId(), clock.instant());
-        if (licenses.markClaimed(license.getId(), account.getId(), license.getActivatedAt()) != 1) {
+        if (licenseMapper.markClaimed(license.getId(), account.getId(), license.getActivatedAt()) != 1) {
             throw new BusinessException(ErrorCode.LICENSE_UNAVAILABLE);
         }
 
         TeacherTokens tokens = tokenService.issueTeacher(account.getId());
-        teachers.updateRefreshHash(account.getId(), tokens.refresh().hash());
+        teacherAccountMapper.updateRefreshHash(account.getId(), tokens.refresh().hash());
         return TokenPairResponse.of(tokens, account);
     }
 
     /** @param username 已规范化为小写 */
     private TeacherAccount insertTeacher(String username) {
-        if (teachers.selectByUsername(username) != null) {
+        if (teacherAccountMapper.selectByUsername(username) != null) {
             throw new BusinessException(ErrorCode.USERNAME_EXISTS);
         }
         TeacherAccount account = new TeacherAccount();
         account.setUsername(username);
         account.setStatus(TeacherStatus.ENABLED);
         try {
-            teachers.insert(account);
+            teacherAccountMapper.insert(account);
         } catch (DuplicateKeyException e) {
             throw new BusinessException(ErrorCode.USERNAME_EXISTS);
         }
         // 回读一次，拿到数据库生成的 created_at
-        return teachers.selectById(account.getId());
+        return teacherAccountMapper.selectById(account.getId());
     }
 }

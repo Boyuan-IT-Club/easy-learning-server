@@ -16,10 +16,10 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
 @Service
 public class AiTaskServiceImpl implements AiTaskService {
 
-    private final AiTaskStore store;
+    private final AiTaskStore aiTaskStore;
 
-    public AiTaskServiceImpl(AiTaskStore store) {
-        this.store = store;
+    public AiTaskServiceImpl(AiTaskStore aiTaskStore) {
+        this.aiTaskStore = aiTaskStore;
     }
 
     @Override
@@ -31,7 +31,7 @@ public class AiTaskServiceImpl implements AiTaskService {
         } catch (IllegalArgumentException ex) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, ApiErrorDetails.atField("/task_id"));
         }
-        AiTask task = store.find(taskId);
+        AiTask task = aiTaskStore.find(taskId);
         if (task == null) {
             throw new BusinessException(ErrorCode.TASK_NOT_FOUND);
         }
@@ -41,7 +41,7 @@ public class AiTaskServiceImpl implements AiTaskService {
 
     @Override
     public AiTask register(AiTask task) {
-        store.save(task);
+        aiTaskStore.save(task);
         return task;
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,23 +28,24 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  * <p>权限：按教师隔离任务；本模块不校验。
  */
 @RestController
+@RequestMapping("/api/ai")
 public class AiStoryScoringController {
 
-    private final AiStoryScoringService scoringService;
-    private final StoryScoringRequestValidator requestValidator;
+    private final AiStoryScoringService aiStoryScoringService;
+    private final StoryScoringRequestValidator storyScoringRequestValidator;
 
-    public AiStoryScoringController(AiStoryScoringService scoringService,
-                                    StoryScoringRequestValidator requestValidator) {
-        this.scoringService = scoringService;
-        this.requestValidator = requestValidator;
+    public AiStoryScoringController(AiStoryScoringService aiStoryScoringService,
+                                    StoryScoringRequestValidator storyScoringRequestValidator) {
+        this.aiStoryScoringService = aiStoryScoringService;
+        this.storyScoringRequestValidator = storyScoringRequestValidator;
     }
 
-    @PostMapping("/api/ai/score")
+    @PostMapping("/score")
     public ResponseEntity<ApiResponse<TaskHandleResponse>> score(
             @RequestParam(name = "retry_attempt", defaultValue = "0") int retryAttempt,
             @RequestBody StoryScoringRequest request) {
-        requestValidator.validate(request);
-        AiTask task = scoringService.submit(toCommand(request), retryAttempt);
+        storyScoringRequestValidator.validate(request);
+        AiTask task = aiStoryScoringService.submit(toCommand(request), retryAttempt);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(TaskHandleResponse.from(task)));
     }
 

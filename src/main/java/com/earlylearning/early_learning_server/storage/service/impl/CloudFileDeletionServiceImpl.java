@@ -18,22 +18,22 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileDeletion
 @Service
 public class CloudFileDeletionServiceImpl implements CloudFileDeletionService {
 
-    private final CloudFileMapper mapper;
-    private final CloudFileQueryMapper queryMapper;
+    private final CloudFileMapper cloudFileMapper;
+    private final CloudFileQueryMapper cloudFileQueryMapper;
     private final TransactionTemplate transaction;
 
-    public CloudFileDeletionServiceImpl(CloudFileMapper mapper,
-                                        CloudFileQueryMapper queryMapper,
+    public CloudFileDeletionServiceImpl(CloudFileMapper cloudFileMapper,
+                                        CloudFileQueryMapper cloudFileQueryMapper,
                                         PlatformTransactionManager transactionManager) {
-        this.mapper = mapper;
-        this.queryMapper = queryMapper;
+        this.cloudFileMapper = cloudFileMapper;
+        this.cloudFileQueryMapper = cloudFileQueryMapper;
         this.transaction = new TransactionTemplate(transactionManager);
     }
 
     @Override
     public CloudFile markDeleted(String fileCode) {
         return transaction.execute(status -> {
-            CloudFile file = mapper.selectForUpdate(fileCode);
+            CloudFile file = cloudFileMapper.selectForUpdate(fileCode);
             if (file == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
             }
@@ -49,15 +49,15 @@ public class CloudFileDeletionServiceImpl implements CloudFileDeletionService {
                 // 到这里状态一个字节都没动过，正是契约要的"保持原状态"。
                 throw new BusinessException(ErrorCode.RESOURCE_IN_USE);
             }
-            mapper.updateStatus(file.getId(), CloudFileStatus.DELETED.value());
-            return mapper.selectById(file.getId());
+            cloudFileMapper.updateStatus(file.getId(), CloudFileStatus.DELETED.value());
+            return cloudFileMapper.selectById(file.getId());
         });
     }
 
     /** 只要有一条引用就算命中，不必数总数。 */
     private boolean isReferenced(CloudFile file) {
         List<CloudFileQueryMapper.ReferenceCount> counts =
-                queryMapper.countReferences(List.of(file.getId()));
+                cloudFileQueryMapper.countReferences(List.of(file.getId()));
         return counts.stream().anyMatch(row -> row.referenceCount() != null && row.referenceCount() > 0);
     }
 }

@@ -36,12 +36,12 @@ public class CloudFileQueryServiceImpl implements CloudFileQueryService {
      */
     private static final char LIKE_ESCAPE = '!';
 
-    private final CloudFileMapper mapper;
-    private final CloudFileQueryMapper queryMapper;
+    private final CloudFileMapper cloudFileMapper;
+    private final CloudFileQueryMapper cloudFileQueryMapper;
 
-    public CloudFileQueryServiceImpl(CloudFileMapper mapper, CloudFileQueryMapper queryMapper) {
-        this.mapper = mapper;
-        this.queryMapper = queryMapper;
+    public CloudFileQueryServiceImpl(CloudFileMapper cloudFileMapper, CloudFileQueryMapper cloudFileQueryMapper) {
+        this.cloudFileMapper = cloudFileMapper;
+        this.cloudFileQueryMapper = cloudFileQueryMapper;
     }
 
     @Override
@@ -61,9 +61,9 @@ public class CloudFileQueryServiceImpl implements CloudFileQueryService {
         // 通配符按普通字符处理：不转义的话，搜 "%" 会命中全部记录。
         String pattern = hasText(keyword) ? "%" + escapeLikeWildcards(keyword) + "%" : null;
 
-        long total = queryMapper.countMatching(normalizedCode, kindValue, statusValue, pattern);
+        long total = cloudFileQueryMapper.countMatching(normalizedCode, kindValue, statusValue, pattern);
         long offset = (long) (page - 1) * pageSize;
-        List<CloudFile> rows = queryMapper.selectPage(normalizedCode, kindValue, statusValue, pattern,
+        List<CloudFile> rows = cloudFileQueryMapper.selectPage(normalizedCode, kindValue, statusValue, pattern,
                 pageSize, offset);
 
         Map<Integer, Integer> referenceCounts = referenceCounts(rows);
@@ -80,7 +80,7 @@ public class CloudFileQueryServiceImpl implements CloudFileQueryService {
      */
     @Override
     public CloudFile requireReadable(String fileCode) {
-        CloudFile file = mapper.selectOne(new QueryWrapper<CloudFile>().eq("file_code", fileCode));
+        CloudFile file = cloudFileMapper.selectOne(new QueryWrapper<CloudFile>().eq("file_code", fileCode));
         if (file == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, ApiErrorDetails.atFile(fileCode));
         }
@@ -95,7 +95,7 @@ public class CloudFileQueryServiceImpl implements CloudFileQueryService {
 
     @Override
     public CloudFile metadata(String fileCode) {
-        CloudFile file = mapper.selectOne(new QueryWrapper<CloudFile>().eq("file_code", fileCode));
+        CloudFile file = cloudFileMapper.selectOne(new QueryWrapper<CloudFile>().eq("file_code", fileCode));
         if (file == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
@@ -115,7 +115,7 @@ public class CloudFileQueryServiceImpl implements CloudFileQueryService {
         }
         List<Integer> ids = files.stream().map(CloudFile::getId).toList();
         Map<Integer, Integer> counts = new HashMap<>();
-        for (CloudFileQueryMapper.ReferenceCount row : queryMapper.countReferences(ids)) {
+        for (CloudFileQueryMapper.ReferenceCount row : cloudFileQueryMapper.countReferences(ids)) {
             counts.put(row.id(), row.referenceCount());
         }
         return counts;

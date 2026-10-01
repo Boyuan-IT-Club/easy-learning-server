@@ -26,31 +26,31 @@ import com.earlylearning.early_learning_server.common.idempotency.InputFingerpri
 @Service
 public class AiStoryScoringServiceImpl implements AiStoryScoringService {
 
-    private final AiTaskSubmission submission;
-    private final AiTaskRunner runner;
+    private final AiTaskSubmission aiTaskSubmission;
+    private final AiTaskRunner aiTaskRunner;
     private final RubricService rubricService;
-    private final StoryScorer scorer;
+    private final StoryScorer storyScorer;
     private final ScoreValidator scoreValidator;
-    private final ScoringImageResolver imageResolver;
+    private final ScoringImageResolver scoringImageResolver;
 
-    public AiStoryScoringServiceImpl(AiTaskSubmission submission,
-                                     AiTaskRunner runner,
+    public AiStoryScoringServiceImpl(AiTaskSubmission aiTaskSubmission,
+                                     AiTaskRunner aiTaskRunner,
                                      RubricService rubricService,
-                                     StoryScorer scorer,
+                                     StoryScorer storyScorer,
                                      ScoreValidator scoreValidator,
-                                     ScoringImageResolver imageResolver) {
-        this.submission = submission;
-        this.runner = runner;
+                                     ScoringImageResolver scoringImageResolver) {
+        this.aiTaskSubmission = aiTaskSubmission;
+        this.aiTaskRunner = aiTaskRunner;
         this.rubricService = rubricService;
-        this.scorer = scorer;
+        this.storyScorer = storyScorer;
         this.scoreValidator = scoreValidator;
-        this.imageResolver = imageResolver;
+        this.scoringImageResolver = scoringImageResolver;
     }
 
     @Override
     public AiTask submit(StoryScoringCommand command, int retryAttempt) {
         String resolvedVersion = rubricService.resolveVersion(command.rubricVersion());
-        return submission.submitAndRun(command.requestId(), fingerprintOf(command), retryAttempt,
+        return aiTaskSubmission.submitAndRun(command.requestId(), fingerprintOf(command), retryAttempt,
                 () -> newTask(command, resolvedVersion),
                 // CREATE：任务创建时已写入解析好的版本，直接沿用
                 task -> runScoring(task, toInput(command), task.getRubricVersion()),
@@ -87,12 +87,12 @@ public class AiStoryScoringServiceImpl implements AiStoryScoringService {
      */
     private StoryScoringInput toInput(StoryScoringCommand command) {
         return new StoryScoringInput(command.confirmedText(), command.storyContext(),
-                command.contentItems(), imageResolver.resolve(command.images()));
+                command.contentItems(), scoringImageResolver.resolve(command.images()));
     }
 
     private AiTask runScoring(AiTask task, StoryScoringInput input, String rubricVersion) {
-        runner.run(task, TaskStage.SCORING, FailedStage.SCORE, TaskFailureCode.MODEL_OUTPUT_INVALID, () -> {
-            var score = scorer.score(input, rubricVersion);
+        aiTaskRunner.run(task, TaskStage.SCORING, FailedStage.SCORE, TaskFailureCode.MODEL_OUTPUT_INVALID, () -> {
+            var score = storyScorer.score(input, rubricVersion);
             // 模型输出必须过运行时语义校验，不合格就不能变成"成功结果"
             scoreValidator.validate(score, rubricVersion, input.confirmedText(), input.contentItems());
             return new StoryScoringResult(score);

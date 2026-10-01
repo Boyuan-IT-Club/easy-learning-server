@@ -27,11 +27,11 @@ import static com.earlylearning.early_learning_server.ai.controller.validation.R
 public class AnswerScoringRequestValidator {
 
     private final ImageContextValidator imageContextValidator;
-    private final ScoringLimits limits;
+    private final ScoringLimits scoringLimits;
 
-    public AnswerScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits limits) {
+    public AnswerScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits scoringLimits) {
         this.imageContextValidator = imageContextValidator;
-        this.limits = limits;
+        this.scoringLimits = scoringLimits;
     }
 
     public void validate(AnswerScoringRequest request) {
@@ -47,8 +47,8 @@ public class AnswerScoringRequestValidator {
         requireNotNull(request.confirmedText(), "confirmed_text");
         requireText(request.storyContext(), "story_context");
 
-        requireWithinLimit(request.confirmedText(), limits.maxTextLength());
-        requireWithinLimit(request.storyContext(), limits.maxTextLength());
+        requireWithinLimit(request.confirmedText(), scoringLimits.maxTextLength());
+        requireWithinLimit(request.storyContext(), scoringLimits.maxTextLength());
 
         validateQuestion(request.question());
 
@@ -58,9 +58,9 @@ public class AnswerScoringRequestValidator {
 
         // 契约的 required 含 images：空数组合法，但字段不能整缺
         requireNotNull(request.images(), "images");
-        if (request.images().size() > limits.maxImageCount()) {
+        if (request.images().size() > scoringLimits.maxImageCount()) {
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.IMAGE_COUNT, limits.maxImageCount()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.IMAGE_COUNT, scoringLimits.maxImageCount()));
         }
         for (int i = 0; i < request.images().size(); i++) {
             imageContextValidator.validate(request.images().get(i), "images/" + i);

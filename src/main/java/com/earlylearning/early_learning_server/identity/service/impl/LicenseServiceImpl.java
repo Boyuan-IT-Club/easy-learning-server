@@ -38,18 +38,18 @@ public class LicenseServiceImpl implements LicenseService {
     /** 80 bit 的码撞上已有哈希的概率可以忽略；重试只是为了不让极小概率变成 500。 */
     private static final int MAX_COLLISION_RETRIES = 3;
 
-    private final LicenseMapper licenses;
-    private final TeacherAccountMapper teachers;
-    private final KeyedHasher hasher;
+    private final LicenseMapper licenseMapper;
+    private final TeacherAccountMapper teacherAccountMapper;
+    private final KeyedHasher keyedHasher;
     private final SensitiveIdempotency sensitiveIdempotency;
 
-    public LicenseServiceImpl(LicenseMapper licenses,
-                              TeacherAccountMapper teachers,
-                              KeyedHasher hasher,
+    public LicenseServiceImpl(LicenseMapper licenseMapper,
+                              TeacherAccountMapper teacherAccountMapper,
+                              KeyedHasher keyedHasher,
                               SensitiveIdempotency sensitiveIdempotency) {
-        this.licenses = licenses;
-        this.teachers = teachers;
-        this.hasher = hasher;
+        this.licenseMapper = licenseMapper;
+        this.teacherAccountMapper = teacherAccountMapper;
+        this.keyedHasher = keyedHasher;
         this.sensitiveIdempotency = sensitiveIdempotency;
     }
 
@@ -68,14 +68,14 @@ public class LicenseServiceImpl implements LicenseService {
     @Override
     public PageResponse<LicenseResponse> list(PageQuery page, LicenseStatus status, Integer userId) {
         String statusValue = status == null ? null : status.name();
-        return PageResponse.of(page, licenses.selectPage(statusValue, userId, page.pageSize(), page.offset()),
-                licenses.countMatching(statusValue, userId), LicenseResponse::from);
+        return PageResponse.of(page, licenseMapper.selectPage(statusValue, userId, page.pageSize(), page.offset()),
+                licenseMapper.countMatching(statusValue, userId), LicenseResponse::from);
     }
 
     @Override
     @Transactional
     public LicenseResponse revoke(int id) {
-        License license = licenses.selectForUpdate(id);
+        License license = licenseMapper.selectForUpdate(id);
         if (license == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
@@ -83,11 +83,11 @@ public class LicenseServiceImpl implements LicenseService {
             return LicenseResponse.from(license);
         }
         boolean disableTeacher = license.revoke();
-        if (licenses.markRevoked(id) != 1) {
+        if (licenseMapper.markRevoked(id) != 1) {
             throw new IllegalStateException("撤销时激活码状态被并发修改 id=" + id);
         }
         if (disableTeacher) {
-            teachers.updateStatus(license.getUserId(), TeacherStatus.DISABLED.value());
+            teacherAccountMapper.updateStatus(license.getUserId(), TeacherStatus.DISABLED.value());
         }
         return LicenseResponse.from(license);
     }
@@ -104,10 +104,10 @@ public class LicenseServiceImpl implements LicenseService {
         for (int attempt = 0; ; attempt++) {
             String code = ActivationCodes.generate();
             License license = new License();
-            license.setActivationCodeHash(hasher.hash(code));
+            license.setActivationCodeHash(keyedHasher.hash(code));
             license.setStatus(LicenseStatus.UNUSED);
             try {
-                licenses.insert(license);
+                licenseMapper.insert(license);
                 return IssuedLicenseResponse.unused(license.getId(), code);
             } catch (DuplicateKeyException e) {
                 if (attempt >= MAX_COLLISION_RETRIES) {

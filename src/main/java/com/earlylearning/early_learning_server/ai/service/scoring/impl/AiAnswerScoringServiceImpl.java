@@ -28,31 +28,31 @@ import com.earlylearning.early_learning_server.common.idempotency.InputFingerpri
 @Service
 public class AiAnswerScoringServiceImpl implements AiAnswerScoringService {
 
-    private final AiTaskSubmission submission;
-    private final AiTaskRunner runner;
+    private final AiTaskSubmission aiTaskSubmission;
+    private final AiTaskRunner aiTaskRunner;
     private final RubricService rubricService;
-    private final AnswerScorer scorer;
-    private final QuestionScoreValidator scoreValidator;
-    private final ScoringImageResolver imageResolver;
+    private final AnswerScorer answerScorer;
+    private final QuestionScoreValidator questionScoreValidator;
+    private final ScoringImageResolver scoringImageResolver;
 
-    public AiAnswerScoringServiceImpl(AiTaskSubmission submission,
-                                      AiTaskRunner runner,
+    public AiAnswerScoringServiceImpl(AiTaskSubmission aiTaskSubmission,
+                                      AiTaskRunner aiTaskRunner,
                                       RubricService rubricService,
-                                      AnswerScorer scorer,
-                                      QuestionScoreValidator scoreValidator,
-                                      ScoringImageResolver imageResolver) {
-        this.submission = submission;
-        this.runner = runner;
+                                      AnswerScorer answerScorer,
+                                      QuestionScoreValidator questionScoreValidator,
+                                      ScoringImageResolver scoringImageResolver) {
+        this.aiTaskSubmission = aiTaskSubmission;
+        this.aiTaskRunner = aiTaskRunner;
         this.rubricService = rubricService;
-        this.scorer = scorer;
-        this.scoreValidator = scoreValidator;
-        this.imageResolver = imageResolver;
+        this.answerScorer = answerScorer;
+        this.questionScoreValidator = questionScoreValidator;
+        this.scoringImageResolver = scoringImageResolver;
     }
 
     @Override
     public AiTask submit(AnswerScoringCommand command, int retryAttempt) {
         String resolvedVersion = rubricService.resolveVersion(command.rubricVersion());
-        return submission.submitAndRun(command.requestId(), fingerprintOf(command), retryAttempt,
+        return aiTaskSubmission.submitAndRun(command.requestId(), fingerprintOf(command), retryAttempt,
                 () -> newTask(command, resolvedVersion),
                 task -> runScoring(task, toInput(command), task.getRubricVersion()),
                 // 与故事评分同一条规则：重试沿用任务记录的版本，核对不过就拒绝且不动任务状态
@@ -93,14 +93,14 @@ public class AiAnswerScoringServiceImpl implements AiAnswerScoringService {
                 command.attempt(),
                 command.confirmedText(),
                 command.storyContext(),
-                imageResolver.resolve(command.images()));
+                scoringImageResolver.resolve(command.images()));
     }
 
     private AiTask runScoring(AiTask task, AnswerScoringInput input, String rubricVersion) {
-        runner.run(task, TaskStage.SCORING, FailedStage.SCORE, TaskFailureCode.MODEL_OUTPUT_INVALID, () -> {
-            AnswerScoringOutput output = scorer.score(input, rubricVersion);
+        aiTaskRunner.run(task, TaskStage.SCORING, FailedStage.SCORE, TaskFailureCode.MODEL_OUTPUT_INVALID, () -> {
+            AnswerScoringOutput output = answerScorer.score(input, rubricVersion);
             // 模型输出必须过运行时语义校验：缺分数、分数越界、编造引文都在这里被挡下
-            scoreValidator.validate(output, rubricVersion, input.confirmedText());
+            questionScoreValidator.validate(output, rubricVersion, input.confirmedText());
             // 题号与 attempt 由服务端写入，不采信模型
             return new AnswerScoringResult(input.questionId(), input.attempt(),
                     output.score(), output.modelMeta());

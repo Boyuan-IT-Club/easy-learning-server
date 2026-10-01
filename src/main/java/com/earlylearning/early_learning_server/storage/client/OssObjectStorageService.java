@@ -24,11 +24,11 @@ import com.earlylearning.early_learning_server.storage.model.ObjectStorageServic
 public class OssObjectStorageService implements ObjectStorageService {
 
     private final OSS client;
-    private final OssProperties properties;
+    private final OssProperties ossProperties;
 
-    public OssObjectStorageService(OSS client, OssProperties properties) {
+    public OssObjectStorageService(OSS client, OssProperties ossProperties) {
         this.client = client;
-        this.properties = properties;
+        this.ossProperties = ossProperties;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class OssObjectStorageService implements ObjectStorageService {
         metadata.setContentType(contentType);
         try {
             // SDK 可以关闭包装流，但原始流始终由调用方管理。
-            client.putObject(properties.bucketName(), objectKey, StreamUtils.nonClosing(input), metadata);
+            client.putObject(ossProperties.bucketName(), objectKey, StreamUtils.nonClosing(input), metadata);
         } catch (OSSException | ClientException ex) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "Object upload failed", ex);
         }
@@ -53,7 +53,7 @@ public class OssObjectStorageService implements ObjectStorageService {
     public void delete(String objectKey) {
         Assert.hasText(objectKey, "objectKey must not be blank");
         try {
-            client.deleteObject(properties.bucketName(), objectKey);
+            client.deleteObject(ossProperties.bucketName(), objectKey);
         } catch (OSSException | ClientException ex) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "Object deletion failed", ex);
         }
@@ -62,7 +62,7 @@ public class OssObjectStorageService implements ObjectStorageService {
     @Override
     public byte[] read(String objectKey) {
         Assert.hasText(objectKey, "objectKey must not be blank");
-        try (OSSObject object = client.getObject(properties.bucketName(), objectKey)) {
+        try (OSSObject object = client.getObject(ossProperties.bucketName(), objectKey)) {
             return StreamUtils.copyToByteArray(object.getObjectContent());
         } catch (IOException ex) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "Object read failed", ex);
@@ -76,10 +76,10 @@ public class OssObjectStorageService implements ObjectStorageService {
         Assert.hasText(objectKey, "objectKey must not be blank");
         // 从同一个 Date 取回报的时刻：Date 只到毫秒，若另用 Instant.now() 计算，
         // 回报值会与真正生效的到期时刻差一个亚毫秒量级——虽然很小，但没必要存在。
-        Date expiration = Date.from(Instant.now().plusSeconds(properties.downloadUrlTtlSeconds()));
+        Date expiration = Date.from(Instant.now().plusSeconds(ossProperties.downloadUrlTtlSeconds()));
         try {
             URI url = URI.create(client.generatePresignedUrl(
-                    properties.bucketName(), objectKey, expiration).toExternalForm());
+                    ossProperties.bucketName(), objectKey, expiration).toExternalForm());
             return new DownloadUrl(url, expiration.toInstant());
         } catch (OSSException | ClientException ex) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "Download URL generation failed", ex);

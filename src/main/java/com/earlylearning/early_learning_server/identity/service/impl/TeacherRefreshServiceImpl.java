@@ -39,23 +39,23 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class TeacherRefreshServiceImpl implements TeacherRefreshService {
 
-    private final TeacherAccountMapper teachers;
-    private final LicenseMapper licenses;
+    private final TeacherAccountMapper teacherAccountMapper;
+    private final LicenseMapper licenseMapper;
     private final TokenService tokenService;
-    private final RefreshGraceStore graces;
+    private final RefreshGraceStore refreshGraceStore;
     private final SensitiveIdempotency sensitiveIdempotency;
     private final ObjectMapper objectMapper;
 
-    public TeacherRefreshServiceImpl(TeacherAccountMapper teachers,
-                                     LicenseMapper licenses,
+    public TeacherRefreshServiceImpl(TeacherAccountMapper teacherAccountMapper,
+                                     LicenseMapper licenseMapper,
                                      TokenService tokenService,
-                                     RefreshGraceStore graces,
+                                     RefreshGraceStore refreshGraceStore,
                                      SensitiveIdempotency sensitiveIdempotency,
                                      ObjectMapper objectMapper) {
-        this.teachers = teachers;
-        this.licenses = licenses;
+        this.teacherAccountMapper = teacherAccountMapper;
+        this.licenseMapper = licenseMapper;
         this.tokenService = tokenService;
-        this.graces = graces;
+        this.refreshGraceStore = refreshGraceStore;
         this.sensitiveIdempotency = sensitiveIdempotency;
         this.objectMapper = objectMapper;
     }
@@ -73,32 +73,32 @@ public class TeacherRefreshServiceImpl implements TeacherRefreshService {
     }
 
     private TokenPairResponse rotateOrReuse(String hash) {
-        TeacherAccount current = teachers.selectByRefreshHashForUpdate(hash);
+        TeacherAccount current = teacherAccountMapper.selectByRefreshHashForUpdate(hash);
         return current != null ? rotate(current, hash) : reuseWithinGrace(hash);
     }
 
     private TokenPairResponse rotate(TeacherAccount account, String oldHash) {
-        account.ensureCloudAccess(licenses.selectByUserId(account.getId()));
+        account.ensureCloudAccess(licenseMapper.selectByUserId(account.getId()));
         TeacherTokens tokens = tokenService.issueTeacher(account.getId());
-        if (teachers.rotateRefresh(account.getId(), oldHash, tokens.refresh().hash()) != 1) {
+        if (teacherAccountMapper.rotateRefresh(account.getId(), oldHash, tokens.refresh().hash()) != 1) {
             // 已持有行锁，正常不会走到这里；万一走到，按凭证失效处理，不返回未提交的结果
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
         TokenPairResponse pair = TokenPairResponse.of(tokens, account);
-        graces.remember(oldHash, new RefreshGrace(account.getId(), tokens.refresh().hash(),
+        refreshGraceStore.remember(oldHash, new RefreshGrace(account.getId(), tokens.refresh().hash(),
                 objectMapper.writeValueAsString(pair)));
         return pair;
     }
 
     private TokenPairResponse reuseWithinGrace(String oldHash) {
-        RefreshGrace grace = graces.find(oldHash)
+        RefreshGrace grace = refreshGraceStore.find(oldHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID));
         // 锁住账号再比对：与正在进行的轮换串行
-        TeacherAccount account = teachers.selectForUpdate(grace.userId());
+        TeacherAccount account = teacherAccountMapper.selectForUpdate(grace.userId());
         if (account == null || !grace.stillCurrent(account.getRefreshTokenHash())) {
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
-        account.ensureCloudAccess(licenses.selectByUserId(account.getId()));
+        account.ensureCloudAccess(licenseMapper.selectByUserId(account.getId()));
         return objectMapper.readValue(grace.pairJson(), TokenPairResponse.class);
     }
 
@@ -107,11 +107,11 @@ public class TeacherRefreshServiceImpl implements TeacherRefreshService {
      * 重放里的 refresh 已不是当前凭证（之后又轮换过）→ 结果不能再用，按敏感结果过期处理。
      */
     private void guardReplay(TokenPairResponse replayed) {
-        TeacherAccount account = teachers.selectById(replayed.user().id());
+        TeacherAccount account = teacherAccountMapper.selectById(replayed.user().id());
         if (account == null) {
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
-        account.ensureCloudAccess(licenses.selectByUserId(account.getId()));
+        account.ensureCloudAccess(licenseMapper.selectByUserId(account.getId()));
         if (!Tokens.sha256Hex(replayed.refreshToken()).equals(account.getRefreshTokenHash())) {
             throw new BusinessException(ErrorCode.SENSITIVE_RESULT_EXPIRED);
         }

@@ -1,5 +1,6 @@
 package com.earlylearning.early_learning_server.identity.service.impl;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.dao.DuplicateKeyException;
@@ -37,24 +38,24 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
     private static final IdempotencyScope CREATE = IdempotencyScope.ADMIN_ACCOUNT_CREATE;
 
-    private final AdminAccountMapper mapper;
+    private final AdminAccountMapper adminAccountMapper;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
-    private final IdempotencyService idempotency;
-    private final KeyedHasher hasher;
+    private final IdempotencyService idempotencyService;
+    private final KeyedHasher keyedHasher;
     private final ObjectMapper objectMapper;
 
-    public AdminAccountServiceImpl(AdminAccountMapper mapper,
+    public AdminAccountServiceImpl(AdminAccountMapper adminAccountMapper,
                                    PasswordEncoder passwordEncoder,
                                    TokenService tokenService,
-                                   IdempotencyService idempotency,
-                                   KeyedHasher hasher,
+                                   IdempotencyService idempotencyService,
+                                   KeyedHasher keyedHasher,
                                    ObjectMapper objectMapper) {
-        this.mapper = mapper;
+        this.adminAccountMapper = adminAccountMapper;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
-        this.idempotency = idempotency;
-        this.hasher = hasher;
+        this.idempotencyService = idempotencyService;
+        this.keyedHasher = keyedHasher;
         this.objectMapper = objectMapper;
     }
 
@@ -63,13 +64,13 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     public AdminAccountResponse create(String rawUsername, String password, String idempotencyKey) {
         String username = Usernames.normalize(rawUsername, "/username");
         AdminPasswordPolicy.require(password, "/password");
-        String fingerprint = InputFingerprint.of(username, hasher.hash(password));
-        Optional<StoredResponse> replayed = idempotency.claim(CREATE, idempotencyKey, fingerprint);
+        String fingerprint = InputFingerprint.of(username, keyedHasher.hash(password));
+        Optional<StoredResponse> replayed = idempotencyService.claim(CREATE, idempotencyKey, fingerprint);
         if (replayed.isPresent()) {
             return objectMapper.readValue(replayed.get().body(), AdminAccountResponse.class);
         }
         AdminAccountResponse created = AdminAccountResponse.from(insert(username, password));
-        idempotency.record(CREATE, idempotencyKey, 201, created);
+        idempotencyService.record(CREATE, idempotencyKey, 201, created);
         return created;
     }
 
@@ -82,15 +83,16 @@ public class AdminAccountServiceImpl implements AdminAccountService {
 
     @Override
     public boolean anyExists() {
-        return mapper.countAll() > 0;
+        return adminAccountMapper.countAll() > 0;
     }
 
     @Override
     public PageResponse<AdminAccountResponse> list(PageQuery page, String rawUsername, AdminStatus status) {
         String username = rawUsername == null ? null : Usernames.normalize(rawUsername, "/parameters/username");
         String statusValue = status == null ? null : status.name();
-        return PageResponse.of(page, mapper.selectPage(username, statusValue, page.pageSize(), page.offset()),
-                mapper.countMatching(username, statusValue), AdminAccountResponse::from);
+        List<AdminAccount> rows = adminAccountMapper.selectPage(username, statusValue, page.pageSize(), page.offset());
+        return PageResponse.of(page, rows, adminAccountMapper.countMatching(username, statusValue),
+                AdminAccountResponse::from);
     }
 
     @Override
@@ -104,28 +106,28 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         }
         AdminStatus target = rawStatus == null ? null : AdminStatus.parse(rawStatus, "/status");
 
-        AdminAccount account = mapper.selectForUpdate(id);
+        AdminAccount account = adminAccountMapper.selectForUpdate(id);
         if (account == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
         boolean revokeTokens = false;
         if (password != null) {
-            mapper.updatePassword(id, passwordEncoder.encode(password));
+            adminAccountMapper.updatePassword(id, passwordEncoder.encode(password));
             revokeTokens = true;
         }
         if (target != null && target != account.getStatus()) {
-            mapper.updateStatus(id, target.name());
+            adminAccountMapper.updateStatus(id, target.name());
             revokeTokens |= target == AdminStatus.DISABLED;
         }
         if (revokeTokens) {
             tokenService.revokeAdminAfterCommit(id);
         }
         // 回读：拿到 ON UPDATE 刷新后的 updated_at
-        return AdminAccountResponse.from(mapper.selectById(id));
+        return AdminAccountResponse.from(adminAccountMapper.selectById(id));
     }
 
     private AdminAccount insert(String username, String password) {
-        if (mapper.selectByUsername(username) != null) {
+        if (adminAccountMapper.selectByUsername(username) != null) {
             throw new BusinessException(ErrorCode.USERNAME_EXISTS);
         }
         AdminAccount account = new AdminAccount();
@@ -133,10 +135,10 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         account.setPasswordHash(passwordEncoder.encode(password));
         account.setStatus(AdminStatus.ACTIVE);
         try {
-            mapper.insert(account);
+            adminAccountMapper.insert(account);
         } catch (DuplicateKeyException e) {
             throw new BusinessException(ErrorCode.USERNAME_EXISTS);
         }
-        return mapper.selectById(account.getId());
+        return adminAccountMapper.selectById(account.getId());
     }
 }

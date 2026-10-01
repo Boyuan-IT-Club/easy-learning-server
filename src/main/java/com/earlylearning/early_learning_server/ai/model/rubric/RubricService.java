@@ -21,10 +21,10 @@ public class RubricService {
 
     private static final Logger log = LoggerFactory.getLogger(RubricService.class);
 
-    private final RubricProperties properties;
+    private final RubricProperties rubricProperties;
 
-    public RubricService(RubricProperties properties) {
-        this.properties = properties;
+    public RubricService(RubricProperties rubricProperties) {
+        this.rubricProperties = rubricProperties;
     }
 
     /**
@@ -35,7 +35,7 @@ public class RubricService {
      * @throws BusinessException 指定版本与当前版本不一致（503）
      */
     public String resolveVersion(String requestedVersion) {
-        String current = properties.version();
+        String current = rubricProperties.version();
         if (requestedVersion == null || requestedVersion.isBlank()) {
             return current;
         }
@@ -50,7 +50,7 @@ public class RubricService {
     }
 
     public String currentVersion() {
-        return properties.version();
+        return rubricProperties.version();
     }
 
     /**

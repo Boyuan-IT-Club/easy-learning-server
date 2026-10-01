@@ -39,41 +39,41 @@ public class AdminLoginServiceImpl implements AdminLoginService {
     /** 连续失败达到上限后的锁定时长。 */
     private static final Duration LOCK_DURATION = Duration.ofMinutes(15);
 
-    private final AdminAccountMapper mapper;
+    private final AdminAccountMapper adminAccountMapper;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
-    private final SlidingWindowRateLimiter rateLimiter;
-    private final FailureLockout lockout;
+    private final SlidingWindowRateLimiter slidingWindowRateLimiter;
+    private final FailureLockout failureLockout;
     private final String dummyHash;
 
-    public AdminLoginServiceImpl(AdminAccountMapper mapper,
+    public AdminLoginServiceImpl(AdminAccountMapper adminAccountMapper,
                                  PasswordEncoder passwordEncoder,
                                  TokenService tokenService,
-                                 SlidingWindowRateLimiter rateLimiter,
-                                 FailureLockout lockout) {
-        this.mapper = mapper;
+                                 SlidingWindowRateLimiter slidingWindowRateLimiter,
+                                 FailureLockout failureLockout) {
+        this.adminAccountMapper = adminAccountMapper;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
-        this.rateLimiter = rateLimiter;
-        this.lockout = lockout;
+        this.slidingWindowRateLimiter = slidingWindowRateLimiter;
+        this.failureLockout = failureLockout;
         this.dummyHash = passwordEncoder.encode("dummy-password-for-timing");
     }
 
     @Override
     public AdminSessionResponse login(String rawUsername, String password) {
-        if (!rateLimiter.tryAcquire(LOGIN_PER_IP, RequestOrigin.clientIp())) {
+        if (!slidingWindowRateLimiter.tryAcquire(LOGIN_PER_IP, RequestOrigin.clientIp())) {
             throw new BusinessException(ErrorCode.RATE_LIMITED);
         }
         String username = Usernames.normalize(rawUsername, "/username");
         AdminPasswordPolicy.require(password, "/password");
-        if (lockout.lockedFor(LOGIN_FAILURES, username).isPresent()) {
+        if (failureLockout.lockedFor(LOGIN_FAILURES, username).isPresent()) {
             throw new BusinessException(ErrorCode.RATE_LIMITED);
         }
 
-        AdminAccount account = mapper.selectByUsername(username);
+        AdminAccount account = adminAccountMapper.selectByUsername(username);
         boolean matches = passwordEncoder.matches(password, account == null ? dummyHash : account.getPasswordHash());
         if (account == null || !matches) {
-            if (lockout.recordFailure(LOGIN_FAILURES, username, LOCK_DURATION)) {
+            if (failureLockout.recordFailure(LOGIN_FAILURES, username, LOCK_DURATION)) {
                 throw new BusinessException(ErrorCode.RATE_LIMITED);
             }
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
@@ -81,7 +81,7 @@ public class AdminLoginServiceImpl implements AdminLoginService {
         if (!account.isActive()) {
             throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
         }
-        lockout.recordSuccess(LOGIN_FAILURES, username);
+        failureLockout.recordSuccess(LOGIN_FAILURES, username);
         return AdminSessionResponse.of(tokenService.issueAdmin(account.getId()), account);
     }
 }

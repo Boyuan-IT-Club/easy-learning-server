@@ -52,12 +52,12 @@ public class ChatModelAnswerScorer implements AnswerScorer {
             }
             """;
 
-    private final ChatModel chat;
-    private final RubricConfig rubric;
+    private final ChatModel chatModel;
+    private final RubricConfig rubricConfig;
 
-    public ChatModelAnswerScorer(ChatModel chat, RubricConfig rubric) {
-        this.chat = chat;
-        this.rubric = rubric;
+    public ChatModelAnswerScorer(ChatModel chatModel, RubricConfig rubricConfig) {
+        this.chatModel = chatModel;
+        this.rubricConfig = rubricConfig;
     }
 
     @Override
@@ -68,7 +68,7 @@ public class ChatModelAnswerScorer implements AnswerScorer {
                 "QuestionScore", RESPONSE_SCHEMA, imageParts(input));
 
         // 端口失败已经是 AiTaskFailedException（带失败码与可重试性），执行器认得，这里不必再翻译一次
-        ChatModel.ChatResponse response = chat.complete(request);
+        ChatModel.ChatResponse response = chatModel.complete(request);
 
         ModelOutput output = ModelJson.parse(response.content(), ModelOutput.class);
         QuestionAiScore score = new QuestionAiScore(rubricVersion, output.score(), output.maxScore(),
@@ -79,7 +79,7 @@ public class ChatModelAnswerScorer implements AnswerScorer {
 
     /** 评分标准由服务端注入；证据规则原文（UTF-16 偏移、左闭右开、不得编造）。 */
     private String systemPrompt() {
-        RubricConfig.Item item = rubric.questionReasoning();
+        RubricConfig.Item item = rubricConfig.questionReasoning();
         StringBuilder rules = new StringBuilder();
         if (item != null) {
             rules.append("评分条目：").append(item.item()).append("（").append(item.itemCode()).append("）\n");

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +36,7 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileService;
  * <p>权限：管理员凭证；本模块不校验。
  */
 @RestController
+@RequestMapping("/admin/files")
 @Validated
 public class AdminFileController {
 
@@ -56,12 +58,12 @@ public class AdminFileController {
      * <p>是标记不是物理删除：只把状态改成 {@code DELETED}，对象本身留在存储里
      * （契约：仅从未发布的孤儿对象可由后台按宽限期清理）。
      */
-    @PostMapping("/admin/files/{file_code}/delete")
+    @PostMapping("/{file_code}/delete")
     public ApiResponse<CloudFileResponse> markDeleted(@PathVariable("file_code") String fileCode) {
         return ApiResponse.ok(CloudFileResponse.from(cloudFileDeletionService.markDeleted(fileCode)));
     }
 
-    @PostMapping(path = "/admin/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<CloudFileResponse>> upload(
             @RequestHeader("Idempotency-Key") @NotBlank @Size(max = 128) String idempotencyKey,
             @RequestParam("file") MultipartFile file,
@@ -80,7 +82,7 @@ public class AdminFileController {
      *
      * <p>{@code file_code} 是精确匹配，契约用它替代单独的详情接口；{@code keyword} 对文件名与编号做包含匹配。
      */
-    @GetMapping("/admin/files")
+    @GetMapping
     public ApiResponse<AdminFilePageResponse> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,

@@ -36,14 +36,16 @@ public class ScoringImageResolver {
 
     private static final Logger log = LoggerFactory.getLogger(ScoringImageResolver.class);
 
-    private final CloudFileQueryService files;
-    private final ObjectStorageService storage;
-    private final ScoringLimits limits;
+    private final CloudFileQueryService cloudFileQueryService;
+    private final ObjectStorageService objectStorageService;
+    private final ScoringLimits scoringLimits;
 
-    public ScoringImageResolver(CloudFileQueryService files, ObjectStorageService storage, ScoringLimits limits) {
-        this.files = files;
-        this.storage = storage;
-        this.limits = limits;
+    public ScoringImageResolver(CloudFileQueryService cloudFileQueryService,
+                                ObjectStorageService objectStorageService,
+                                ScoringLimits scoringLimits) {
+        this.cloudFileQueryService = cloudFileQueryService;
+        this.objectStorageService = objectStorageService;
+        this.scoringLimits = scoringLimits;
     }
 
     public List<ScoringImage> resolve(List<ImageRef> images) {
@@ -70,9 +72,9 @@ public class ScoringImageResolver {
     private ScoringImage decodeInline(ImageRef image) {
         String base64 = image.contentBase64();
         // 4 个 base64 字符 = 3 字节，末尾可能有填充
-        if (base64.length() / 4L * 3 > limits.maxImageBytes()) {
+        if (base64.length() / 4L * 3 > scoringLimits.maxImageBytes()) {
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxImageBytes()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, scoringLimits.maxImageBytes()));
         }
         byte[] content;
         try {
@@ -86,25 +88,25 @@ public class ScoringImageResolver {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "content_base64 解出来是空图片",
                     ApiErrorDetails.atField("/images"));
         }
-        if (content.length > limits.maxImageBytes()) {
+        if (content.length > scoringLimits.maxImageBytes()) {
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxImageBytes()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, scoringLimits.maxImageBytes()));
         }
         return new ScoringImage(image.fileCode(), image.mimeType(), content, null);
     }
 
     /** 按编号取回图片字节：先看状态与大小，再读内容。 */
     private ScoringImage fetch(String fileCode) {
-        CloudFile file = files.requireReadable(fileCode);
+        CloudFile file = cloudFileQueryService.requireReadable(fileCode);
         if (file.getFileKind() != CloudFileKind.IMAGE) {
             // 音频/PDF 喂给多模态模型没有意义，属于调用方用错了编号
             throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE, ApiErrorDetails.atFile(fileCode));
         }
-        if (file.getSizeBytes() > limits.maxImageBytes()) {
+        if (file.getSizeBytes() > scoringLimits.maxImageBytes()) {
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxImageBytes()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, scoringLimits.maxImageBytes()));
         }
-        byte[] content = storage.read(file.getObjectKey());
+        byte[] content = objectStorageService.read(file.getObjectKey());
         log.info("为评分取回图片 fileCode={} mime={} bytes={}", fileCode, file.getMimeType(), content.length);
         return new ScoringImage(fileCode, file.getMimeType(), content, null);
     }

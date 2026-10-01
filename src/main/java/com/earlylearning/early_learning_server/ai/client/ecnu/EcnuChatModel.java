@@ -42,30 +42,30 @@ public class EcnuChatModel implements ChatModel {
     private static final Logger log = LoggerFactory.getLogger(EcnuChatModel.class);
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private final EcnuProperties properties;
+    private final EcnuProperties ecnuProperties;
     private final HttpClient http;
 
-    public EcnuChatModel(EcnuProperties properties) {
-        this.properties = properties;
+    public EcnuChatModel(EcnuProperties ecnuProperties) {
+        this.ecnuProperties = ecnuProperties;
         this.http = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(Math.min(10, properties.timeoutSeconds())))
+                .connectTimeout(Duration.ofSeconds(Math.min(10, ecnuProperties.timeoutSeconds())))
                 .build();
     }
 
     /** 带图走视觉模型，不带图走文本模型——这是本适配器唯一关心"能力差异"的地方。 */
     @Override
     public String modelFor(ChatRequest request) {
-        return request.hasImages() ? properties.modelVision() : properties.modelText();
+        return request.hasImages() ? ecnuProperties.modelVision() : ecnuProperties.modelText();
     }
 
     @Override
     public ChatResponse complete(ChatRequest request) {
         String model = modelFor(request);
-        Map<String, Object> body = buildBody(request, properties, model);
-        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(properties.baseUrl() + "/chat/completions"))
-                .timeout(Duration.ofSeconds(properties.timeoutSeconds()))
+        Map<String, Object> body = buildBody(request, ecnuProperties, model);
+        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(ecnuProperties.baseUrl() + "/chat/completions"))
+                .timeout(Duration.ofSeconds(ecnuProperties.timeoutSeconds()))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + properties.apiKey())
+                .header("Authorization", "Bearer " + ecnuProperties.apiKey())
                 .POST(HttpRequest.BodyPublishers.ofString(writeJson(body)))
                 .build();
 
@@ -94,12 +94,12 @@ public class EcnuChatModel implements ChatModel {
      * 构造请求体。独立出来是为了能离线验证形状（模型选择、data URI、response_format、思考模式），
      * 不需要真的发出请求。
      */
-    static Map<String, Object> buildBody(ChatRequest request, EcnuProperties properties, String model) {
+    static Map<String, Object> buildBody(ChatRequest request, EcnuProperties ecnuProperties, String model) {
         if (request.images() != null) {
             for (ImagePart image : request.images()) {
-                if (image.content() != null && image.content().length > properties.maxImageBytes()) {
+                if (image.content() != null && image.content().length > ecnuProperties.maxImageBytes()) {
                     throw new AiTaskFailedException(TaskFailureCode.MODEL_TIMEOUT,
-                        "单张图片超过上限 " + properties.maxImageBytes() + " 字节", false);
+                        "单张图片超过上限 " + ecnuProperties.maxImageBytes() + " 字节", false);
                 }
             }
         }
@@ -129,10 +129,10 @@ public class EcnuChatModel implements ChatModel {
                     "json_schema", Map.of("name", request.schemaName() == null ? "result" : request.schemaName(),
                             "schema", readJson(request.schemaJson()))));
         }
-        if (properties.thinking()) {
+        if (ecnuProperties.thinking()) {
             body.put("thinking", Map.of("type", "enabled"));
-            if (properties.reasoningEffort() != null && !properties.reasoningEffort().isBlank()) {
-                body.put("reasoning_effort", properties.reasoningEffort());
+            if (ecnuProperties.reasoningEffort() != null && !ecnuProperties.reasoningEffort().isBlank()) {
+                body.put("reasoning_effort", ecnuProperties.reasoningEffort());
             }
         }
         return body;

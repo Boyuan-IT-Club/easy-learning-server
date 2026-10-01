@@ -22,13 +22,15 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
 public class TeacherBearerAuthenticator implements BearerAuthenticator {
 
     private final TokenService tokenService;
-    private final TeacherAccountMapper teachers;
-    private final LicenseMapper licenses;
+    private final TeacherAccountMapper teacherAccountMapper;
+    private final LicenseMapper licenseMapper;
 
-    public TeacherBearerAuthenticator(TokenService tokenService, TeacherAccountMapper teachers, LicenseMapper licenses) {
+    public TeacherBearerAuthenticator(TokenService tokenService,
+                                      TeacherAccountMapper teacherAccountMapper,
+                                      LicenseMapper licenseMapper) {
         this.tokenService = tokenService;
-        this.teachers = teachers;
-        this.licenses = licenses;
+        this.teacherAccountMapper = teacherAccountMapper;
+        this.licenseMapper = licenseMapper;
     }
 
     @Override
@@ -39,11 +41,11 @@ public class TeacherBearerAuthenticator implements BearerAuthenticator {
     @Override
     public AuthPrincipal authenticate(String token) {
         int userId = tokenService.requireTeacher(token);
-        TeacherAccount account = teachers.selectById(userId);
+        TeacherAccount account = teacherAccountMapper.selectById(userId);
         if (account == null) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
-        account.ensureCloudAccess(licenses.selectByUserId(userId));
+        account.ensureCloudAccess(licenseMapper.selectByUserId(userId));
         return new TeacherPrincipal(userId);
     }
 }

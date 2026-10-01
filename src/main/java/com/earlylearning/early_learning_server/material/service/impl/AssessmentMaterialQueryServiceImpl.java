@@ -41,26 +41,26 @@ public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQue
     private static final String CODE_PATTERN = "^[A-Za-z0-9_-]+$";
     private static final String VERSION_PATTERN = "^[A-Za-z0-9][A-Za-z0-9._-]*$";
 
-    private final AssessmentMaterialMapper mapper;
-    private final AssessmentMaterialQueryMapper queryMapper;
-    private final GrammarRefMapper grammarMapper;
-    private final CloudFileQueryService cloudFiles;
-    private final MaterialConfigValidator validator;
+    private final AssessmentMaterialMapper assessmentMaterialMapper;
+    private final AssessmentMaterialQueryMapper assessmentMaterialQueryMapper;
+    private final GrammarRefMapper grammarRefMapper;
+    private final CloudFileQueryService cloudFileQueryService;
+    private final MaterialConfigValidator materialConfigValidator;
     private final TransactionTemplate transaction;
     private final ObjectMapper objectMapper;
 
-    public AssessmentMaterialQueryServiceImpl(AssessmentMaterialMapper mapper,
-                                              AssessmentMaterialQueryMapper queryMapper,
-                                              GrammarRefMapper grammarMapper,
-                                              CloudFileQueryService cloudFiles,
-                                              MaterialConfigValidator validator,
+    public AssessmentMaterialQueryServiceImpl(AssessmentMaterialMapper assessmentMaterialMapper,
+                                              AssessmentMaterialQueryMapper assessmentMaterialQueryMapper,
+                                              GrammarRefMapper grammarRefMapper,
+                                              CloudFileQueryService cloudFileQueryService,
+                                              MaterialConfigValidator materialConfigValidator,
                                               PlatformTransactionManager transactionManager,
                                               ObjectMapper objectMapper) {
-        this.mapper = mapper;
-        this.queryMapper = queryMapper;
-        this.grammarMapper = grammarMapper;
-        this.cloudFiles = cloudFiles;
-        this.validator = validator;
+        this.assessmentMaterialMapper = assessmentMaterialMapper;
+        this.assessmentMaterialQueryMapper = assessmentMaterialQueryMapper;
+        this.grammarRefMapper = grammarRefMapper;
+        this.cloudFileQueryService = cloudFileQueryService;
+        this.materialConfigValidator = materialConfigValidator;
         this.transaction = new TransactionTemplate(transactionManager);
         this.objectMapper = objectMapper;
     }
@@ -73,8 +73,8 @@ public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQue
         String codeFilter = code == null || code.isBlank() ? null : code;
         String statusFilter = status == null ? null : status.value();
         String pattern = keyword == null || keyword.isBlank() ? null : "%" + escapeLikeWildcards(keyword) + "%";
-        long total = queryMapper.countMatching(codeFilter, statusFilter, pattern);
-        List<MaterialSummary> items = queryMapper
+        long total = assessmentMaterialQueryMapper.countMatching(codeFilter, statusFilter, pattern);
+        List<MaterialSummary> items = assessmentMaterialQueryMapper
                 .selectPage(codeFilter, statusFilter, pattern, pageSize, (long) (page - 1) * pageSize)
                 .stream().map(MaterialSummary::from).toList();
         return new MaterialPage(items, page, pageSize, total);
@@ -83,35 +83,35 @@ public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQue
     @Override
     public AssessmentMaterial disable(int id) {
         return transaction.execute(status -> {
-            AssessmentMaterial row = mapper.selectByIdForUpdate(id);
+            AssessmentMaterial row = assessmentMaterialMapper.selectByIdForUpdate(id);
             if (row == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
             }
             if (row.getStatus() == ContentStatus.DISABLED) {
                 return row;
             }
-            mapper.disableById(id);
-            return mapper.selectById(id);
+            assessmentMaterialMapper.disableById(id);
+            return assessmentMaterialMapper.selectById(id);
         });
     }
 
     @Override
     public List<MaterialVersionSummary> versions() {
-        return queryMapper.selectAllOrdered().stream().map(MaterialVersionSummary::from).toList();
+        return assessmentMaterialQueryMapper.selectAllOrdered().stream().map(MaterialVersionSummary::from).toList();
     }
 
     @Override
     public MaterialDownload download(String code, String version) {
         requirePathCode(code);
         requirePathVersion(version);
-        AssessmentMaterial material = mapper.selectByCodeAndVersion(code, version);
+        AssessmentMaterial material = assessmentMaterialMapper.selectByCodeAndVersion(code, version);
         if (material == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
         JsonNode config = readFrozenConfig(material);
 
-        Set<String> dependencyCodes = new LinkedHashSet<>(validator.referencedFileCodes(config));
-        Set<String> grammarCodes = validator.referencedGrammarCodes(config);
+        Set<String> dependencyCodes = new LinkedHashSet<>(materialConfigValidator.referencedFileCodes(config));
+        Set<String> grammarCodes = materialConfigValidator.referencedGrammarCodes(config);
 
         List<GrammarDefinition> grammars = grammarCodes.isEmpty()
                 ? List.of()
@@ -127,7 +127,7 @@ public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQue
     }
 
     private List<GrammarDefinition> selectGrammars(Set<String> grammarCodes) {
-        Map<String, GrammarDefinition> byCode = grammarMapper.selectByCodes(grammarCodes).stream()
+        Map<String, GrammarDefinition> byCode = grammarRefMapper.selectByCodes(grammarCodes).stream()
                 .collect(Collectors.toMap(GrammarDefinition::grammarCode, Function.identity()));
         List<GrammarDefinition> ordered = new ArrayList<>();
         for (String code : grammarCodes) {
@@ -146,7 +146,7 @@ public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQue
      */
     private CloudFile requireReadyDependency(String fileCode) {
         try {
-            return cloudFiles.requireReadable(fileCode);
+            return cloudFileQueryService.requireReadable(fileCode);
         } catch (BusinessException ex) {
             if (ex.getErrorCode() == ErrorCode.FILE_DELETED) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_READY, "依赖文件已不可下载",

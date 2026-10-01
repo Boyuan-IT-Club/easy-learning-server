@@ -68,38 +68,38 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
             "audio/mpeg", CloudFileKind.AUDIO,
             "audio/wav", CloudFileKind.AUDIO);
 
-    private final AssessmentMaterialMapper mapper;
-    private final GrammarRefMapper grammarMapper;
-    private final IdempotencyService idempotency;
-    private final MaterialZipReader zipReader;
-    private final MaterialConfigValidator validator;
+    private final AssessmentMaterialMapper assessmentMaterialMapper;
+    private final GrammarRefMapper grammarRefMapper;
+    private final IdempotencyService idempotencyService;
+    private final MaterialZipReader materialZipReader;
+    private final MaterialConfigValidator materialConfigValidator;
     private final CloudFileService cloudFileService;
-    private final RubricCatalogService rubricCatalog;
+    private final RubricCatalogService rubricCatalogService;
     private final MediaTypeDetector mediaTypeDetector;
-    private final MaterialPublishLimits limits;
+    private final MaterialPublishLimits materialPublishLimits;
     private final TransactionTemplate transaction;
     private final ObjectMapper objectMapper;
 
-    public AssessmentMaterialPublishServiceImpl(AssessmentMaterialMapper mapper,
-                                                GrammarRefMapper grammarMapper,
-                                                IdempotencyService idempotency,
-                                                MaterialZipReader zipReader,
-                                                MaterialConfigValidator validator,
+    public AssessmentMaterialPublishServiceImpl(AssessmentMaterialMapper assessmentMaterialMapper,
+                                                GrammarRefMapper grammarRefMapper,
+                                                IdempotencyService idempotencyService,
+                                                MaterialZipReader materialZipReader,
+                                                MaterialConfigValidator materialConfigValidator,
                                                 CloudFileService cloudFileService,
-                                                RubricCatalogService rubricCatalog,
+                                                RubricCatalogService rubricCatalogService,
                                                 MediaTypeDetector mediaTypeDetector,
-                                                MaterialPublishLimits limits,
+                                                MaterialPublishLimits materialPublishLimits,
                                                 PlatformTransactionManager transactionManager,
                                                 ObjectMapper objectMapper) {
-        this.mapper = mapper;
-        this.grammarMapper = grammarMapper;
-        this.idempotency = idempotency;
-        this.zipReader = zipReader;
-        this.validator = validator;
+        this.assessmentMaterialMapper = assessmentMaterialMapper;
+        this.grammarRefMapper = grammarRefMapper;
+        this.idempotencyService = idempotencyService;
+        this.materialZipReader = materialZipReader;
+        this.materialConfigValidator = materialConfigValidator;
         this.cloudFileService = cloudFileService;
-        this.rubricCatalog = rubricCatalog;
+        this.rubricCatalogService = rubricCatalogService;
         this.mediaTypeDetector = mediaTypeDetector;
-        this.limits = limits;
+        this.materialPublishLimits = materialPublishLimits;
         this.transaction = new TransactionTemplate(transactionManager);
         this.objectMapper = objectMapper;
     }
@@ -109,9 +109,9 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
         if (zip.size() <= 0) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        if (zip.size() > limits.maxZipBytes()) {
+        if (zip.size() > materialPublishLimits.maxZipBytes()) {
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE, null,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxZipBytes()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, materialPublishLimits.maxZipBytes()));
         }
 
         Path staged = null;
@@ -121,16 +121,16 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
             String zipSha256 = sha256Hex(staged);
             String fingerprint = InputFingerprint.of(zipSha256);
 
-            Optional<StoredResponse> replayed = idempotency.peek(SCOPE, idempotencyKey, fingerprint);
+            Optional<StoredResponse> replayed = idempotencyService.peek(SCOPE, idempotencyKey, fingerprint);
             if (replayed.isPresent()) {
                 return fromSnapshot(replayed.get().body());
             }
 
-            ZipPackage pkg = zipReader.read(staged);
+            ZipPackage pkg = materialZipReader.read(staged);
             try {
                 return publishValidatedPackage(idempotencyKey, fingerprint, zipSha256, pkg);
             } finally {
-                zipReader.cleanup(pkg);
+                materialZipReader.cleanup(pkg);
             }
         } catch (IOException ex) {
             throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "材料包暂存读写失败", ex);
@@ -146,21 +146,22 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
         Set<String> packageFileNames = pkg.fileNames();
 
         // 第一遍只校验不上传：配置与文件全部合格才开始搬运媒体
-        validator.build(config, packageFileNames, rubricCatalog.contentItemCodes(), knownGrammarCodes,
-                verifyingResolver(packageFileNames));
+        materialConfigValidator.build(config, packageFileNames, rubricCatalogService.contentItemCodes(),
+                knownGrammarCodes, verifyingResolver(packageFileNames));
 
         Map<String, String> codeByName = uploadPackageFiles(zipSha256, pkg);
-        ValidatedMaterial materialized = validator.build(config, packageFileNames,
-                rubricCatalog.contentItemCodes(), knownGrammarCodes,
+        ValidatedMaterial materialized = materialConfigValidator.build(config, packageFileNames,
+                rubricCatalogService.contentItemCodes(), knownGrammarCodes,
                 (fileName, fieldPath) -> codeByName.get(fileName));
         String frozenConfig = objectMapper.writeValueAsString(materialized.activityConfig());
 
         return transaction.execute(status -> {
-            Optional<StoredResponse> claimed = idempotency.claim(SCOPE, idempotencyKey, fingerprint);
+            Optional<StoredResponse> claimed = idempotencyService.claim(SCOPE, idempotencyKey, fingerprint);
             if (claimed.isPresent()) {
                 return fromSnapshot(claimed.get().body());
             }
-            List<AssessmentMaterial> existing = mapper.selectByCodeForUpdate(materialized.officialMaterialCode());
+            List<AssessmentMaterial> existing =
+                    assessmentMaterialMapper.selectByCodeForUpdate(materialized.officialMaterialCode());
             for (AssessmentMaterial row : existing) {
                 if (row.getContentVersion().equals(materialized.contentVersion())) {
                     throw new BusinessException(ErrorCode.CONTENT_VERSION_EXISTS,
@@ -168,7 +169,7 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
                             ApiErrorDetails.atField("/content_version"));
                 }
             }
-            mapper.disableActive(materialized.officialMaterialCode());
+            assessmentMaterialMapper.disableActive(materialized.officialMaterialCode());
 
             AssessmentMaterial entity = new AssessmentMaterial();
             entity.setOfficialMaterialCode(materialized.officialMaterialCode());
@@ -176,20 +177,20 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
             entity.setName(materialized.name());
             entity.setActivityConfigsJson(frozenConfig);
             entity.setStatus(ContentStatus.ACTIVE);
-            mapper.insert(entity);
+            assessmentMaterialMapper.insert(entity);
 
-            AssessmentMaterial saved = mapper.selectById(entity.getId());
-            idempotency.record(SCOPE, idempotencyKey, 201, saved);
+            AssessmentMaterial saved = assessmentMaterialMapper.selectById(entity.getId());
+            idempotencyService.record(SCOPE, idempotencyKey, 201, saved);
             return saved;
         });
     }
 
     private Set<String> selectKnownGrammarCodes(JsonNode config) {
-        Set<String> referenced = validator.referencedGrammarCodes(config);
+        Set<String> referenced = materialConfigValidator.referencedGrammarCodes(config);
         if (referenced.isEmpty()) {
             return Set.of();
         }
-        return grammarMapper.selectByCodes(referenced).stream()
+        return grammarRefMapper.selectByCodes(referenced).stream()
                 .map(grammar -> grammar.grammarCode())
                 .collect(Collectors.toUnmodifiableSet());
     }

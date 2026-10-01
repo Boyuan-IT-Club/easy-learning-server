@@ -43,10 +43,10 @@ public class RubricCatalogServiceImpl implements RubricCatalogService {
             new ContentItemSpec("NARRATIVE_CONTENT_05", "图7-1"),
             new ContentItemSpec("NARRATIVE_CONTENT_06", "图7-2"));
 
-    private final RubricProperties properties;
+    private final RubricProperties rubricProperties;
 
-    public RubricCatalogServiceImpl(RubricProperties properties) {
-        this.properties = properties;
+    public RubricCatalogServiceImpl(RubricProperties rubricProperties) {
+        this.rubricProperties = rubricProperties;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class RubricCatalogServiceImpl implements RubricCatalogService {
 
     @Override
     public RubricCatalog catalog() {
-        String version = properties.version();
+        String version = rubricProperties.version();
         if (version == null || version.isBlank()) {
             throw new BusinessException(ErrorCode.RUBRIC_UNAVAILABLE, "服务端统一评分配置不可用");
         }

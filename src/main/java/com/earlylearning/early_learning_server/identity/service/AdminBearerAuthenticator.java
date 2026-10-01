@@ -17,11 +17,11 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
 public class AdminBearerAuthenticator implements BearerAuthenticator {
 
     private final TokenService tokenService;
-    private final AdminAccountMapper accounts;
+    private final AdminAccountMapper adminAccountMapper;
 
-    public AdminBearerAuthenticator(TokenService tokenService, AdminAccountMapper accounts) {
+    public AdminBearerAuthenticator(TokenService tokenService, AdminAccountMapper adminAccountMapper) {
         this.tokenService = tokenService;
-        this.accounts = accounts;
+        this.adminAccountMapper = adminAccountMapper;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class AdminBearerAuthenticator implements BearerAuthenticator {
     @Override
     public AuthPrincipal authenticate(String token) {
         int adminId = tokenService.requireAdmin(token);
-        AdminAccount account = accounts.selectById(adminId);
+        AdminAccount account = adminAccountMapper.selectById(adminId);
         if (account == null) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }

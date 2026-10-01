@@ -27,15 +27,15 @@ public class AudioValidator {
     private static final Logger log = LoggerFactory.getLogger(AudioValidator.class);
 
     private final MediaTypeDetector mediaTypeDetector;
-    private final AudioDurationParser durationParser;
-    private final AiTranscriptionLimits limits;
+    private final AudioDurationParser audioDurationParser;
+    private final AiTranscriptionLimits aiTranscriptionLimits;
 
     public AudioValidator(MediaTypeDetector mediaTypeDetector,
-                          AudioDurationParser durationParser,
-                          AiTranscriptionLimits limits) {
+                          AudioDurationParser audioDurationParser,
+                          AiTranscriptionLimits aiTranscriptionLimits) {
         this.mediaTypeDetector = mediaTypeDetector;
-        this.durationParser = durationParser;
-        this.limits = limits;
+        this.audioDurationParser = audioDurationParser;
+        this.aiTranscriptionLimits = aiTranscriptionLimits;
     }
 
     /**
@@ -68,20 +68,21 @@ public class AudioValidator {
         }
         requireDeclarationAgrees(declaredMime, detected);
 
-        if (!durationParser.supports(detected)) {
+        if (!audioDurationParser.supports(detected)) {
             // 契约里列了 ogg/webm，但不接受它们：无法在内存中校验时长
             log.info("音频格式不接受：无法校验时长 detectedMime={}", detected);
             throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE,
                     "该音频格式无法校验时长，暂不接受：" + detected + "；请改用 m4a/mp3/wav");
         }
-        if (audio.length > limits.maxSizeBytes()) {
+        if (audio.length > aiTranscriptionLimits.maxSizeBytes()) {
             log.info("音频超出体积上限 detectedMime={} sizeBytes={} limit={}",
-                    detected, audio.length, limits.maxSizeBytes());
+                    detected, audio.length, aiTranscriptionLimits.maxSizeBytes());
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES, limits.maxSizeBytes()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.SIZE_BYTES,
+                            aiTranscriptionLimits.maxSizeBytes()));
         }
 
-        OptionalLong duration = durationParser.parse(audio, detected);
+        OptionalLong duration = audioDurationParser.parse(audio, detected);
         if (duration.isEmpty()) {
             log.info("音频内容无法解析 detectedMime={} sizeBytes={}", detected, audio.length);
             throw new BusinessException(ErrorCode.INVALID_REQUEST,
@@ -89,11 +90,12 @@ public class AudioValidator {
         }
 
         long durationMs = duration.getAsLong();
-        if (durationMs > limits.maxDurationMs()) {
+        if (durationMs > aiTranscriptionLimits.maxDurationMs()) {
             log.info("音频超出时长上限 detectedMime={} durationMs={} limit={}",
-                    detected, durationMs, limits.maxDurationMs());
+                    detected, durationMs, aiTranscriptionLimits.maxDurationMs());
             throw new BusinessException(ErrorCode.AUDIO_DURATION_EXCEEDED,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.DURATION_MS, limits.maxDurationMs()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.DURATION_MS,
+                            aiTranscriptionLimits.maxDurationMs()));
         }
         return durationMs;
     }

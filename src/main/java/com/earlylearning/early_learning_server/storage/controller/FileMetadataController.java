@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
@@ -19,6 +20,7 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileSignatur
  * <p>权限：契约按角色限定可见与可签发的资源范围；本模块不校验。
  */
 @RestController
+@RequestMapping("/api/files")
 public class FileMetadataController {
 
     private final CloudFileQueryService cloudFileQueryService;
@@ -30,7 +32,7 @@ public class FileMetadataController {
         this.cloudFileSignatureService = cloudFileSignatureService;
     }
 
-    @GetMapping("/api/files/{file_code}")
+    @GetMapping("/{file_code}")
     public ApiResponse<CloudFileResponse> metadata(@PathVariable("file_code") String fileCode) {
         return ApiResponse.ok(CloudFileResponse.from(cloudFileQueryService.metadata(fileCode)));
     }
@@ -40,7 +42,7 @@ public class FileMetadataController {
      *
      * <p>整批语义：先全部校验、再统一签发，任意一项失败则整批失败（见 {@link CloudFileSignatureService}）。
      */
-    @PostMapping("/api/files/signatures")
+    @PostMapping("/signatures")
     public ApiResponse<DownloadSignatureBatchResponse> sign(@RequestBody SignDownloadUrlsRequest request) {
         return ApiResponse.ok(DownloadSignatureBatchResponse.from(cloudFileSignatureService.sign(request.fileCodes())));
     }

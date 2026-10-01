@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,47 +35,49 @@ import tools.jackson.databind.ObjectMapper;
  * <p>权限：管理员凭证；本模块不校验。file 是唯一表单字段，包内 config.json 携带其余发布信息。
  */
 @RestController
+@RequestMapping("/admin/assessment-materials")
 @Validated
 public class AssessmentMaterialAdminController {
 
-    private final AssessmentMaterialPublishService publishService;
-    private final AssessmentMaterialQueryService queryService;
+    private final AssessmentMaterialPublishService assessmentMaterialPublishService;
+    private final AssessmentMaterialQueryService assessmentMaterialQueryService;
     private final ObjectMapper objectMapper;
 
-    public AssessmentMaterialAdminController(AssessmentMaterialPublishService publishService,
-                                             AssessmentMaterialQueryService queryService,
+    public AssessmentMaterialAdminController(AssessmentMaterialPublishService assessmentMaterialPublishService,
+                                             AssessmentMaterialQueryService assessmentMaterialQueryService,
                                              ObjectMapper objectMapper) {
-        this.publishService = publishService;
-        this.queryService = queryService;
+        this.assessmentMaterialPublishService = assessmentMaterialPublishService;
+        this.assessmentMaterialQueryService = assessmentMaterialQueryService;
         this.objectMapper = objectMapper;
     }
 
-    @PostMapping(path = "/admin/assessment-materials", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AssessmentMaterialResponse>> publish(
             @RequestHeader("Idempotency-Key") @NotBlank @Size(max = 128) String idempotencyKey,
             @RequestPart("file") MultipartFile file) {
         IncomingFile incoming = new IncomingFile(file.getSize(), file.getOriginalFilename(),
                 file.getContentType(), file::transferTo);
-        AssessmentMaterial saved = publishService.publish(idempotencyKey, incoming);
+        AssessmentMaterial saved = assessmentMaterialPublishService.publish(idempotencyKey, incoming);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(AssessmentMaterialResponse.from(saved,
                         objectMapper.readTree(saved.getActivityConfigsJson()))));
     }
 
-    @GetMapping("/admin/assessment-materials")
+    @GetMapping
     public ApiResponse<AssessmentMaterialPageResponse> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(name = "official_material_code", required = false) String officialMaterialCode,
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String keyword) {
-        MaterialPage pageResult = queryService.list(page, pageSize, officialMaterialCode, status, keyword);
+        MaterialPage pageResult =
+                assessmentMaterialQueryService.list(page, pageSize, officialMaterialCode, status, keyword);
         return ApiResponse.ok(AssessmentMaterialPageResponse.from(pageResult));
     }
 
-    @PostMapping("/admin/assessment-materials/{id}/disable")
+    @PostMapping("/{id}/disable")
     public ApiResponse<AssessmentMaterialResponse> disable(@PathVariable int id) {
-        AssessmentMaterial disabled = queryService.disable(id);
+        AssessmentMaterial disabled = assessmentMaterialQueryService.disable(id);
         return ApiResponse.ok(AssessmentMaterialResponse.from(disabled,
                 objectMapper.readTree(disabled.getActivityConfigsJson())));
     }

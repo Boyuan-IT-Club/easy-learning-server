@@ -32,11 +32,11 @@ import static com.earlylearning.early_learning_server.ai.controller.validation.R
 public class StoryScoringRequestValidator {
 
     private final ImageContextValidator imageContextValidator;
-    private final ScoringLimits limits;
+    private final ScoringLimits scoringLimits;
 
-    public StoryScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits limits) {
+    public StoryScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits scoringLimits) {
         this.imageContextValidator = imageContextValidator;
-        this.limits = limits;
+        this.scoringLimits = scoringLimits;
     }
 
     public void validate(StoryScoringRequest request) {
@@ -53,8 +53,8 @@ public class StoryScoringRequestValidator {
         requireText(request.storyContext(), "story_context");
 
         // 契约把 text_length / image_count 列为部署上限，要真的执行；按「一次定位首个失败」只报第一个
-        requireWithinLimit(request.confirmedText(), limits.maxTextLength());
-        requireWithinLimit(request.storyContext(), limits.maxTextLength());
+        requireWithinLimit(request.confirmedText(), scoringLimits.maxTextLength());
+        requireWithinLimit(request.storyContext(), scoringLimits.maxTextLength());
 
         Set<String> referencedImages = validateContentItems(request.contentItems());
         validateImages(request.images(), referencedImages);
@@ -119,9 +119,9 @@ public class StoryScoringRequestValidator {
                 throw invalid(path + "/file_code");
             }
         }
-        if (provided.size() > limits.maxImageCount()) {
+        if (provided.size() > scoringLimits.maxImageCount()) {
             throw new BusinessException(ErrorCode.PAYLOAD_TOO_LARGE,
-                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.IMAGE_COUNT, limits.maxImageCount()));
+                    ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.IMAGE_COUNT, scoringLimits.maxImageCount()));
         }
         if (!provided.equals(referencedImages)) {
             // 多给、少给、或只发了编号没给内容，都在这里被挡下

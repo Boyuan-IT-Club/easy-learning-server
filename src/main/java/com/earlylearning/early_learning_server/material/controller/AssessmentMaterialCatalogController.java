@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.material.dto.AssessmentMaterialDownloadResponse;
 import com.earlylearning.early_learning_server.material.dto.AssessmentMaterialVersionsResponse;
+import com.earlylearning.early_learning_server.material.model.MaterialDownload;
 import com.earlylearning.early_learning_server.material.model.MaterialVersionSummary;
 import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
 
@@ -21,28 +23,29 @@ import tools.jackson.databind.ObjectMapper;
  * 下载清单经教师确认后由客户端异步拉取文件。
  */
 @RestController
+@RequestMapping("/api/assessment-materials")
 public class AssessmentMaterialCatalogController {
 
-    private final AssessmentMaterialQueryService queryService;
+    private final AssessmentMaterialQueryService assessmentMaterialQueryService;
     private final ObjectMapper objectMapper;
 
-    public AssessmentMaterialCatalogController(AssessmentMaterialQueryService queryService,
+    public AssessmentMaterialCatalogController(AssessmentMaterialQueryService assessmentMaterialQueryService,
                                                ObjectMapper objectMapper) {
-        this.queryService = queryService;
+        this.assessmentMaterialQueryService = assessmentMaterialQueryService;
         this.objectMapper = objectMapper;
     }
 
-    @GetMapping("/api/assessment-materials/versions")
+    @GetMapping("/versions")
     public ApiResponse<AssessmentMaterialVersionsResponse> versions() {
-        List<MaterialVersionSummary> summaries = queryService.versions();
+        List<MaterialVersionSummary> summaries = assessmentMaterialQueryService.versions();
         return ApiResponse.ok(AssessmentMaterialVersionsResponse.from(summaries));
     }
 
-    @GetMapping("/api/assessment-materials/{code}/{version}")
+    @GetMapping("/{code}/{version}")
     public ApiResponse<AssessmentMaterialDownloadResponse> download(
             @PathVariable String code,
             @PathVariable String version) {
-        return ApiResponse.ok(
-                AssessmentMaterialDownloadResponse.from(queryService.download(code, version), objectMapper));
+        MaterialDownload download = assessmentMaterialQueryService.download(code, version);
+        return ApiResponse.ok(AssessmentMaterialDownloadResponse.from(download, objectMapper));
     }
 }

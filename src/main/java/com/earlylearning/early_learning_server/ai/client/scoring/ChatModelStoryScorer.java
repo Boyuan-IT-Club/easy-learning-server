@@ -64,12 +64,12 @@ public class ChatModelStoryScorer implements StoryScorer {
              },
              "required": ["score", "reason", "evidence"]}""";
 
-    private final ChatModel chat;
-    private final RubricConfig rubric;
+    private final ChatModel chatModel;
+    private final RubricConfig rubricConfig;
 
-    public ChatModelStoryScorer(ChatModel chat, RubricConfig rubric) {
-        this.chat = chat;
-        this.rubric = rubric;
+    public ChatModelStoryScorer(ChatModel chatModel, RubricConfig rubricConfig) {
+        this.chatModel = chatModel;
+        this.rubricConfig = rubricConfig;
     }
 
     @Override
@@ -80,7 +80,7 @@ public class ChatModelStoryScorer implements StoryScorer {
                         new ChatModel.ChatMessage("user", rendered.text())),
                 SCHEMA_NAME, responseSchema(input), rendered.images());
 
-        ChatModel.ChatResponse response = chat.complete(request);
+        ChatModel.ChatResponse response = chatModel.complete(request);
         ModelOutput output = ModelJson.parse(response.content(), ModelOutput.class);
 
         return new AiScore(
@@ -107,19 +107,19 @@ public class ChatModelStoryScorer implements StoryScorer {
         rules.append("宏观结构（6 项）：\n");
         int index = 1;
         for (MacroDimensionCode code : MacroDimensionCode.values()) {
-            appendItem(rules, index++, itemOf(rubric.macrostructure(), code.name()));
+            appendItem(rules, index++, itemOf(rubricConfig.macrostructure(), code.name()));
         }
         rules.append("微观结构（5 项）：\n");
         for (MicroDimensionCode code : MicroDimensionCode.values()) {
-            appendItem(rules, index++, itemOf(rubric.microstructure(), code.name()));
+            appendItem(rules, index++, itemOf(rubricConfig.microstructure(), code.name()));
         }
         rules.append("叙事产生性（独立一项，不属于上面的维度）：\n");
-        appendItem(rules, index++, itemOf(rubric.microstructure(), ProductivityStat.ITEM_CODE));
+        appendItem(rules, index++, itemOf(rubricConfig.microstructure(), ProductivityStat.ITEM_CODE));
 
         rules.append("图片分组：每个分组按它自己的规则打分，逐组都要给：\n");
         for (ScoringGroup group : input.contentItems()) {
             rules.append("- 分组 ").append(group.contentItemId()).append(" 适用规则：");
-            appendItem(rules, index++, itemOf(rubric.macrostructure(), group.rubricItemCode()));
+            appendItem(rules, index++, itemOf(rubricConfig.macrostructure(), group.rubricItemCode()));
         }
 
         return """

@@ -68,6 +68,8 @@ common/    ← 共享能力，只被依赖、不依赖任何模块与 entity，�
 依赖规则：
 
 - controller 只调 service 接口，使用 dto（可用 entity / model 做转换）；**不碰 mapper、client**，不写业务。
+  公共路径写在类上的 `@RequestMapping`，方法上只写剩余部分。
+- 注入一律走构造器、字段 `private final`，字段名取类型名的小驼峰（`licenseMapper`、`tokenService`）。
 - service 可以用 mapper、entity、model、client、dto；**不产出 `ApiResponse` / `ResponseEntity`**，包络由 controller 套。
 - **service 一律接口 + 实现**：`service/XxxService` 是接口，`service/impl/XxxServiceImpl` 加 `@Service` 并实现它；
   除 impl 自己外谁都不依赖 impl（注入一律用接口）。接口写契约语义（做什么、失败返回什么），
