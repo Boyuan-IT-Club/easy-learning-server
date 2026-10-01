@@ -4,8 +4,6 @@ import java.util.List;
 
 import jakarta.servlet.DispatcherType;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +30,7 @@ import com.earlylearning.early_learning_server.security.model.AdminPrincipal;
 import com.earlylearning.early_learning_server.security.model.TeacherPrincipal;
 import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -54,9 +53,8 @@ import tools.jackson.databind.ObjectMapper;
  * 不使用 Spring 默认生成的用户（AGENTS.md 第 8 节）。
  */
 @Configuration(proxyBeanMethods = false)
+@Slf4j
 public class SecurityConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     private static final String TEACHER = TeacherPrincipal.ROLE;
     private static final String ADMIN = AdminPrincipal.ROLE;

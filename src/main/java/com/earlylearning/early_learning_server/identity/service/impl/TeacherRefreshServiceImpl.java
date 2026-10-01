@@ -1,7 +1,5 @@
 package com.earlylearning.early_learning_server.identity.service.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
@@ -21,6 +19,8 @@ import com.earlylearning.early_learning_server.identity.service.TeacherRefreshSe
 import com.earlylearning.early_learning_server.security.model.TeacherTokens;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -39,9 +39,9 @@ import tools.jackson.databind.ObjectMapper;
  * 否则它会在"已提交、尚未写缓存"的空档里拿到 401。提前写入是安全的：事务回滚后这条记录永远对不上。
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class TeacherRefreshServiceImpl implements TeacherRefreshService {
-
-    private static final Logger log = LoggerFactory.getLogger(TeacherRefreshServiceImpl.class);
 
     private final TeacherAccountMapper teacherAccountMapper;
     private final LicenseMapper licenseMapper;
@@ -49,20 +49,6 @@ public class TeacherRefreshServiceImpl implements TeacherRefreshService {
     private final RefreshGraceStore refreshGraceStore;
     private final SensitiveIdempotency sensitiveIdempotency;
     private final ObjectMapper objectMapper;
-
-    public TeacherRefreshServiceImpl(TeacherAccountMapper teacherAccountMapper,
-                                     LicenseMapper licenseMapper,
-                                     TokenService tokenService,
-                                     RefreshGraceStore refreshGraceStore,
-                                     SensitiveIdempotency sensitiveIdempotency,
-                                     ObjectMapper objectMapper) {
-        this.teacherAccountMapper = teacherAccountMapper;
-        this.licenseMapper = licenseMapper;
-        this.tokenService = tokenService;
-        this.refreshGraceStore = refreshGraceStore;
-        this.sensitiveIdempotency = sensitiveIdempotency;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public TokenPairResponse refresh(String refreshToken, String idempotencyKey) {

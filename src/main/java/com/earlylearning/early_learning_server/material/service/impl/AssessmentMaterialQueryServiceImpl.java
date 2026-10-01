@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -32,14 +30,14 @@ import com.earlylearning.early_learning_server.material.model.MaterialVersionSum
 import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /** {@link AssessmentMaterialQueryService} 的实现。 */
 @Service
+@Slf4j
 public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQueryService {
-
-    private static final Logger log = LoggerFactory.getLogger(AssessmentMaterialQueryServiceImpl.class);
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final String CODE_PATTERN = "^[A-Za-z0-9_-]+$";

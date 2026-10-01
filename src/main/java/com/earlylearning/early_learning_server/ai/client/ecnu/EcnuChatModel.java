@@ -12,13 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -37,9 +35,9 @@ import tools.jackson.databind.ObjectMapper;
  * 429（并发配额）、5xx、超时与 IO 归可重试；4xx（除 429）与响应结构不对归不可重试。
  * 响应本身不合法用 {@code MODEL_OUTPUT_INVALID}，传输层问题用 {@code MODEL_TIMEOUT}。
  */
+@Slf4j
 public class EcnuChatModel implements ChatModel {
 
-    private static final Logger log = LoggerFactory.getLogger(EcnuChatModel.class);
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final EcnuProperties ecnuProperties;

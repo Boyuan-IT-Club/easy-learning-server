@@ -6,8 +6,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -19,6 +17,7 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.tx.AfterCommit;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -37,9 +36,8 @@ import tools.jackson.databind.ObjectMapper;
  * 本方法自己开启（或加入）事务：业务失败回滚后，占用的键一并消失，可以重试。
  */
 @Component
+@Slf4j
 public class SensitiveIdempotency {
-
-    private static final Logger log = LoggerFactory.getLogger(SensitiveIdempotency.class);
 
     static final String KEY_PREFIX = "el:idem:sensitive:";
 

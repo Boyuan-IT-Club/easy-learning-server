@@ -14,8 +14,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -45,14 +43,14 @@ import com.earlylearning.early_learning_server.material.service.AssessmentMateri
 import com.earlylearning.early_learning_server.storage.model.IncomingFile;
 import com.earlylearning.early_learning_server.storage.service.CloudFileService;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /** {@link AssessmentMaterialPublishService} 的实现。 */
 @Service
+@Slf4j
 public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialPublishService {
-
-    private static final Logger log = LoggerFactory.getLogger(AssessmentMaterialPublishServiceImpl.class);
 
     private static final IdempotencyScope SCOPE = IdempotencyScope.ASSESSMENT_MATERIAL_PUBLISH;
 

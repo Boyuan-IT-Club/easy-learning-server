@@ -2,12 +2,13 @@ package com.earlylearning.early_learning_server.ai.model.rubric;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 评分规则版本与条目。
@@ -17,15 +18,11 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
  * 否则客户端会把不同标准的分数混在一起。
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class RubricService {
 
-    private static final Logger log = LoggerFactory.getLogger(RubricService.class);
-
     private final RubricProperties rubricProperties;
-
-    public RubricService(RubricProperties rubricProperties) {
-        this.rubricProperties = rubricProperties;
-    }
 
     /**
      * 解析本次评分实际采用的版本。

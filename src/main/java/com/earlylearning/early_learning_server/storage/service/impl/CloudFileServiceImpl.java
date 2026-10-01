@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -37,13 +35,13 @@ import com.earlylearning.early_learning_server.storage.model.ObjectStorageServic
 import com.earlylearning.early_learning_server.storage.model.UploadLimits;
 import com.earlylearning.early_learning_server.storage.service.CloudFileService;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /** {@link CloudFileService} 的实现。 */
 @Service
+@Slf4j
 public class CloudFileServiceImpl implements CloudFileService {
-
-    private static final Logger log = LoggerFactory.getLogger(CloudFileServiceImpl.class);
 
     private static final IdempotencyScope SCOPE = IdempotencyScope.ADMIN_FILE_UPLOAD;
 

@@ -14,6 +14,7 @@ import com.earlylearning.early_learning_server.material.model.MaterialDownload;
 import com.earlylearning.early_learning_server.material.model.MaterialVersionSummary;
 import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
 
+import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -24,16 +25,11 @@ import tools.jackson.databind.ObjectMapper;
  */
 @RestController
 @RequestMapping("/api/assessment-materials")
+@RequiredArgsConstructor
 public class AssessmentMaterialCatalogController {
 
     private final AssessmentMaterialQueryService assessmentMaterialQueryService;
     private final ObjectMapper objectMapper;
-
-    public AssessmentMaterialCatalogController(AssessmentMaterialQueryService assessmentMaterialQueryService,
-                                               ObjectMapper objectMapper) {
-        this.assessmentMaterialQueryService = assessmentMaterialQueryService;
-        this.objectMapper = objectMapper;
-    }
 
     @GetMapping("/versions")
     public ApiResponse<AssessmentMaterialVersionsResponse> versions() {

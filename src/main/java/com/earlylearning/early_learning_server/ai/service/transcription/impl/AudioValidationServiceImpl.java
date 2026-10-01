@@ -3,8 +3,6 @@ package com.earlylearning.early_learning_server.ai.service.transcription.impl;
 import java.util.Locale;
 import java.util.OptionalLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
@@ -15,23 +13,18 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /** {@link AudioValidationService} 的实现。 */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class AudioValidationServiceImpl implements AudioValidationService {
-
-    private static final Logger log = LoggerFactory.getLogger(AudioValidationServiceImpl.class);
 
     private final MediaTypeDetector mediaTypeDetector;
     private final AudioDurationParser audioDurationParser;
     private final AiTranscriptionLimits aiTranscriptionLimits;
-
-    public AudioValidationServiceImpl(MediaTypeDetector mediaTypeDetector,
-                                      AudioDurationParser audioDurationParser,
-                                      AiTranscriptionLimits aiTranscriptionLimits) {
-        this.mediaTypeDetector = mediaTypeDetector;
-        this.audioDurationParser = audioDurationParser;
-        this.aiTranscriptionLimits = aiTranscriptionLimits;
-    }
 
     @Override
     public String detect(byte[] audio) {

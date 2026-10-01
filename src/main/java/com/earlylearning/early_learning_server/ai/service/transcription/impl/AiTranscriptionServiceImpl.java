@@ -22,8 +22,11 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.idempotency.InputFingerprint;
 
+import lombok.RequiredArgsConstructor;
+
 /** {@link AiTranscriptionService} 的实现。 */
 @Service
+@RequiredArgsConstructor
 public class AiTranscriptionServiceImpl implements AiTranscriptionService {
 
     private static final String CONTEXT_FIELD_PREFIX = "/context/";
@@ -31,14 +34,6 @@ public class AiTranscriptionServiceImpl implements AiTranscriptionService {
     private final AiTaskSubmission aiTaskSubmission;
     private final AiTaskRunner aiTaskRunner;
     private final SpeechTranscriber speechTranscriber;
-
-    public AiTranscriptionServiceImpl(AiTaskSubmission aiTaskSubmission,
-                                      AiTaskRunner aiTaskRunner,
-                                      SpeechTranscriber speechTranscriber) {
-        this.aiTaskSubmission = aiTaskSubmission;
-        this.aiTaskRunner = aiTaskRunner;
-        this.speechTranscriber = speechTranscriber;
-    }
 
     @Override
     public AiTask submit(byte[] audio, String mimeType, TranscriptionCommand command, int retryAttempt) {

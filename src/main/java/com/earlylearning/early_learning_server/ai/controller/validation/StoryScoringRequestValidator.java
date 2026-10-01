@@ -16,6 +16,8 @@ import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.RequiredArgsConstructor;
+
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.invalid;
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.requireNotNull;
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.requireText;
@@ -29,15 +31,11 @@ import static com.earlylearning.early_learning_server.ai.controller.validation.R
  * （SERVER_FETCH）或教师确认过的图片说明（CONFIRMED_DESCRIPTION）。
  */
 @Component
+@RequiredArgsConstructor
 public class StoryScoringRequestValidator {
 
     private final ImageContextValidator imageContextValidator;
     private final ScoringLimits scoringLimits;
-
-    public StoryScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits scoringLimits) {
-        this.imageContextValidator = imageContextValidator;
-        this.scoringLimits = scoringLimits;
-    }
 
     public void validate(StoryScoringRequest request) {
         requireNotNull(request, "request");

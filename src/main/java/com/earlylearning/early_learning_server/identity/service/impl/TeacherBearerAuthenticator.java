@@ -13,25 +13,20 @@ import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 认教师 access_token（{@code at_}）。契约 TeacherBearer：每个请求都校验教师 status = 1、绑定激活码为 ACTIVE。
  *
  * <p>不做状态缓存：停用立即生效；重新启用后，未过期的 access 立即恢复可用（契约原文）。
  */
 @Component
+@RequiredArgsConstructor
 public class TeacherBearerAuthenticator implements BearerAuthenticator {
 
     private final TokenService tokenService;
     private final TeacherAccountMapper teacherAccountMapper;
     private final LicenseMapper licenseMapper;
-
-    public TeacherBearerAuthenticator(TokenService tokenService,
-                                      TeacherAccountMapper teacherAccountMapper,
-                                      LicenseMapper licenseMapper) {
-        this.tokenService = tokenService;
-        this.teacherAccountMapper = teacherAccountMapper;
-        this.licenseMapper = licenseMapper;
-    }
 
     @Override
     public TokenType type() {

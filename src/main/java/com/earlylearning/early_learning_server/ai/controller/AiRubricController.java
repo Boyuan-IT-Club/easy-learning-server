@@ -8,6 +8,8 @@ import com.earlylearning.early_learning_server.ai.dto.RubricCatalogResponse;
 import com.earlylearning.early_learning_server.ai.service.rubric.RubricCatalogService;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 评分条目目录查询。
  *
@@ -15,13 +17,10 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  */
 @RestController
 @RequestMapping("/api/ai")
+@RequiredArgsConstructor
 public class AiRubricController {
 
     private final RubricCatalogService rubricCatalogService;
-
-    public AiRubricController(RubricCatalogService rubricCatalogService) {
-        this.rubricCatalogService = rubricCatalogService;
-    }
 
     @GetMapping("/rubrics")
     public ApiResponse<RubricCatalogResponse> catalog() {

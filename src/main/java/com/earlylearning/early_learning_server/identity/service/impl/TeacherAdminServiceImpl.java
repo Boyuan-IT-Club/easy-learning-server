@@ -3,8 +3,6 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.util.List;
 import java.util.Locale;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,19 +17,17 @@ import com.earlylearning.early_learning_server.identity.mapper.LicenseMapper;
 import com.earlylearning.early_learning_server.identity.mapper.TeacherAccountMapper;
 import com.earlylearning.early_learning_server.identity.service.TeacherAdminService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /** {@link TeacherAdminService} 的实现。 */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class TeacherAdminServiceImpl implements TeacherAdminService {
-
-    private static final Logger log = LoggerFactory.getLogger(TeacherAdminServiceImpl.class);
 
     private final TeacherAccountMapper teacherAccountMapper;
     private final LicenseMapper licenseMapper;
-
-    public TeacherAdminServiceImpl(TeacherAccountMapper teacherAccountMapper, LicenseMapper licenseMapper) {
-        this.teacherAccountMapper = teacherAccountMapper;
-        this.licenseMapper = licenseMapper;
-    }
 
     @Override
     public PageResponse<UserAccountResponse> list(PageQuery page, String username, TeacherStatus status) {

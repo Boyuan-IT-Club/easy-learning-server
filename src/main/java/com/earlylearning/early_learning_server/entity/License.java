@@ -11,6 +11,9 @@ import com.earlylearning.early_learning_server.common.enums.LicenseStatus;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * 一枚激活码（{@code user_license}）。库里只有哈希，原码只在生成的那次响应里出现。
  *
@@ -18,6 +21,8 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
  * 迁移规则在这里，落库用 Mapper 里带旧状态条件的 UPDATE，并发时只有一个成功。
  */
 @TableName("user_license")
+@Getter
+@Setter
 public class License {
 
     @TableId(type = IdType.AUTO)
@@ -67,45 +72,5 @@ public class License {
         boolean boundTeacherMustBeDisabled = status == LicenseStatus.ACTIVE && userId != null;
         status = LicenseStatus.REVOKED;
         return boundTeacherMustBeDisabled;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
-
-    public String getActivationCodeHash() {
-        return activationCodeHash;
-    }
-
-    public void setActivationCodeHash(String activationCodeHash) {
-        this.activationCodeHash = activationCodeHash;
-    }
-
-    public LicenseStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(LicenseStatus status) {
-        this.status = status;
-    }
-
-    public Instant getActivatedAt() {
-        return activatedAt;
-    }
-
-    public void setActivatedAt(Instant activatedAt) {
-        this.activatedAt = activatedAt;
     }
 }

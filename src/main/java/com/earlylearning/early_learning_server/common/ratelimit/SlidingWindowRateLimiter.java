@@ -4,8 +4,6 @@ import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -13,6 +11,9 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.common.secret.Tokens;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 滑动日志限流：ZSET 里记录窗口内每一次请求的时间戳，任意时刻回看"过去 N 毫秒"的真实次数。
@@ -23,9 +24,9 @@ import com.earlylearning.early_learning_server.common.secret.Tokens;
  * <p>subject（IP、用户名等）先做 SHA-256 再进键名：键名不会被注入分隔符，Redis 里也不留原始用户名。
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class SlidingWindowRateLimiter {
-
-    private static final Logger log = LoggerFactory.getLogger(SlidingWindowRateLimiter.class);
 
     static final String KEY_PREFIX = "el:rl:";
 
@@ -41,11 +42,6 @@ public class SlidingWindowRateLimiter {
 
     private final StringRedisTemplate stringRedisTemplate;
     private final Clock clock;
-
-    public SlidingWindowRateLimiter(StringRedisTemplate stringRedisTemplate, Clock clock) {
-        this.stringRedisTemplate = stringRedisTemplate;
-        this.clock = clock;
-    }
 
     /**
      * 尝试占用一次配额。

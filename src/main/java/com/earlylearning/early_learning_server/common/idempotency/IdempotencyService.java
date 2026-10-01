@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -25,15 +26,11 @@ import tools.jackson.databind.ObjectMapper;
  * <p>两个方法都要求调用方已开启事务（{@code MANDATORY}），占用与回填才会一起提交或一起回滚。
  */
 @Service
+@RequiredArgsConstructor
 public class IdempotencyService {
 
     private final IdempotencyRecordMapper idempotencyRecordMapper;
     private final ObjectMapper objectMapper;
-
-    public IdempotencyService(IdempotencyRecordMapper idempotencyRecordMapper, ObjectMapper objectMapper) {
-        this.idempotencyRecordMapper = idempotencyRecordMapper;
-        this.objectMapper = objectMapper;
-    }
 
     /**
      * 占用幂等键。

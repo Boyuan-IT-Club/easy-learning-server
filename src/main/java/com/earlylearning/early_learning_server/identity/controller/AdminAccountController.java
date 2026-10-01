@@ -22,16 +22,15 @@ import com.earlylearning.early_learning_server.identity.dto.CreateAdminAccountRe
 import com.earlylearning.early_learning_server.identity.dto.UpdateAdminAccountRequest;
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
 
+import lombok.RequiredArgsConstructor;
+
 /** 管理员账号维护（契约 createAdminAccount、listAdminAccounts、updateAdminAccount）。权限：管理员。 */
 @RestController
 @RequestMapping("/admin/accounts")
+@RequiredArgsConstructor
 public class AdminAccountController {
 
     private final AdminAccountService adminAccountService;
-
-    public AdminAccountController(AdminAccountService adminAccountService) {
-        this.adminAccountService = adminAccountService;
-    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

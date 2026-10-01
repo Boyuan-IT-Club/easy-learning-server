@@ -10,16 +10,15 @@ import com.earlylearning.early_learning_server.identity.dto.AdminLoginRequest;
 import com.earlylearning.early_learning_server.identity.dto.AdminSessionResponse;
 import com.earlylearning.early_learning_server.identity.service.AdminLoginService;
 
+import lombok.RequiredArgsConstructor;
+
 /** 管理员登录（契约 adminLogin）。免认证。 */
 @RestController
 @RequestMapping("/admin")
+@RequiredArgsConstructor
 public class AdminAuthController {
 
     private final AdminLoginService adminLoginService;
-
-    public AdminAuthController(AdminLoginService adminLoginService) {
-        this.adminLoginService = adminLoginService;
-    }
 
     @PostMapping("/login")
     public ApiResponse<AdminSessionResponse> login(@RequestBody AdminLoginRequest request) {

@@ -2,8 +2,6 @@ package com.earlylearning.early_learning_server.storage.service.impl;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -16,11 +14,12 @@ import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
 import com.earlylearning.early_learning_server.storage.mapper.CloudFileQueryMapper;
 import com.earlylearning.early_learning_server.storage.service.CloudFileDeletionService;
 
+import lombok.extern.slf4j.Slf4j;
+
 /** {@link CloudFileDeletionService} 的实现。 */
 @Service
+@Slf4j
 public class CloudFileDeletionServiceImpl implements CloudFileDeletionService {
-
-    private static final Logger log = LoggerFactory.getLogger(CloudFileDeletionServiceImpl.class);
 
     private final CloudFileMapper cloudFileMapper;
     private final CloudFileQueryMapper cloudFileQueryMapper;

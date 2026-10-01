@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -22,11 +20,14 @@ import com.earlylearning.early_learning_server.storage.model.DownloadSignature;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileSignatureService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /** {@link CloudFileSignatureService} 的实现。 */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class CloudFileSignatureServiceImpl implements CloudFileSignatureService {
-
-    private static final Logger log = LoggerFactory.getLogger(CloudFileSignatureServiceImpl.class);
 
     private static final int MAX_BATCH_SIZE = 100;
 
@@ -35,11 +36,6 @@ public class CloudFileSignatureServiceImpl implements CloudFileSignatureService 
 
     private final CloudFileMapper cloudFileMapper;
     private final ObjectStorageService objectStorageService;
-
-    public CloudFileSignatureServiceImpl(CloudFileMapper cloudFileMapper, ObjectStorageService objectStorageService) {
-        this.cloudFileMapper = cloudFileMapper;
-        this.objectStorageService = objectStorageService;
-    }
 
     @Override
     public List<DownloadSignature> sign(List<String> fileCodes) {

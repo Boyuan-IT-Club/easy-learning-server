@@ -1,13 +1,13 @@
 package com.earlylearning.early_learning_server.ai.client.fake;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTranscriber;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 语音识别的假实现：接入真实服务前用它把链路跑通。
@@ -25,9 +25,8 @@ import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTran
  * <p>接入真实实现时，提供自己的 {@link SpeechTranscriber} Bean 并标注 {@code @Primary} 即可覆盖。
  */
 @Configuration(proxyBeanMethods = false)
+@Slf4j
 public class FakeTranscriberConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(FakeTranscriberConfig.class);
 
     private static final String DEFAULT_TRANSCRIPT = "（示例识别结果）";
 

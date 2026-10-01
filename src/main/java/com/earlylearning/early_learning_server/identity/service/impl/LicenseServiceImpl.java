@@ -3,8 +3,6 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +28,14 @@ import com.earlylearning.early_learning_server.identity.model.ActivationCodes;
 import com.earlylearning.early_learning_server.identity.model.IssuedLicenseIds;
 import com.earlylearning.early_learning_server.identity.service.LicenseService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /** {@link LicenseService} 的实现。 */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class LicenseServiceImpl implements LicenseService {
-
-    private static final Logger log = LoggerFactory.getLogger(LicenseServiceImpl.class);
 
     /** 单次最多生成的激活码数量。 */
     private static final int MAX_BATCH = 100;
@@ -46,16 +47,6 @@ public class LicenseServiceImpl implements LicenseService {
     private final TeacherAccountMapper teacherAccountMapper;
     private final KeyedHasher keyedHasher;
     private final SensitiveIdempotency sensitiveIdempotency;
-
-    public LicenseServiceImpl(LicenseMapper licenseMapper,
-                              TeacherAccountMapper teacherAccountMapper,
-                              KeyedHasher keyedHasher,
-                              SensitiveIdempotency sensitiveIdempotency) {
-        this.licenseMapper = licenseMapper;
-        this.teacherAccountMapper = teacherAccountMapper;
-        this.keyedHasher = keyedHasher;
-        this.sensitiveIdempotency = sensitiveIdempotency;
-    }
 
     @Override
     public CreateLicensesResponse create(Integer count, int adminId, String idempotencyKey) {

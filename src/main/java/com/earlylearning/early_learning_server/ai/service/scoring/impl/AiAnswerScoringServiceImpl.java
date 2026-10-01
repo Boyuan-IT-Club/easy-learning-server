@@ -24,8 +24,11 @@ import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScorin
 import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
 import com.earlylearning.early_learning_server.common.idempotency.InputFingerprint;
 
+import lombok.RequiredArgsConstructor;
+
 /** {@link AiAnswerScoringService} 的实现。 */
 @Service
+@RequiredArgsConstructor
 public class AiAnswerScoringServiceImpl implements AiAnswerScoringService {
 
     private final AiTaskSubmission aiTaskSubmission;
@@ -34,20 +37,6 @@ public class AiAnswerScoringServiceImpl implements AiAnswerScoringService {
     private final AnswerScorer answerScorer;
     private final QuestionScoreValidator questionScoreValidator;
     private final ScoringImageService scoringImageService;
-
-    public AiAnswerScoringServiceImpl(AiTaskSubmission aiTaskSubmission,
-                                      AiTaskRunner aiTaskRunner,
-                                      RubricService rubricService,
-                                      AnswerScorer answerScorer,
-                                      QuestionScoreValidator questionScoreValidator,
-                                      ScoringImageService scoringImageService) {
-        this.aiTaskSubmission = aiTaskSubmission;
-        this.aiTaskRunner = aiTaskRunner;
-        this.rubricService = rubricService;
-        this.answerScorer = answerScorer;
-        this.questionScoreValidator = questionScoreValidator;
-        this.scoringImageService = scoringImageService;
-    }
 
     @Override
     public AiTask submit(AnswerScoringCommand command, int retryAttempt) {

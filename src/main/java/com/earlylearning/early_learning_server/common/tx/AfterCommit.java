@@ -1,9 +1,9 @@
 package com.earlylearning.early_learning_server.common.tx;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 事务提交后执行；当前没有事务时立即执行。
@@ -14,9 +14,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * <p>提交后的任务失败只记日志、不上抛：数据库已经提交，此时再抛异常只会让客户端误以为操作失败。
  * 调用方要保证"任务没执行"是可以自愈的（例如 access 没写进 Redis，客户端会在 401 后自动刷新）。
  */
+@Slf4j
 public final class AfterCommit {
-
-    private static final Logger log = LoggerFactory.getLogger(AfterCommit.class);
 
     private AfterCommit() {
     }

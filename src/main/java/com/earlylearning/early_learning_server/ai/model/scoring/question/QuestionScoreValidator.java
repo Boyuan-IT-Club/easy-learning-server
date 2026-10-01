@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
 import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 单题评分的运行时语义校验。
  *
@@ -21,13 +23,10 @@ import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutp
  * 题号与 {@code attempt} 由服务端按请求写入结果，模型无从弄错。
  */
 @Component
+@RequiredArgsConstructor
 public class QuestionScoreValidator {
 
     private final EvidenceValidator evidenceValidator;
-
-    public QuestionScoreValidator(EvidenceValidator evidenceValidator) {
-        this.evidenceValidator = evidenceValidator;
-    }
 
     /**
      * @param output                模型返回的分数与元数据

@@ -1,7 +1,5 @@
 package com.earlylearning.early_learning_server.identity.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -11,19 +9,17 @@ import com.earlylearning.early_learning_server.identity.config.AdminBootstrapPro
 import com.earlylearning.early_learning_server.identity.dto.AdminAccountResponse;
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /** 启动时按 {@link AdminBootstrapProperties} 创建首个管理员。 */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class AdminBootstrap implements ApplicationRunner {
-
-    private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
     private final AdminAccountService adminAccountService;
     private final AdminBootstrapProperties adminBootstrapProperties;
-
-    public AdminBootstrap(AdminAccountService adminAccountService, AdminBootstrapProperties adminBootstrapProperties) {
-        this.adminAccountService = adminAccountService;
-        this.adminBootstrapProperties = adminBootstrapProperties;
-    }
 
     @Override
     public void run(ApplicationArguments args) {

@@ -3,8 +3,6 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.util.List;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +26,8 @@ import com.earlylearning.early_learning_server.identity.model.AdminPasswordPolic
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -36,9 +36,9 @@ import tools.jackson.databind.ObjectMapper;
  * <p>幂等快照是不含密码的响应，指纹里是密码的 HMAC；改密码或停用的 Token 吊销在提交后执行。
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class AdminAccountServiceImpl implements AdminAccountService {
-
-    private static final Logger log = LoggerFactory.getLogger(AdminAccountServiceImpl.class);
 
     private static final IdempotencyScope CREATE = IdempotencyScope.ADMIN_ACCOUNT_CREATE;
 
@@ -48,20 +48,6 @@ public class AdminAccountServiceImpl implements AdminAccountService {
     private final IdempotencyService idempotencyService;
     private final KeyedHasher keyedHasher;
     private final ObjectMapper objectMapper;
-
-    public AdminAccountServiceImpl(AdminAccountMapper adminAccountMapper,
-                                   PasswordEncoder passwordEncoder,
-                                   TokenService tokenService,
-                                   IdempotencyService idempotencyService,
-                                   KeyedHasher keyedHasher,
-                                   ObjectMapper objectMapper) {
-        this.adminAccountMapper = adminAccountMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenService = tokenService;
-        this.idempotencyService = idempotencyService;
-        this.keyedHasher = keyedHasher;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     @Transactional

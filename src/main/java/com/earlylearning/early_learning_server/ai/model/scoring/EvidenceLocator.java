@@ -3,8 +3,7 @@ package com.earlylearning.early_learning_server.ai.model.scoring;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 把模型照抄的原文片段定位到确认文本里,得到带偏移的证据。故事评分与单题评分共用。
@@ -14,9 +13,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>public:两个模型适配器(infrastructure)都使用,属共享的领域规则。
  */
+@Slf4j
 public final class EvidenceLocator {
-
-    private static final Logger log = LoggerFactory.getLogger(EvidenceLocator.class);
 
     private EvidenceLocator() {
     }

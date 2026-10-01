@@ -26,6 +26,8 @@ import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScori
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 故事评分的模型适配器:把已解析的输入交给多模态模型,产出 {@code AIScore v2}。
  * 只依赖 {@link ChatModel} 端口,与厂商无关;真实实现在 client/ecnu,联调假实现在 client/fake。
@@ -46,6 +48,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <p>叙事产生性的四项量化统计({@code mean_c_unit_length} 等)恒为 null:本服务不含分词与
  * 词性工具,该条目取模型判断的 0/1/2 分。
  */
+@RequiredArgsConstructor
 public class ChatModelStoryScorer implements StoryScorer {
 
     /** 提示词版本：随 prompt 一起演进，写进结果的 model_meta，便于追溯。 */
@@ -66,11 +69,6 @@ public class ChatModelStoryScorer implements StoryScorer {
 
     private final ChatModel chatModel;
     private final RubricConfig rubricConfig;
-
-    public ChatModelStoryScorer(ChatModel chatModel, RubricConfig rubricConfig) {
-        this.chatModel = chatModel;
-        this.rubricConfig = rubricConfig;
-    }
 
     @Override
     public AiScore score(StoryScoringInput input, String rubricVersion) {

@@ -10,6 +10,7 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.identity.model.RefreshGrace;
 
+import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -17,17 +18,13 @@ import tools.jackson.databind.ObjectMapper;
  * 值里有新凭证明文，Redis 须关闭持久化。Redis 故障统一翻译成 503 DEPENDENCY_UNAVAILABLE。
  */
 @Repository
+@RequiredArgsConstructor
 public class RefreshGraceStore {
 
     private static final String KEY = "el:auth:rt-grace:";
 
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
-
-    public RefreshGraceStore(StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
-        this.stringRedisTemplate = stringRedisTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     /** 覆盖写：同一枚旧凭证只有在上次轮换回滚后才会再次轮换，此时旧记录必须被替换。 */
     public void remember(String oldRefreshHash, RefreshGrace grace) {

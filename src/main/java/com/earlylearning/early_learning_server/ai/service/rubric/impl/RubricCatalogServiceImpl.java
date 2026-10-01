@@ -19,8 +19,11 @@ import com.earlylearning.early_learning_server.ai.service.rubric.RubricCatalogSe
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.RequiredArgsConstructor;
+
 /** {@link RubricCatalogService} 的实现。 */
 @Service
+@RequiredArgsConstructor
 public class RubricCatalogServiceImpl implements RubricCatalogService {
 
     private static final String SHARED_APPLICABILITY = "所有故事共用的统一叙事或问答评价条目。";
@@ -44,10 +47,6 @@ public class RubricCatalogServiceImpl implements RubricCatalogService {
             new ContentItemSpec("NARRATIVE_CONTENT_06", "图7-2"));
 
     private final RubricProperties rubricProperties;
-
-    public RubricCatalogServiceImpl(RubricProperties rubricProperties) {
-        this.rubricProperties = rubricProperties;
-    }
 
     @Override
     public Set<String> contentItemCodes() {

@@ -10,9 +10,9 @@ import org.jaudiotagger.audio.exceptions.CannotReadException;
 import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
 import org.jaudiotagger.audio.exceptions.ReadOnlyFileException;
 import org.jaudiotagger.tag.TagException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 读取音频文件时长，写入上传记录的 duration_ms。
@@ -22,9 +22,8 @@ import org.springframework.stereotype.Component;
  * 该库只给到整秒，因此毫秒值必然是 1000 的整数倍。
  */
 @Component
+@Slf4j
 public class AudioDurationReader {
-
-    private static final Logger log = LoggerFactory.getLogger(AudioDurationReader.class);
 
     /**
      * 可解析的 MIME。

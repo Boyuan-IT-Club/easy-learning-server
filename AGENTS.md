@@ -69,13 +69,17 @@ common/    ← 共享能力与共享取值，只被依赖、不依赖任何模�
 
 - controller 只调 service 接口，使用 dto（可用 entity / model 做转换）；**不碰 mapper、client**，不写业务。
   公共路径写在类上的 `@RequestMapping`，方法上只写剩余部分。
-- 注入一律走构造器、字段 `private final`，字段名取类型名的小驼峰（`licenseMapper`、`tokenService`）。
+- 注入一律走构造器：字段 `private final` + 类上 `@RequiredArgsConstructor`（构造器里有别的逻辑时才手写），
+  字段名取类型名的小驼峰（`licenseMapper`、`tokenService`）。
+- Lombok 只用 `@Slf4j`、`@RequiredArgsConstructor`、实体上的 `@Getter @Setter`。**实体不用 `@Data`**：
+  它生成的 `toString` 会带出密码哈希、refresh 哈希与激活码哈希。dto 用 record，不需要 Lombok。
 - service 可以用 mapper、entity、model、client、dto；**不产出 `ApiResponse` / `ResponseEntity`**，包络由 controller 套。
 - **service 一律接口 + 实现**：`service/` 下只有接口，`service/impl/XxxServiceImpl` 加 `@Service` 并实现同名接口；
   impl 里也可以放别的 service 接口的实现（如 identity 实现 security 的 `BearerAuthenticator`）。
   除 impl 自己外谁都不依赖 impl（注入一律用接口）。不是业务的组件不放 service：
-  执行器、外部适配进 `client/`，纯规则校验进 `model/`，启动初始化进 `config/`。接口写契约语义（做什么、失败返回什么），
-  实现细节（锁、事务边界、并发处理）写在 impl 上；impl 方法只加 `@Override`，不重复接口注释；常量放 impl 里。
+  执行器、外部适配进 `client/`，纯规则校验进 `model/`，启动初始化进 `config/`。
+  接口写契约语义（做什么、失败返回什么），实现细节（锁、事务边界、并发处理）写在 impl 上；
+  impl 方法只加 `@Override`，不重复接口注释；常量放 impl 里。
 - **实体集中在顶层 `entity/`，只放表映射类**；状态、种类等取值枚举放 `common/enums/`。
   状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）。
   表归属由 Mapper 决定：同一实体的 BaseMapper 只能出现在一个模块，别的模块经该模块的 service 读写。
@@ -205,7 +209,7 @@ MySQL 保存文件元数据和对象引用；OSS 保存实际大文件。
 
 ### 日志
 
-- `private static final Logger log = LoggerFactory.getLogger(Xxx.class);`，消息用中文，参数写成 `key={}`。
+- 类上加 `@Slf4j`，消息用中文，参数写成 `key={}`。
 - 级别：`info` 记业务成功事件（登录、注册、发布、撤销、状态变更等）；`warn` 记被拒绝的请求（4xx、限流、锁定、
   疑似凭证重放）；`error` 记服务端故障，异常对象作为最后一个参数带出堆栈
   （message 可能带识别原文等内容的异常只记类型，见 `AiTaskRunner`）；`debug` 记排查细节（签发 Token 等）。

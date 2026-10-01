@@ -3,8 +3,6 @@ package com.earlylearning.early_learning_server.common.web;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -21,6 +19,8 @@ import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * 把异常翻译成的响应形状。
  *
@@ -30,9 +30,8 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
  * <p>500 的响应体里只有错误码与简短说明，不回传堆栈；堆栈只进日志。
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /** 业务异常：状态码与错误码都已确定。 */
     @ExceptionHandler(BusinessException.class)

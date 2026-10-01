@@ -3,8 +3,6 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.time.Clock;
 import java.time.Duration;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -30,15 +28,18 @@ import com.earlylearning.early_learning_server.identity.service.TeacherRegistrat
 import com.earlylearning.early_learning_server.security.model.TeacherTokens;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * {@link TeacherRegistrationService} 的实现。
  *
  * <p>同一事务：锁码 → 建号 → 占码 → 签发 Token 并写 refresh 哈希。幂等指纹里放激活码的 HMAC，不放原码。
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class TeacherRegistrationServiceImpl implements TeacherRegistrationService {
-
-    private static final Logger log = LoggerFactory.getLogger(TeacherRegistrationServiceImpl.class);
 
     /** 同一 IP 每分钟最多 10 次注册请求。 */
     public static final RateLimitRule PER_IP = new RateLimitRule("register", Duration.ofMinutes(1), 10);
@@ -50,22 +51,6 @@ public class TeacherRegistrationServiceImpl implements TeacherRegistrationServic
     private final SlidingWindowRateLimiter slidingWindowRateLimiter;
     private final KeyedHasher keyedHasher;
     private final Clock clock;
-
-    public TeacherRegistrationServiceImpl(LicenseMapper licenseMapper,
-                                          TeacherAccountMapper teacherAccountMapper,
-                                          TokenService tokenService,
-                                          SensitiveIdempotency sensitiveIdempotency,
-                                          SlidingWindowRateLimiter slidingWindowRateLimiter,
-                                          KeyedHasher keyedHasher,
-                                          Clock clock) {
-        this.licenseMapper = licenseMapper;
-        this.teacherAccountMapper = teacherAccountMapper;
-        this.tokenService = tokenService;
-        this.sensitiveIdempotency = sensitiveIdempotency;
-        this.slidingWindowRateLimiter = slidingWindowRateLimiter;
-        this.keyedHasher = keyedHasher;
-        this.clock = clock;
-    }
 
     @Override
     public TokenPairResponse register(String activationCode, String rawUsername, String idempotencyKey) {

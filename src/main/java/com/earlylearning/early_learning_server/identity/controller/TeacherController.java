@@ -16,16 +16,15 @@ import com.earlylearning.early_learning_server.identity.dto.UpdateTeacherStatusR
 import com.earlylearning.early_learning_server.identity.dto.UserAccountResponse;
 import com.earlylearning.early_learning_server.identity.service.TeacherAdminService;
 
+import lombok.RequiredArgsConstructor;
+
 /** 教师云端账号管理（契约 listTeachers、updateTeacherStatus）。权限：管理员。 */
 @RestController
 @RequestMapping("/admin/users")
+@RequiredArgsConstructor
 public class TeacherController {
 
     private final TeacherAdminService teacherAdminService;
-
-    public TeacherController(TeacherAdminService teacherAdminService) {
-        this.teacherAdminService = teacherAdminService;
-    }
 
     @GetMapping
     public ApiResponse<PageResponse<UserAccountResponse>> list(

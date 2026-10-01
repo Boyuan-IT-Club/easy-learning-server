@@ -16,19 +16,16 @@ import com.earlylearning.early_learning_server.identity.dto.TokenPairResponse;
 import com.earlylearning.early_learning_server.identity.service.TeacherRefreshService;
 import com.earlylearning.early_learning_server.identity.service.TeacherRegistrationService;
 
+import lombok.RequiredArgsConstructor;
+
 /** 教师注册与刷新（契约 registerTeacher、refreshTeacherToken）。两个接口都免认证。 */
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class TeacherAuthController {
 
     private final TeacherRegistrationService teacherRegistrationService;
     private final TeacherRefreshService teacherRefreshService;
-
-    public TeacherAuthController(TeacherRegistrationService teacherRegistrationService,
-                                 TeacherRefreshService teacherRefreshService) {
-        this.teacherRegistrationService = teacherRegistrationService;
-        this.teacherRefreshService = teacherRefreshService;
-    }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)

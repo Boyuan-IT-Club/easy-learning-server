@@ -4,13 +4,14 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.common.secret.Tokens;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 失败锁定：窗口内失败达到上限后锁定一段时间，锁定期间直接拒绝。
@@ -19,17 +20,12 @@ import com.earlylearning.early_learning_server.common.secret.Tokens;
  * 只在失败时计数，所以正常用户输对一次就不受影响。
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class FailureLockout {
-
-    private static final Logger log = LoggerFactory.getLogger(FailureLockout.class);
 
     private final SlidingWindowRateLimiter slidingWindowRateLimiter;
     private final StringRedisTemplate stringRedisTemplate;
-
-    public FailureLockout(SlidingWindowRateLimiter slidingWindowRateLimiter, StringRedisTemplate stringRedisTemplate) {
-        this.slidingWindowRateLimiter = slidingWindowRateLimiter;
-        this.stringRedisTemplate = stringRedisTemplate;
-    }
 
     /** @return 仍在锁定中时给出剩余时长；未锁定或 Redis 故障时为空 */
     public Optional<Duration> lockedFor(RateLimitRule rule, String subject) {

@@ -14,8 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 import jakarta.annotation.PreDestroy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
@@ -25,6 +23,8 @@ import com.earlylearning.early_learning_server.ai.model.task.FailedStage;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailure;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * AI 任务的异步执行：把结果写回内存里的任务。
@@ -42,9 +42,8 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
  * </ul>
  */
 @Component
+@Slf4j
 public class AiTaskRunner {
-
-    private static final Logger log = LoggerFactory.getLogger(AiTaskRunner.class);
 
     private static final int POOL_SIZE = 2;
     /** 队列容量：两倍线程数。再多的请求直接落成可重试失败，比堆里堆着几百 MB 儿童数据好。 */

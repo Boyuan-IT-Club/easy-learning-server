@@ -3,14 +3,13 @@ package com.earlylearning.early_learning_server.ai.client.rubric;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricConfig;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
 
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -21,9 +20,9 @@ import tools.jackson.databind.ObjectMapper;
  * 这种错一旦发生，所有分数都不可信且很难发现。宁可启动失败。
  */
 @Component
+@Slf4j
 public class RubricConfigLoader {
 
-    private static final Logger log = LoggerFactory.getLogger(RubricConfigLoader.class);
     private static final String RESOURCE = "ai/rubric-config.json";
 
     private final RubricConfig config;

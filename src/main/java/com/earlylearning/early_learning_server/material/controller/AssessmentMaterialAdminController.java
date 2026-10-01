@@ -27,6 +27,7 @@ import com.earlylearning.early_learning_server.material.service.AssessmentMateri
 import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
 import com.earlylearning.early_learning_server.storage.model.IncomingFile;
 
+import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -37,19 +38,12 @@ import tools.jackson.databind.ObjectMapper;
 @RestController
 @RequestMapping("/admin/assessment-materials")
 @Validated
+@RequiredArgsConstructor
 public class AssessmentMaterialAdminController {
 
     private final AssessmentMaterialPublishService assessmentMaterialPublishService;
     private final AssessmentMaterialQueryService assessmentMaterialQueryService;
     private final ObjectMapper objectMapper;
-
-    public AssessmentMaterialAdminController(AssessmentMaterialPublishService assessmentMaterialPublishService,
-                                             AssessmentMaterialQueryService assessmentMaterialQueryService,
-                                             ObjectMapper objectMapper) {
-        this.assessmentMaterialPublishService = assessmentMaterialPublishService;
-        this.assessmentMaterialQueryService = assessmentMaterialQueryService;
-        this.objectMapper = objectMapper;
-    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AssessmentMaterialResponse>> publish(

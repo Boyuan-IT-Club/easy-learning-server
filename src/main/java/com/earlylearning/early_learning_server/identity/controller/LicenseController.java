@@ -26,16 +26,15 @@ import com.earlylearning.early_learning_server.identity.dto.LicenseResponse;
 import com.earlylearning.early_learning_server.identity.service.LicenseService;
 import com.earlylearning.early_learning_server.security.model.AdminPrincipal;
 
+import lombok.RequiredArgsConstructor;
+
 /** 激活码管理（契约 createLicenses、listLicenses、revokeLicense）。权限：管理员。 */
 @RestController
 @RequestMapping("/admin/licenses")
+@RequiredArgsConstructor
 public class LicenseController {
 
     private final LicenseService licenseService;
-
-    public LicenseController(LicenseService licenseService) {
-        this.licenseService = licenseService;
-    }
 
     /** 单个或批量生成。响应含激活码原文，只在首次与短时重放中出现。 */
     @PostMapping

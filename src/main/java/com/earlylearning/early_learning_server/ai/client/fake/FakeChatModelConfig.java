@@ -2,8 +2,6 @@ package com.earlylearning.early_learning_server.ai.client.fake;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 默认（假）大模型实现：没有令牌也能把链路跑通，测试也不需要联网。
@@ -27,9 +27,8 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "ai.llm.provider", havingValue = "fake", matchIfMissing = true)
+@Slf4j
 public class FakeChatModelConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(FakeChatModelConfig.class);
 
     /** 默认返回：能通过单题评分校验的最小 JSON（空证据是合法的）。 */
     private static final String DEFAULT_CONTENT =

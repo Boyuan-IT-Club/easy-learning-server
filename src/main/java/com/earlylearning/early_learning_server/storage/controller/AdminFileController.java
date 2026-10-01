@@ -27,6 +27,8 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileDeletion
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileService;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 官方文件的管理端接口：上传、列表、标记删除。
  *
@@ -38,19 +40,12 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileService;
 @RestController
 @RequestMapping("/admin/files")
 @Validated
+@RequiredArgsConstructor
 public class AdminFileController {
 
     private final CloudFileService cloudFileService;
     private final CloudFileQueryService cloudFileQueryService;
     private final CloudFileDeletionService cloudFileDeletionService;
-
-    public AdminFileController(CloudFileService cloudFileService,
-                               CloudFileQueryService cloudFileQueryService,
-                               CloudFileDeletionService cloudFileDeletionService) {
-        this.cloudFileService = cloudFileService;
-        this.cloudFileQueryService = cloudFileQueryService;
-        this.cloudFileDeletionService = cloudFileDeletionService;
-    }
 
     /**
      * 标记删除。

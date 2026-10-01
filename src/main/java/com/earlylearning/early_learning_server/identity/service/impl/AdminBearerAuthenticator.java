@@ -12,17 +12,15 @@ import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 
+import lombok.RequiredArgsConstructor;
+
 /** 认管理员 Token（{@code adt_}）。契约 AdminBearer：每个请求都校验账号仍为 ACTIVE。 */
 @Component
+@RequiredArgsConstructor
 public class AdminBearerAuthenticator implements BearerAuthenticator {
 
     private final TokenService tokenService;
     private final AdminAccountMapper adminAccountMapper;
-
-    public AdminBearerAuthenticator(TokenService tokenService, AdminAccountMapper adminAccountMapper) {
-        this.tokenService = tokenService;
-        this.adminAccountMapper = adminAccountMapper;
-    }
 
     @Override
     public TokenType type() {

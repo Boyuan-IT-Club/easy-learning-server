@@ -14,6 +14,8 @@ import com.earlylearning.early_learning_server.storage.dto.SignDownloadUrlsReque
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileSignatureService;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 教师端的文件读取接口：元数据与批量下载地址签发。
  *
@@ -21,16 +23,11 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileSignatur
  */
 @RestController
 @RequestMapping("/api/files")
+@RequiredArgsConstructor
 public class FileMetadataController {
 
     private final CloudFileQueryService cloudFileQueryService;
     private final CloudFileSignatureService cloudFileSignatureService;
-
-    public FileMetadataController(CloudFileQueryService cloudFileQueryService,
-                                  CloudFileSignatureService cloudFileSignatureService) {
-        this.cloudFileQueryService = cloudFileQueryService;
-        this.cloudFileSignatureService = cloudFileSignatureService;
-    }
 
     @GetMapping("/{file_code}")
     public ApiResponse<CloudFileResponse> metadata(@PathVariable("file_code") String fileCode) {

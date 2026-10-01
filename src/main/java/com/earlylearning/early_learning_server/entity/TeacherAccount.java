@@ -11,10 +11,15 @@ import com.earlylearning.early_learning_server.common.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * 教师云端账号（{@code user_account}）。云端不保存教师密码，只保存当前 refresh_token 的哈希。
  */
 @TableName("user_account")
+@Getter
+@Setter
 public class TeacherAccount {
 
     @TableId(type = IdType.AUTO)
@@ -53,46 +58,6 @@ public class TeacherAccount {
         if (license == null || !license.isActive()) {
             throw new BusinessException(ErrorCode.LICENSE_REVOKED, HttpStatus.CONFLICT, null, null, null);
         }
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getRefreshTokenHash() {
-        return refreshTokenHash;
-    }
-
-    public void setRefreshTokenHash(String refreshTokenHash) {
-        this.refreshTokenHash = refreshTokenHash;
-    }
-
-    public TeacherStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TeacherStatus status) {
-        this.status = status;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
     }
 
     @Override

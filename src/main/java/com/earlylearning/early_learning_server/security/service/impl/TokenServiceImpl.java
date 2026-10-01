@@ -3,8 +3,6 @@ package com.earlylearning.early_learning_server.security.service.impl;
 import java.time.Clock;
 import java.time.Instant;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
@@ -18,21 +16,18 @@ import com.earlylearning.early_learning_server.security.model.TeacherTokens;
 import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /** {@link TokenService} 的实现。 */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class TokenServiceImpl implements TokenService {
-
-    private static final Logger log = LoggerFactory.getLogger(TokenServiceImpl.class);
 
     private final RedisTokenStore redisTokenStore;
     private final AuthProperties authProperties;
     private final Clock clock;
-
-    public TokenServiceImpl(RedisTokenStore redisTokenStore, AuthProperties authProperties, Clock clock) {
-        this.redisTokenStore = redisTokenStore;
-        this.authProperties = authProperties;
-        this.clock = clock;
-    }
 
     @Override
     public TeacherTokens issueTeacher(int userId) {

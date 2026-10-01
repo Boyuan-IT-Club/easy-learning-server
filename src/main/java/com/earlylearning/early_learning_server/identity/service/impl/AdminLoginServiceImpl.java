@@ -2,8 +2,6 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 
 import java.time.Duration;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +19,8 @@ import com.earlylearning.early_learning_server.identity.model.AdminPasswordPolic
 import com.earlylearning.early_learning_server.identity.service.AdminLoginService;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * {@link AdminLoginService} 的实现。
  *
@@ -30,9 +30,8 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
  * </ul>
  */
 @Service
+@Slf4j
 public class AdminLoginServiceImpl implements AdminLoginService {
-
-    private static final Logger log = LoggerFactory.getLogger(AdminLoginServiceImpl.class);
 
     /** 同一 IP 每分钟最多 20 次登录请求。 */
     public static final RateLimitRule LOGIN_PER_IP = new RateLimitRule("admin-login-ip", Duration.ofMinutes(1), 20);

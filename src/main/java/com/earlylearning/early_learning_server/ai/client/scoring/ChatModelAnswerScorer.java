@@ -18,6 +18,8 @@ import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageSe
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 单题评分的模型适配器:把题目、预设提示、本次回答与已解析图片交给多模态模型,产出结构化分数。
  * 只依赖 {@link ChatModel} 端口,与厂商无关;图片字节由服务端按 file_code 取回(见 {@code ScoringImageService})。
@@ -29,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *   <li>模型只给分与理由;{@code rubric_version}、提示词版本、模型标识由服务端写入结果。</li>
  * </ul>
  */
+@RequiredArgsConstructor
 public class ChatModelAnswerScorer implements AnswerScorer {
 
     /** 提示词版本:随 prompt 演进,写进结果的 model_meta,便于追溯。 */
@@ -54,11 +57,6 @@ public class ChatModelAnswerScorer implements AnswerScorer {
 
     private final ChatModel chatModel;
     private final RubricConfig rubricConfig;
-
-    public ChatModelAnswerScorer(ChatModel chatModel, RubricConfig rubricConfig) {
-        this.chatModel = chatModel;
-        this.rubricConfig = rubricConfig;
-    }
 
     @Override
     public AnswerScoringOutput score(AnswerScoringInput input, String rubricVersion) {

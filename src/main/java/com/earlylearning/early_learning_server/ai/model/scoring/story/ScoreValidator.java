@@ -14,6 +14,8 @@ import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidato
 import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 故事评分结果的运行时语义校验:维度集合完整且按规则顺序、分数不越界、证据与确认文本一致、
  * 图片分组条目恰好覆盖请求的全部分组。
@@ -22,16 +24,13 @@ import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
  * 任务以 {@code MODEL_OUTPUT_INVALID} 失败,不产生部分可用的结果。
  */
 @Component
+@RequiredArgsConstructor
 public class ScoreValidator {
 
     private static final int MAX_SCORE = 2;
     private static final int MIN_SCORE = 0;
 
     private final EvidenceValidator evidenceValidator;
-
-    public ScoreValidator(EvidenceValidator evidenceValidator) {
-        this.evidenceValidator = evidenceValidator;
-    }
 
     public void validate(AiScore score,
                          String expectedRubricVersion,

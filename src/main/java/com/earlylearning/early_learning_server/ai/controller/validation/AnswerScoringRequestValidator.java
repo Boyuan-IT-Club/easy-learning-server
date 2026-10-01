@@ -9,6 +9,8 @@ import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.RequiredArgsConstructor;
+
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.invalid;
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.requireNotNull;
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.requireText;
@@ -24,15 +26,11 @@ import static com.earlylearning.early_learning_server.ai.controller.validation.R
  * 本类不校验"提示后作答必须带非空提示"——预设提示由课程配置决定，且契约允许它为空。
  */
 @Component
+@RequiredArgsConstructor
 public class AnswerScoringRequestValidator {
 
     private final ImageContextValidator imageContextValidator;
     private final ScoringLimits scoringLimits;
-
-    public AnswerScoringRequestValidator(ImageContextValidator imageContextValidator, ScoringLimits scoringLimits) {
-        this.imageContextValidator = imageContextValidator;
-        this.scoringLimits = scoringLimits;
-    }
 
     public void validate(AnswerScoringRequest request) {
         requireNotNull(request, "request");

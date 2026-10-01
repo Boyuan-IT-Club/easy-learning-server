@@ -19,8 +19,11 @@ import com.earlylearning.early_learning_server.storage.model.FilePage;
 import com.earlylearning.early_learning_server.storage.model.FileSummary;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 
+import lombok.RequiredArgsConstructor;
+
 /** {@link CloudFileQueryService} 的实现。 */
 @Service
+@RequiredArgsConstructor
 public class CloudFileQueryServiceImpl implements CloudFileQueryService {
 
     private static final int MIN_PAGE = 1;
@@ -38,11 +41,6 @@ public class CloudFileQueryServiceImpl implements CloudFileQueryService {
 
     private final CloudFileMapper cloudFileMapper;
     private final CloudFileQueryMapper cloudFileQueryMapper;
-
-    public CloudFileQueryServiceImpl(CloudFileMapper cloudFileMapper, CloudFileQueryMapper cloudFileQueryMapper) {
-        this.cloudFileMapper = cloudFileMapper;
-        this.cloudFileQueryMapper = cloudFileQueryMapper;
-    }
 
     @Override
     public FilePage list(int page,

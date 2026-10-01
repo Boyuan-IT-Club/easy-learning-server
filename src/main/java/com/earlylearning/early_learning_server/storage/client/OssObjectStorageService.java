@@ -19,17 +19,15 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
+import lombok.RequiredArgsConstructor;
+
 /** OSS 适配实现。失败抛 {@link BusinessException}（DEPENDENCY_UNAVAILABLE），由全局异常处理翻译成 503。 */
 @Service
+@RequiredArgsConstructor
 public class OssObjectStorageService implements ObjectStorageService {
 
     private final OSS client;
     private final OssProperties ossProperties;
-
-    public OssObjectStorageService(OSS client, OssProperties ossProperties) {
-        this.client = client;
-        this.ossProperties = ossProperties;
-    }
 
     @Override
     public void upload(String objectKey, InputStream input, long contentLength, String contentType) {

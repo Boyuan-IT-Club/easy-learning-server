@@ -20,6 +20,8 @@ import com.earlylearning.early_learning_server.ai.model.task.AiTask;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScoringService;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 单题（提示前／提示后）评分提交。
  *
@@ -29,16 +31,11 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  */
 @RestController
 @RequestMapping("/api/ai")
+@RequiredArgsConstructor
 public class AiAnswerScoringController {
 
     private final AiAnswerScoringService aiAnswerScoringService;
     private final AnswerScoringRequestValidator answerScoringRequestValidator;
-
-    public AiAnswerScoringController(AiAnswerScoringService aiAnswerScoringService,
-                                     AnswerScoringRequestValidator answerScoringRequestValidator) {
-        this.aiAnswerScoringService = aiAnswerScoringService;
-        this.answerScoringRequestValidator = answerScoringRequestValidator;
-    }
 
     @PostMapping("/score-answer")
     public ResponseEntity<ApiResponse<TaskHandleResponse>> scoreAnswer(

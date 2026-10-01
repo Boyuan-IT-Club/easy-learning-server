@@ -4,12 +4,13 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 转写、故事评分、单题评分三个提交接口共用的提交语义。
@@ -25,18 +26,14 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
  * 持久化的判据会指向已消失的任务。
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class AiTaskSubmission {
-
-    private static final Logger log = LoggerFactory.getLogger(AiTaskSubmission.class);
 
     /** 首次提交的序号。三个提交服务共用，写在这里避免各自再抄一份。 */
     public static final int FIRST_ATTEMPT = 0;
 
     private final AiTaskStore aiTaskStore;
-
-    public AiTaskSubmission(AiTaskStore aiTaskStore) {
-        this.aiTaskStore = aiTaskStore;
-    }
 
     /**
      * 判断本次提交该做什么。

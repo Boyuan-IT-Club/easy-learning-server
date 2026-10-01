@@ -2,8 +2,6 @@ package com.earlylearning.early_learning_server.ai.client.fake;
 
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +15,8 @@ import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerS
 import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 单题评分的假实现：接入真实模型前用它把链路跑通。
@@ -32,9 +32,8 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "ai.llm.provider", havingValue = "fake", matchIfMissing = true)
+@Slf4j
 public class FakeAnswerScorerConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(FakeAnswerScorerConfig.class);
 
     private static final int SAMPLE_SCORE = 1;
     private static final int EVIDENCE_SAMPLE_LENGTH = 2;

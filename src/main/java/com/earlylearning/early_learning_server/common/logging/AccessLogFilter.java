@@ -7,13 +7,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 访问日志：每个请求一行，记方法、路径、状态码、耗时与调用方身份。
@@ -24,9 +24,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
+@Slf4j
 public class AccessLogFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(AccessLogFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,

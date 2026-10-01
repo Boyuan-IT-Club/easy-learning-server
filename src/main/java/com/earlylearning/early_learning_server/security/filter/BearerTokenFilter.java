@@ -11,8 +11,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.context.SecurityContext;
@@ -29,6 +27,8 @@ import com.earlylearning.early_learning_server.security.model.TeacherPrincipal;
 import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * 读取 {@code Authorization: Bearer <token>}，按前缀交给对应的 {@link BearerAuthenticator}。
  *
@@ -44,9 +44,8 @@ import com.earlylearning.early_learning_server.security.service.BearerAuthentica
  *
  * <p>不是 Spring Bean：否则 Boot 会把它再注册成一个普通 Servlet 过滤器，每个请求执行两遍。
  */
+@Slf4j
 public final class BearerTokenFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(BearerTokenFilter.class);
 
     private static final String BEARER = "Bearer ";
 

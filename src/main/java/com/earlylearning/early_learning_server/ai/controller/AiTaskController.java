@@ -9,6 +9,8 @@ import com.earlylearning.early_learning_server.ai.dto.AiTaskResponse;
 import com.earlylearning.early_learning_server.ai.service.task.AiTaskService;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * AI 任务查询。
  *
@@ -16,13 +18,10 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  */
 @RestController
 @RequestMapping("/api/ai")
+@RequiredArgsConstructor
 public class AiTaskController {
 
     private final AiTaskService aiTaskService;
-
-    public AiTaskController(AiTaskService aiTaskService) {
-        this.aiTaskService = aiTaskService;
-    }
 
     @GetMapping("/tasks/{task_id}")
     public ApiResponse<AiTaskResponse> get(@PathVariable("task_id") String taskId) {

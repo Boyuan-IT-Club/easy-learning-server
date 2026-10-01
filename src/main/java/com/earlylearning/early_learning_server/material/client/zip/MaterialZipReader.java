@@ -14,14 +14,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.material.model.MaterialPublishLimits;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 读取材料 ZIP 包并执行结构性校验：根目录平铺、恰好一个 config.json、
@@ -31,21 +32,17 @@ import com.earlylearning.early_learning_server.material.model.MaterialPublishLim
  * 由调用方在发布结束后调用 cleanup 删除。
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class MaterialZipReader {
 
     public static final String CONFIG_ENTRY_NAME = "config.json";
-
-    private static final Logger log = LoggerFactory.getLogger(MaterialZipReader.class);
 
     /** 契约的包内文件名规则：非纯点号、无路径与控制字符，长度 1 到 128。 */
     private static final String NAME_PATTERN = "^(?!\\.{1,2}$)[^<>:\"/\\\\|?*\\x00-\\x1F\\x7F]+$";
     private static final int MAX_NAME_LENGTH = 128;
 
     private final MaterialPublishLimits materialPublishLimits;
-
-    public MaterialZipReader(MaterialPublishLimits materialPublishLimits) {
-        this.materialPublishLimits = materialPublishLimits;
-    }
 
     /**
      * 解析暂存的 ZIP 文件。

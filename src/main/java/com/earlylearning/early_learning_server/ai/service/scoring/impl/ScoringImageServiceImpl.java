@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageRef;
@@ -20,23 +18,18 @@ import com.earlylearning.early_learning_server.entity.CloudFile;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 /** {@link ScoringImageService} 的实现。 */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class ScoringImageServiceImpl implements ScoringImageService {
-
-    private static final Logger log = LoggerFactory.getLogger(ScoringImageServiceImpl.class);
 
     private final CloudFileQueryService cloudFileQueryService;
     private final ObjectStorageService objectStorageService;
     private final ScoringLimits scoringLimits;
-
-    public ScoringImageServiceImpl(CloudFileQueryService cloudFileQueryService,
-                                   ObjectStorageService objectStorageService,
-                                   ScoringLimits scoringLimits) {
-        this.cloudFileQueryService = cloudFileQueryService;
-        this.objectStorageService = objectStorageService;
-        this.scoringLimits = scoringLimits;
-    }
 
     @Override
     public List<ScoringImage> resolve(List<ImageRef> images) {

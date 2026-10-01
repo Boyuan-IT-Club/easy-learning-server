@@ -22,6 +22,8 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 录音转写提交。
  *
@@ -29,16 +31,11 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  */
 @RestController
 @RequestMapping("/api/ai")
+@RequiredArgsConstructor
 public class AiTranscriptionController {
 
     private final AudioValidationService audioValidationService;
     private final AiTranscriptionService aiTranscriptionService;
-
-    public AiTranscriptionController(AudioValidationService audioValidationService,
-                                     AiTranscriptionService aiTranscriptionService) {
-        this.audioValidationService = audioValidationService;
-        this.aiTranscriptionService = aiTranscriptionService;
-    }
 
     /**
      * 提交一段录音。音频只读进内存（不写临时文件），校验通过后登记任务并立即返回凭据。

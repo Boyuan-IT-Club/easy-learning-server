@@ -16,6 +16,7 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -32,6 +33,7 @@ import tools.jackson.databind.ObjectMapper;
  * Redis 故障统一翻译成 503 DEPENDENCY_UNAVAILABLE：鉴权宁可拒绝，也不放行未经校验的请求。
  */
 @Repository
+@RequiredArgsConstructor
 public class RedisTokenStore {
 
     private static final String TEACHER_KEY = "el:auth:at:";
@@ -40,11 +42,6 @@ public class RedisTokenStore {
 
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
-
-    public RedisTokenStore(StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
-        this.stringRedisTemplate = stringRedisTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     public record TeacherGrant(@JsonProperty("user_id") int userId, @JsonProperty("expires_at") Instant expiresAt) {
     }

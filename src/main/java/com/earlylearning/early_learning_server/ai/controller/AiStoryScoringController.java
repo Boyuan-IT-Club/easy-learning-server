@@ -20,6 +20,8 @@ import com.earlylearning.early_learning_server.ai.model.task.AiTask;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiStoryScoringService;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 故事叙述评分提交。
  *
@@ -29,16 +31,11 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
  */
 @RestController
 @RequestMapping("/api/ai")
+@RequiredArgsConstructor
 public class AiStoryScoringController {
 
     private final AiStoryScoringService aiStoryScoringService;
     private final StoryScoringRequestValidator storyScoringRequestValidator;
-
-    public AiStoryScoringController(AiStoryScoringService aiStoryScoringService,
-                                    StoryScoringRequestValidator storyScoringRequestValidator) {
-        this.aiStoryScoringService = aiStoryScoringService;
-        this.storyScoringRequestValidator = storyScoringRequestValidator;
-    }
 
     @PostMapping("/score")
     public ResponseEntity<ApiResponse<TaskHandleResponse>> score(

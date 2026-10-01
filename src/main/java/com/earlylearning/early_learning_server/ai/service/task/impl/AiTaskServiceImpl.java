@@ -12,15 +12,14 @@ import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
+import lombok.RequiredArgsConstructor;
+
 /** {@link AiTaskService} 的实现。 */
 @Service
+@RequiredArgsConstructor
 public class AiTaskServiceImpl implements AiTaskService {
 
     private final AiTaskStore aiTaskStore;
-
-    public AiTaskServiceImpl(AiTaskStore aiTaskStore) {
-        this.aiTaskStore = aiTaskStore;
-    }
 
     @Override
     public AiTask query(String taskId) {
