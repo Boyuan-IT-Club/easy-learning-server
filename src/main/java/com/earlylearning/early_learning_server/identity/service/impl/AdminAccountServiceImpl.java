@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.earlylearning.early_learning_server.common.enums.AdminStatus;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.idempotency.IdempotencyScope;
@@ -21,7 +22,6 @@ import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.secret.KeyedHasher;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
 import com.earlylearning.early_learning_server.entity.AdminAccount;
-import com.earlylearning.early_learning_server.enums.AdminStatus;
 import com.earlylearning.early_learning_server.identity.dto.AdminAccountResponse;
 import com.earlylearning.early_learning_server.identity.mapper.AdminAccountMapper;
 import com.earlylearning.early_learning_server.identity.model.AdminPasswordPolicy;

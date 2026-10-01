@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
+import com.earlylearning.early_learning_server.ai.client.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.client.task.InMemoryAiTaskStore;
 import com.earlylearning.early_learning_server.ai.controller.AiTranscriptionController;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
@@ -35,10 +36,10 @@ import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTran
 import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionCommand;
 import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionResult;
 import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionTarget;
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
-import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
+import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidationService;
 import com.earlylearning.early_learning_server.ai.service.transcription.impl.AiTranscriptionServiceImpl;
+import com.earlylearning.early_learning_server.ai.service.transcription.impl.AudioValidationServiceImpl;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
@@ -77,7 +78,7 @@ class AiTranscriptionTests {
         AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
         service = new AiTranscriptionServiceImpl(new AiTaskSubmission(store), runner,
                 (audio, mimeType) -> transcriber.transcribe(audio, mimeType));
-        AudioValidator validator = new AudioValidator(new MediaTypeDetector(), new AudioDurationParser(),
+        AudioValidationService validator = new AudioValidationServiceImpl(new MediaTypeDetector(), new AudioDurationParser(),
                 new AiTranscriptionLimits(50_000_000, 600_000));
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new AiTranscriptionController(validator, service))

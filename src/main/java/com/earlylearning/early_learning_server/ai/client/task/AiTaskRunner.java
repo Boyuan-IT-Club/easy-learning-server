@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.ai.service.task;
+package com.earlylearning.early_learning_server.ai.client.task;
 
 import java.time.Duration;
 import java.time.Instant;

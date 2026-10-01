@@ -1,8 +1,8 @@
 package com.earlylearning.early_learning_server.storage.dto;
 
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.model.FileSummary;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

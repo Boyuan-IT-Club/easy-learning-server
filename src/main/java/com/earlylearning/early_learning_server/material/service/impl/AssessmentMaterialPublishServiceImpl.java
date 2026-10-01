@@ -21,6 +21,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.earlylearning.early_learning_server.ai.service.rubric.RubricCatalogService;
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.ContentStatus;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -31,17 +33,15 @@ import com.earlylearning.early_learning_server.common.idempotency.StoredResponse
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
 import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.ContentStatus;
 import com.earlylearning.early_learning_server.material.client.json.ConfigJson;
 import com.earlylearning.early_learning_server.material.client.zip.MaterialZipReader;
 import com.earlylearning.early_learning_server.material.client.zip.ZipPackage;
 import com.earlylearning.early_learning_server.material.mapper.AssessmentMaterialMapper;
 import com.earlylearning.early_learning_server.material.mapper.GrammarRefMapper;
+import com.earlylearning.early_learning_server.material.model.MaterialConfigValidator;
 import com.earlylearning.early_learning_server.material.model.MaterialPublishLimits;
+import com.earlylearning.early_learning_server.material.model.ValidatedMaterial;
 import com.earlylearning.early_learning_server.material.service.AssessmentMaterialPublishService;
-import com.earlylearning.early_learning_server.material.service.MaterialConfigValidator;
-import com.earlylearning.early_learning_server.material.service.ValidatedMaterial;
 import com.earlylearning.early_learning_server.storage.model.IncomingFile;
 import com.earlylearning.early_learning_server.storage.service.CloudFileService;
 

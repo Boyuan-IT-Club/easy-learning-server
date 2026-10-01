@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.enums;
+package com.earlylearning.early_learning_server.common.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 

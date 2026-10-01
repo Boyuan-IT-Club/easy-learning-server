@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.ai.service.scoring;
+package com.earlylearning.early_learning_server.ai.service.scoring.impl;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -11,43 +11,34 @@ import org.springframework.stereotype.Component;
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageRef;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 
-/**
- * 把提交里的图片引用解析成模型能直接使用的内容,供评分输入组装。
- *
- * <ul>
- *   <li>{@code SERVER_FETCH}:按 {@code file_code} 取回字节;先校验文件状态与大小,
- *       语义与签发/元数据接口一致。</li>
- *   <li>{@code INLINE_IMAGE}:解码请求携带的 base64 并校验字节上限。</li>
- *   <li>{@code CONFIRMED_DESCRIPTION}:教师确认过的说明,直接作为文字交给模型。</li>
- * </ul>
- *
- * <p>取回的字节只在内存中存在,交给模型后即丢弃;不落盘、不写日志。
- */
+/** {@link ScoringImageService} 的实现。 */
 @Component
-public class ScoringImageResolver {
+public class ScoringImageServiceImpl implements ScoringImageService {
 
-    private static final Logger log = LoggerFactory.getLogger(ScoringImageResolver.class);
+    private static final Logger log = LoggerFactory.getLogger(ScoringImageServiceImpl.class);
 
     private final CloudFileQueryService cloudFileQueryService;
     private final ObjectStorageService objectStorageService;
     private final ScoringLimits scoringLimits;
 
-    public ScoringImageResolver(CloudFileQueryService cloudFileQueryService,
-                                ObjectStorageService objectStorageService,
-                                ScoringLimits scoringLimits) {
+    public ScoringImageServiceImpl(CloudFileQueryService cloudFileQueryService,
+                                   ObjectStorageService objectStorageService,
+                                   ScoringLimits scoringLimits) {
         this.cloudFileQueryService = cloudFileQueryService;
         this.objectStorageService = objectStorageService;
         this.scoringLimits = scoringLimits;
     }
 
+    @Override
     public List<ScoringImage> resolve(List<ImageRef> images) {
         if (images == null || images.isEmpty()) {
             return List.of();

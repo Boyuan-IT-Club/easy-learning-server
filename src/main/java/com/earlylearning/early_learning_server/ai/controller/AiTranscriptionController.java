@@ -17,7 +17,7 @@ import com.earlylearning.early_learning_server.ai.dto.TranscriptionContext;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
 import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionCommand;
 import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
-import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
+import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidationService;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
@@ -31,12 +31,12 @@ import com.earlylearning.early_learning_server.common.web.ApiResponse;
 @RequestMapping("/api/ai")
 public class AiTranscriptionController {
 
-    private final AudioValidator audioValidator;
+    private final AudioValidationService audioValidationService;
     private final AiTranscriptionService aiTranscriptionService;
 
-    public AiTranscriptionController(AudioValidator audioValidator,
+    public AiTranscriptionController(AudioValidationService audioValidationService,
                                      AiTranscriptionService aiTranscriptionService) {
-        this.audioValidator = audioValidator;
+        this.audioValidationService = audioValidationService;
         this.aiTranscriptionService = aiTranscriptionService;
     }
 
@@ -49,8 +49,8 @@ public class AiTranscriptionController {
             @RequestPart("audio") MultipartFile audio,
             @RequestPart("context") TranscriptionContext context) {
         byte[] content = readAudio(audio);
-        String detectedMime = audioValidator.detect(content);
-        audioValidator.validate(content, audio.getContentType());
+        String detectedMime = audioValidationService.detect(content);
+        audioValidationService.validate(content, audio.getContentType());
 
         AiTask task = aiTranscriptionService.submit(content, detectedMime, toCommand(context), retryAttempt);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(TaskHandleResponse.from(task)));

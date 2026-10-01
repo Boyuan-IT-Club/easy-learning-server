@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.enums;
+package com.earlylearning.early_learning_server.common.enums;
 
 /**
  * 激活码状态（契约 {@code LicenseStatus}）：UNUSED → ACTIVE（注册占用）；UNUSED / ACTIVE → REVOKED。

@@ -5,7 +5,7 @@ import java.time.Instant;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.earlylearning.early_learning_server.enums.AdminStatus;
+import com.earlylearning.early_learning_server.common.enums.AdminStatus;
 
 /** 管理员账号（{@code admin_account}）。password_hash 不出模块、不写日志。 */
 @TableName("admin_account")

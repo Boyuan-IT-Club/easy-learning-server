@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -49,15 +49,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <pre>
  *   入口        controller/（HTTP）、filter/（Servlet 过滤器）
  *   请求与响应   dto/
- *   业务        service/（接口）、service/impl/（XxxServiceImpl）
- *   数据与规则   顶层 entity/（只放表映射类）、顶层 enums/（字段取值的枚举）、模块内 model/（不落库的业务对象与规则）
+ *   业务        service/（只放接口）、service/impl/（实现）
+ *   数据与规则   顶层 entity/（只放表映射类）、common/enums/（字段取值的枚举）、模块内 model/（不落库的业务对象与规则）
  *   数据访问     mapper/
  *   外部适配     client/
  *   装配        config/
  * </pre>
  *
  * <ol>
- *   <li>模块边界：模块之间不许成环；跨模块只能用 {@link #CROSS_MODULE_API} 里列出的包，common、entity、enums 可被任何模块使用。</li>
+ *   <li>模块边界：模块之间不许成环；跨模块只能用 {@link #CROSS_MODULE_API} 里列出的包，common、entity 可被任何模块使用。</li>
  *   <li>表归属：entity 集中存放，但每个实体的 Mapper 只能出现在一个模块里，别的模块经该模块的 service 读写。</li>
  *   <li>层间方向（ArchUnit，覆盖全部模块）：入口 → service → mapper / client；entity、model 不依赖任何上层。</li>
  *   <li>源码 import：只在 Javadoc 里出现的 import 不进字节码，ArchUnit 看不到，这里直接扫源码。</li>
@@ -79,8 +79,6 @@ class ArchitectureTests {
     private static final String L_SERVICE_IMPL = LAYER + "service..impl";
     /** 实体不在模块里：顶层 entity 包，被所有模块共享。 */
     private static final String L_ENTITY = BASE + ".entity..";
-    /** 实体字段取值的枚举（状态、种类），同样是顶层共享包。 */
-    private static final String L_ENUMS = BASE + ".enums..";
     private static final String L_MODEL = LAYER + "model..";
     private static final String L_MAPPER = LAYER + "mapper..";
     private static final String L_CLIENT = LAYER + "client..";
@@ -89,7 +87,7 @@ class ArchitectureTests {
     private static final Set<String> ABOVE_ENTITY_AND_MODEL =
             Set.of("controller", "filter", "dto", "service", "mapper", "client", "config");
     /** 不属于任何业务模块、可被所有模块使用的顶层包。 */
-    private static final Set<String> SHARED = Set.of("common", "entity", "enums");
+    private static final Set<String> SHARED = Set.of("common", "entity");
     private static final String[] BUSINESS_MODULES = {
             BASE + ".ai..", BASE + ".identity..", BASE + ".material..", BASE + ".security..", BASE + ".storage.."};
 
@@ -119,8 +117,8 @@ class ArchitectureTests {
                     .should().beAnnotatedWith(TableName.class);
 
     @ArchTest
-    ArchRule entity与enums只依赖common =
-            noClasses().that().resideInAnyPackage(L_ENTITY, L_ENUMS)
+    ArchRule entity只依赖common =
+            noClasses().that().resideInAPackage(L_ENTITY)
                     .should().dependOnClassesThat().resideInAnyPackage(BUSINESS_MODULES)
                     .orShould().dependOnClassesThat().resideInAnyPackage("org.springframework.web..", "jakarta.servlet..");
 
@@ -133,7 +131,7 @@ class ArchitectureTests {
 
     @ArchTest
     ArchRule 除入口与装配外都不依赖入口 =
-            noClasses().that().resideInAnyPackage(L_DTO, L_SERVICE, L_ENTITY, L_ENUMS, L_MODEL, L_MAPPER, L_CLIENT)
+            noClasses().that().resideInAnyPackage(L_DTO, L_SERVICE, L_ENTITY, L_MODEL, L_MAPPER, L_CLIENT)
                     .should().dependOnClassesThat().resideInAnyPackage(L_CONTROLLER, L_FILTER);
 
     @ArchTest
@@ -147,17 +145,16 @@ class ArchitectureTests {
                     .should().dependOnClassesThat().resideInAnyPackage(L_SERVICE, L_CLIENT);
 
     @ArchTest
-    ArchRule service包里的Service都是接口 =
+    ArchRule service包里只放接口 =
             classes().that().resideInAPackage(L_SERVICE).and().resideOutsideOfPackage(L_SERVICE_IMPL)
-                    .and().haveSimpleNameEndingWith("Service")
+                    .and().areTopLevelClasses()
                     .should().beInterfaces();
 
     @ArchTest
-    ArchRule impl包里只放Service实现 =
+    ArchRule impl包里只放service接口的实现 =
             classes().that().resideInAPackage(L_SERVICE_IMPL).and().areTopLevelClasses()
-                    .should().haveSimpleNameEndingWith("ServiceImpl")
-                    .andShould().beAnnotatedWith(Service.class)
-                    .andShould(implementTheirInterfaceInParentPackage());
+                    .should().beMetaAnnotatedWith(Component.class)
+                    .andShould(implementAServiceInterface());
 
     @ArchTest
     ArchRule 只依赖Service接口不依赖实现 =
@@ -181,7 +178,7 @@ class ArchitectureTests {
     ArchRule common不依赖任何业务模块与entity =
             noClasses().that().resideInAPackage(BASE + ".common..")
                     .should().dependOnClassesThat().resideInAnyPackage(BUSINESS_MODULES)
-                    .orShould().dependOnClassesThat().resideInAnyPackage(L_ENTITY, L_ENUMS);
+                    .orShould().dependOnClassesThat().resideInAPackage(L_ENTITY);
 
     /** 实体集中存放后，表归属靠 Mapper 守住：同一个实体的 BaseMapper 只能出现在一个模块。 */
     @ArchTest
@@ -209,7 +206,7 @@ class ArchitectureTests {
                 continue;
             }
             String top = pkg.group(1).split("\\.")[0];
-            boolean entity = top.equals("entity") || top.equals("enums");
+            boolean entity = top.equals("entity");
             if (!entity && !isLayer(pkg.group(1), "model")) {
                 continue;
             }
@@ -249,16 +246,26 @@ class ArchitectureTests {
         };
     }
 
-    /** {@code a.service.impl.XxxServiceImpl} 必须实现 {@code a.service.XxxService}。 */
-    private static ArchCondition<JavaClass> implementTheirInterfaceInParentPackage() {
-        return new ArchCondition<>("implement the interface of the same name in the parent package") {
+    /**
+     * impl 里的类必须实现某个 service 接口；{@code a.service.impl.XxxServiceImpl} 必须实现 {@code a.service.XxxService}。
+     * 其它实现（如实现 security 的 {@code BearerAuthenticator}）只要求实现的是 service 包里的接口。
+     */
+    private static ArchCondition<JavaClass> implementAServiceInterface() {
+        return new ArchCondition<>("implement a service interface") {
             @Override
             public void check(JavaClass impl, ConditionEvents events) {
-                String parent = impl.getPackageName().substring(0, impl.getPackageName().length() - ".impl".length());
-                String expected = parent + "." + impl.getSimpleName().replaceFirst("Impl$", "");
-                boolean ok = impl.getRawInterfaces().stream().anyMatch(i -> i.getName().equals(expected));
+                if (impl.getSimpleName().endsWith("ServiceImpl")) {
+                    String parent = impl.getPackageName().substring(0, impl.getPackageName().length() - ".impl".length());
+                    String expected = parent + "." + impl.getSimpleName().replaceFirst("Impl$", "");
+                    if (impl.getRawInterfaces().stream().noneMatch(i -> i.getName().equals(expected))) {
+                        events.add(SimpleConditionEvent.violated(impl, impl.getName() + " 没有实现 " + expected));
+                    }
+                    return;
+                }
+                boolean ok = impl.getRawInterfaces().stream().anyMatch(i -> isLayer(
+                        i.getPackageName().substring(BASE.length() + 1), "service") && !i.getPackageName().endsWith(".impl"));
                 if (!ok) {
-                    events.add(SimpleConditionEvent.violated(impl, impl.getName() + " 没有实现 " + expected));
+                    events.add(SimpleConditionEvent.violated(impl, impl.getName() + " 没有实现任何 service 接口"));
                 }
             }
         };

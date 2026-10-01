@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.identity.dto;
 
-import com.earlylearning.early_learning_server.enums.LicenseStatus;
+import com.earlylearning.early_learning_server.common.enums.LicenseStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /** 契约 {@code IssuedLicense}：仅本次生成结果返回的可分发激活码，状态恒为 UNUSED。不得写日志。 */

@@ -2,9 +2,9 @@ package com.earlylearning.early_learning_server.storage.model;
 
 import java.time.LocalDateTime;
 
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 
 /**
  * 官方文件在列表里的一行（读模型）：实体字段 + 它被内容引用的次数。

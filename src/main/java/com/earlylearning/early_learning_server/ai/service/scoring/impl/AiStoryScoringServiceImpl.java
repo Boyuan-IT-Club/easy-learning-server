@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.earlylearning.early_learning_server.ai.client.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricService;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreValidator;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
@@ -18,8 +19,7 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiStoryScoringService;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
 import com.earlylearning.early_learning_server.common.idempotency.InputFingerprint;
 
 /** {@link AiStoryScoringService} 的实现。 */
@@ -31,20 +31,20 @@ public class AiStoryScoringServiceImpl implements AiStoryScoringService {
     private final RubricService rubricService;
     private final StoryScorer storyScorer;
     private final ScoreValidator scoreValidator;
-    private final ScoringImageResolver scoringImageResolver;
+    private final ScoringImageService scoringImageService;
 
     public AiStoryScoringServiceImpl(AiTaskSubmission aiTaskSubmission,
                                      AiTaskRunner aiTaskRunner,
                                      RubricService rubricService,
                                      StoryScorer storyScorer,
                                      ScoreValidator scoreValidator,
-                                     ScoringImageResolver scoringImageResolver) {
+                                     ScoringImageService scoringImageService) {
         this.aiTaskSubmission = aiTaskSubmission;
         this.aiTaskRunner = aiTaskRunner;
         this.rubricService = rubricService;
         this.storyScorer = storyScorer;
         this.scoreValidator = scoreValidator;
-        this.scoringImageResolver = scoringImageResolver;
+        this.scoringImageService = scoringImageService;
     }
 
     @Override
@@ -87,7 +87,7 @@ public class AiStoryScoringServiceImpl implements AiStoryScoringService {
      */
     private StoryScoringInput toInput(StoryScoringCommand command) {
         return new StoryScoringInput(command.confirmedText(), command.storyContext(),
-                command.contentItems(), scoringImageResolver.resolve(command.images()));
+                command.contentItems(), scoringImageService.resolve(command.images()));
     }
 
     private AiTask runScoring(AiTask task, StoryScoringInput input, String rubricVersion) {

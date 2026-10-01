@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.earlylearning.early_learning_server.common.enums.ContentStatus;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
-import com.earlylearning.early_learning_server.enums.ContentStatus;
 import com.earlylearning.early_learning_server.material.dto.AssessmentMaterialPageResponse;
 import com.earlylearning.early_learning_server.material.dto.AssessmentMaterialResponse;
 import com.earlylearning.early_learning_server.material.model.MaterialPage;

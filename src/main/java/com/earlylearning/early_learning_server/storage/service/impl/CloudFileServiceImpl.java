@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -27,8 +29,6 @@ import com.earlylearning.early_learning_server.common.idempotency.StoredResponse
 import com.earlylearning.early_learning_server.common.media.AudioDurationReader;
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
 import com.earlylearning.early_learning_server.storage.model.CloudFileCodeGenerator;
 import com.earlylearning.early_learning_server.storage.model.IncomingFile;

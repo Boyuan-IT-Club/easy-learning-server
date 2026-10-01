@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.earlylearning.early_learning_server.ai.client.fake.FakeAnswerScorerConfig;
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
+import com.earlylearning.early_learning_server.ai.client.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.client.task.InMemoryAiTaskStore;
 import com.earlylearning.early_learning_server.ai.controller.AiAnswerScoringController;
 import com.earlylearning.early_learning_server.ai.controller.validation.AnswerScoringRequestValidator;
@@ -43,9 +44,9 @@ import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScoringService;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
 import com.earlylearning.early_learning_server.ai.service.scoring.impl.AiAnswerScoringServiceImpl;
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
+import com.earlylearning.early_learning_server.ai.service.scoring.impl.ScoringImageServiceImpl;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -88,8 +89,8 @@ class AnswerScoringTests {
     void setUp() {
         AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
         // 解析器用真实实现 + mock 依赖：本测试的图片都是 CONFIRMED_DESCRIPTION / INLINE_IMAGE，
-        // 走"直接放行"分支、不碰存储；SERVER_FETCH 由 ScoringImageResolverTests 单独覆盖
-        ScoringImageResolver imageResolver = new ScoringImageResolver(
+        // 走"直接放行"分支、不碰存储；SERVER_FETCH 由 ScoringImageServiceTests 单独覆盖
+        ScoringImageService imageResolver = new ScoringImageServiceImpl(
                 mock(CloudFileQueryService.class), mock(ObjectStorageService.class),
                 new ScoringLimits(20000, 20, 5242880));
         service = new AiAnswerScoringServiceImpl(new AiTaskSubmission(store), runner, rubricService,

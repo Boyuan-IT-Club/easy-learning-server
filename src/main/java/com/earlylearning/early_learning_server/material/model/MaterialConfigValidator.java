@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.material.service;
+package com.earlylearning.early_learning_server.material.model;
 
 import java.util.ArrayList;
 import java.util.HashSet;

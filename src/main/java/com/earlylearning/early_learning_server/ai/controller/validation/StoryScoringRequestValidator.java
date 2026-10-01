@@ -11,7 +11,7 @@ import com.earlylearning.early_learning_server.ai.dto.ImageContext;
 import com.earlylearning.early_learning_server.ai.dto.StoryScoringRequest;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiStoryScoringService;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -112,7 +112,7 @@ public class StoryScoringRequestValidator {
             String path = "images/" + i;
             // 三种形态都收：契约 /api/ai/score 的 images 明确写「由服务端按 file_code 取图（SERVER_FETCH），
             // 或教师确认过的图片说明（CONFIRMED_DESCRIPTION）。不再要求客户端内联图片内容」。
-            // 取回动作在提交的同步路径上完成（见 AiStoryScoringService.toInput → ScoringImageResolver），
+            // 取回动作在提交的同步路径上完成（见 AiStoryScoringService.toInput → ScoringImageService），
             // 编号不可读会当场 404/409/410/413，而不是落成任务失败。
             imageContextValidator.validate(image, path);
             if (!provided.add(image.fileCode())) {

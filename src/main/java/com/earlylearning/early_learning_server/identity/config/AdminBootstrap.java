@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.identity.service;
+package com.earlylearning.early_learning_server.identity.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.identity.config.AdminBootstrapProperties;
 import com.earlylearning.early_learning_server.identity.dto.AdminAccountResponse;
+import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
 
 /** 启动时按 {@link AdminBootstrapProperties} 创建首个管理员。 */
 @Component

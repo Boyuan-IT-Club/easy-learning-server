@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
 
 /**
  * 生成对象存储路径 object_key：{@code <类型>/<年>/<月>/<uuid>}。

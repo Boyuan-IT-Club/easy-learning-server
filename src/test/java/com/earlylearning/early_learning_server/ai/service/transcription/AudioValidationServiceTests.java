@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
 import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscriptionLimits;
-import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
+import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidationService;
+import com.earlylearning.early_learning_server.ai.service.transcription.impl.AudioValidationServiceImpl;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -17,15 +18,15 @@ import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class AudioValidatorTests {
+class AudioValidationServiceTests {
 
     /** 体积上限设得很小，便于用很小的夹具触发；时长上限的 10 分钟。 */
     private static final AiTranscriptionLimits SMALL_SIZE_LIMITS = new AiTranscriptionLimits(5000, 600_000);
     private static final AiTranscriptionLimits ROOMY_LIMITS = new AiTranscriptionLimits(50_000_000, 600_000);
 
-    private final AudioValidator smallSizeValidator = new AudioValidator(
+    private final AudioValidationService smallSizeValidator = new AudioValidationServiceImpl(
             new MediaTypeDetector(), new AudioDurationParser(), SMALL_SIZE_LIMITS);
-    private final AudioValidator roomyValidator = new AudioValidator(
+    private final AudioValidationService roomyValidator = new AudioValidationServiceImpl(
             new MediaTypeDetector(), new AudioDurationParser(), ROOMY_LIMITS);
 
     @Test

@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.earlylearning.early_learning_server.ai.client.fake.FakeStoryScorerConfig;
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
+import com.earlylearning.early_learning_server.ai.client.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.client.task.InMemoryAiTaskStore;
 import com.earlylearning.early_learning_server.ai.controller.AiStoryScoringController;
 import com.earlylearning.early_learning_server.ai.controller.validation.ImageContextValidator;
@@ -41,9 +42,9 @@ import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiStoryScoringService;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
 import com.earlylearning.early_learning_server.ai.service.scoring.impl.AiStoryScoringServiceImpl;
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
+import com.earlylearning.early_learning_server.ai.service.scoring.impl.ScoringImageServiceImpl;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
@@ -82,7 +83,7 @@ class AiStoryScoringTests {
     void setUp() {
         AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
         // 图片在提交路径上解析；本测试的请求都是内联图片与确认说明，不需要碰存储
-        ScoringImageResolver imageResolver = new ScoringImageResolver(
+        ScoringImageService imageResolver = new ScoringImageServiceImpl(
                 mock(CloudFileQueryService.class), mock(ObjectStorageService.class),
                 new ScoringLimits(20000, 20, 5242880));
         service = new AiStoryScoringServiceImpl(new AiTaskSubmission(store), runner, rubricService,
@@ -199,8 +200,8 @@ class AiStoryScoringTests {
     @Test
     void aFileCodeOnlyImageIsAcceptedBecauseTheContractAllowsIt() {
         // 契约：故事评分的 images「由服务端按 file_code 取图（SERVER_FETCH），或教师确认过的图片说明……
-        // 不再要求客户端内联图片内容」。取回发生在提交的同步路径上（ScoringImageResolver），
-        // 取回本身由 ScoringImageResolverTests 覆盖；这里只钉住请求校验不再拒它。
+        // 不再要求客户端内联图片内容」。取回发生在提交的同步路径上（ScoringImageService），
+        // 取回本身由 ScoringImageServiceTests 覆盖；这里只钉住请求校验不再拒它。
         StoryScoringRequest fileCodeOnly = new StoryScoringRequest(UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(), BusinessType.ASSESSMENT, "ACT_1", null,
                 TEXT, true, "故事依据", groups(),

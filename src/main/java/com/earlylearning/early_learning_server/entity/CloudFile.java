@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.CloudFileStatus;
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileStatus;
 
 /**
  * {@code storage_cloud_file} 的持久化映射。

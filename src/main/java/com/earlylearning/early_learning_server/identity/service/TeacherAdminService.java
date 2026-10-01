@@ -1,9 +1,9 @@
 package com.earlylearning.early_learning_server.identity.service;
 
+import com.earlylearning.early_learning_server.common.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
-import com.earlylearning.early_learning_server.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.dto.UserAccountResponse;
 
 /**

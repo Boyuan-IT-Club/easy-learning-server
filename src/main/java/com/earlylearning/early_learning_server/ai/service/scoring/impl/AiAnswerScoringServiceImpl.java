@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.earlylearning.early_learning_server.ai.client.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricService;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoredQuestion;
 import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
@@ -20,8 +21,7 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScoringService;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
 import com.earlylearning.early_learning_server.common.idempotency.InputFingerprint;
 
 /** {@link AiAnswerScoringService} 的实现。 */
@@ -33,20 +33,20 @@ public class AiAnswerScoringServiceImpl implements AiAnswerScoringService {
     private final RubricService rubricService;
     private final AnswerScorer answerScorer;
     private final QuestionScoreValidator questionScoreValidator;
-    private final ScoringImageResolver scoringImageResolver;
+    private final ScoringImageService scoringImageService;
 
     public AiAnswerScoringServiceImpl(AiTaskSubmission aiTaskSubmission,
                                       AiTaskRunner aiTaskRunner,
                                       RubricService rubricService,
                                       AnswerScorer answerScorer,
                                       QuestionScoreValidator questionScoreValidator,
-                                      ScoringImageResolver scoringImageResolver) {
+                                      ScoringImageService scoringImageService) {
         this.aiTaskSubmission = aiTaskSubmission;
         this.aiTaskRunner = aiTaskRunner;
         this.rubricService = rubricService;
         this.answerScorer = answerScorer;
         this.questionScoreValidator = questionScoreValidator;
-        this.scoringImageResolver = scoringImageResolver;
+        this.scoringImageService = scoringImageService;
     }
 
     @Override
@@ -93,7 +93,7 @@ public class AiAnswerScoringServiceImpl implements AiAnswerScoringService {
                 command.attempt(),
                 command.confirmedText(),
                 command.storyContext(),
-                scoringImageResolver.resolve(command.images()));
+                scoringImageService.resolve(command.images()));
     }
 
     private AiTask runScoring(AiTask task, AnswerScoringInput input, String rubricVersion) {

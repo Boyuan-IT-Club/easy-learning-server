@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.dto.AdminFilePageResponse;
 import com.earlylearning.early_learning_server.storage.dto.CloudFileResponse;
 import com.earlylearning.early_learning_server.storage.model.IncomingFile;

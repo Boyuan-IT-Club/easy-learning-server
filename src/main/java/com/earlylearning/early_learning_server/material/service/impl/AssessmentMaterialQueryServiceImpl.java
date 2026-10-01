@@ -14,22 +14,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.earlylearning.early_learning_server.common.enums.ContentStatus;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.ContentStatus;
 import com.earlylearning.early_learning_server.material.mapper.AssessmentMaterialMapper;
 import com.earlylearning.early_learning_server.material.mapper.AssessmentMaterialQueryMapper;
 import com.earlylearning.early_learning_server.material.mapper.GrammarRefMapper;
 import com.earlylearning.early_learning_server.material.model.GrammarDefinition;
+import com.earlylearning.early_learning_server.material.model.MaterialConfigValidator;
 import com.earlylearning.early_learning_server.material.model.MaterialDownload;
 import com.earlylearning.early_learning_server.material.model.MaterialPage;
 import com.earlylearning.early_learning_server.material.model.MaterialSummary;
 import com.earlylearning.early_learning_server.material.model.MaterialVersionSummary;
 import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
-import com.earlylearning.early_learning_server.material.service.MaterialConfigValidator;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 
 import tools.jackson.databind.JsonNode;

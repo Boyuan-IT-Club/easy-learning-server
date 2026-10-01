@@ -16,12 +16,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.controller.FileMetadataController;
 import com.earlylearning.early_learning_server.storage.dto.DownloadSignatureBatchResponse;
 import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;

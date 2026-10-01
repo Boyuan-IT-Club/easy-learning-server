@@ -41,11 +41,10 @@ security/  ← 鉴权机制：安全链、Token 签发 / 校验 / 吊销、已�
 ai/        ← 录音转写与评分
 material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
 storage/   ← 官方资源文件（对象存储）
-entity/    ← 表映射类，每个类对应一张表（@TableName），集中存放，任何模块都可以用；只依赖 common 与 enums
-enums/     ← 实体字段的取值枚举（状态、种类），任何模块都可以用；只依赖 common
-common/    ← 共享能力，只被依赖、不依赖任何模块与 entity / enums，任何模块都可以用：
-             web（响应信封、分页响应）/ error / idempotency / logging / media / paging /
-             identity（用户名规则）/ secret / ratelimit / tx / time
+entity/    ← 表映射类，每个类对应一张表（@TableName），集中存放，任何模块都可以用；只依赖 common
+common/    ← 共享能力与共享取值，只被依赖、不依赖任何模块与 entity，任何模块都可以用：
+             enums（实体字段的取值：状态、种类）/ web（响应信封、分页响应）/ error / idempotency /
+             logging / media / paging / identity（用户名规则）/ secret / ratelimit / tx / time
 ```
 
 模块依赖单向、无环：`identity → security`；`ai → storage`；`material → storage, ai`。
@@ -58,8 +57,8 @@ common/    ← 共享能力，只被依赖、不依赖任何模块与 entity / e
 <module>/
 ├── controller/   入口：HTTP 接口（以后有 MQ、定时任务，在同级加 listener/、job/；security 的过滤器在 filter/）
 ├── dto/          请求与响应（契约的 JSON 形状，Jackson 注解只在这里）
-├── service/      业务接口 XxxService（不加 I 前缀），以及实现要用到的组件（校验器、执行器等）
-│   └── impl/     XxxServiceImpl：业务逻辑、事务、幂等、限流、编排
+├── service/      只放业务接口 XxxService（不加 I 前缀）
+│   └── impl/     接口的实现 XxxServiceImpl：业务逻辑、事务、幂等、限流、编排
 ├── mapper/       MyBatis Mapper；这个模块的表只由这里的 Mapper 读写
 ├── model/        （可选）不落库的业务对象与规则，以及外部能力的接口（如 ChatModel、ObjectStorageService）
 ├── client/       （可选）外部系统与底层 I/O 适配：OSS、ECNU、Redis、ZIP / JSON 解析；实现 model 里的接口
@@ -72,14 +71,16 @@ common/    ← 共享能力，只被依赖、不依赖任何模块与 entity / e
   公共路径写在类上的 `@RequestMapping`，方法上只写剩余部分。
 - 注入一律走构造器、字段 `private final`，字段名取类型名的小驼峰（`licenseMapper`、`tokenService`）。
 - service 可以用 mapper、entity、model、client、dto；**不产出 `ApiResponse` / `ResponseEntity`**，包络由 controller 套。
-- **service 一律接口 + 实现**：`service/XxxService` 是接口，`service/impl/XxxServiceImpl` 加 `@Service` 并实现它；
-  除 impl 自己外谁都不依赖 impl（注入一律用接口）。接口写契约语义（做什么、失败返回什么），
+- **service 一律接口 + 实现**：`service/` 下只有接口，`service/impl/XxxServiceImpl` 加 `@Service` 并实现同名接口；
+  impl 里也可以放别的 service 接口的实现（如 identity 实现 security 的 `BearerAuthenticator`）。
+  除 impl 自己外谁都不依赖 impl（注入一律用接口）。不是业务的组件不放 service：
+  执行器、外部适配进 `client/`，纯规则校验进 `model/`，启动初始化进 `config/`。接口写契约语义（做什么、失败返回什么），
   实现细节（锁、事务边界、并发处理）写在 impl 上；impl 方法只加 `@Override`，不重复接口注释；常量放 impl 里。
-- **实体集中在顶层 `entity/`，只放表映射类**；状态、种类等取值枚举放顶层 `enums/`。
+- **实体集中在顶层 `entity/`，只放表映射类**；状态、种类等取值枚举放 `common/enums/`。
   状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）。
   表归属由 Mapper 决定：同一实体的 BaseMapper 只能出现在一个模块，别的模块经该模块的 service 读写。
 - **Controller 不把实体直接返回给客户端**：返回类型（含泛型参数）里不得出现 entity。
-- entity、enums 只依赖 common（entity 可以用 enums）；model 不依赖任何上层（controller、filter、dto、service、mapper、client、config）；两者都不依赖 Spring Web。
+- entity 只依赖 common；model 不依赖任何上层（controller、filter、dto、service、mapper、client、config）；两者都不依赖 Spring Web。
 - dto、mapper 不依赖 service、client。
 - 跨模块只能用 `ArchitectureTests.CROSS_MODULE_API` 白名单里的包，模块之间不许成环。当前白名单：
   `ai.service.rubric`、`storage.service`、`storage.model`、`security.service`、`security.model`。
@@ -88,7 +89,7 @@ common/    ← 共享能力，只被依赖、不依赖任何模块与 entity / e
 - service 之外，**存在第二个真实实现才立接口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。
 - 含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开 service，对外与幂等快照都用 dto。
 - `ArchitectureTests` 同时扫描源码 import：只在 Javadoc 里出现的 import 不进字节码、ArchUnit 看不到，
-  但同样让 entity / enums / model 指向上层，一律改用 `{@code}` 引用。
+  但同样让 entity / model 指向上层，一律改用 `{@code}` 引用。
 
 ---
 

@@ -9,6 +9,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.earlylearning.early_learning_server.common.enums.LicenseStatus;
+import com.earlylearning.early_learning_server.common.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -19,8 +21,6 @@ import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.secret.KeyedHasher;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
 import com.earlylearning.early_learning_server.entity.License;
-import com.earlylearning.early_learning_server.enums.LicenseStatus;
-import com.earlylearning.early_learning_server.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.dto.CreateLicensesResponse;
 import com.earlylearning.early_learning_server.identity.dto.IssuedLicenseResponse;
 import com.earlylearning.early_learning_server.identity.dto.LicenseResponse;

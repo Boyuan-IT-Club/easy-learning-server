@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
+import com.earlylearning.early_learning_server.common.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -21,7 +22,6 @@ import com.earlylearning.early_learning_server.common.ratelimit.SlidingWindowRat
 import com.earlylearning.early_learning_server.common.secret.KeyedHasher;
 import com.earlylearning.early_learning_server.entity.License;
 import com.earlylearning.early_learning_server.entity.TeacherAccount;
-import com.earlylearning.early_learning_server.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.dto.TokenPairResponse;
 import com.earlylearning.early_learning_server.identity.dto.UserAccountResponse;
 import com.earlylearning.early_learning_server.identity.mapper.LicenseMapper;

@@ -14,13 +14,13 @@ import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerS
 import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.Attempt;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageService;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * 单题评分的模型适配器:把题目、预设提示、本次回答与已解析图片交给多模态模型,产出结构化分数。
- * 只依赖 {@link ChatModel} 端口,与厂商无关;图片字节由服务端按 file_code 取回(见 {@code ScoringImageResolver})。
+ * 只依赖 {@link ChatModel} 端口,与厂商无关;图片字节由服务端按 file_code 取回(见 {@code ScoringImageService})。
  *
  * <p>分工:
  * <ul>

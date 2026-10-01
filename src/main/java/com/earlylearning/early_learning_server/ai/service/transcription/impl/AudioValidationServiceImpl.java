@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.ai.service.transcription;
+package com.earlylearning.early_learning_server.ai.service.transcription.impl;
 
 import java.util.Locale;
 import java.util.OptionalLong;
@@ -9,50 +9,36 @@ import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
 import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscriptionLimits;
+import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidationService;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
 
-/**
- * 转写音频的准入校验：格式、体积、时长。每一种不合格都给出能直接定位原因的说明。
- *
- * <p>契约列了 m4a/mp3/wav/ogg/webm，但 ogg 与 webm 的时长无法在内存里测出来
- * （见 {@link AudioDurationParser}），按"测不出就不放行"处理——拒收时明确说明是格式原因，
- * 而不是笼统的"不支持的格式"。
- */
+/** {@link AudioValidationService} 的实现。 */
 @Component
-public class AudioValidator {
+public class AudioValidationServiceImpl implements AudioValidationService {
 
-    private static final Logger log = LoggerFactory.getLogger(AudioValidator.class);
+    private static final Logger log = LoggerFactory.getLogger(AudioValidationServiceImpl.class);
 
     private final MediaTypeDetector mediaTypeDetector;
     private final AudioDurationParser audioDurationParser;
     private final AiTranscriptionLimits aiTranscriptionLimits;
 
-    public AudioValidator(MediaTypeDetector mediaTypeDetector,
-                          AudioDurationParser audioDurationParser,
-                          AiTranscriptionLimits aiTranscriptionLimits) {
+    public AudioValidationServiceImpl(MediaTypeDetector mediaTypeDetector,
+                                      AudioDurationParser audioDurationParser,
+                                      AiTranscriptionLimits aiTranscriptionLimits) {
         this.mediaTypeDetector = mediaTypeDetector;
         this.audioDurationParser = audioDurationParser;
         this.aiTranscriptionLimits = aiTranscriptionLimits;
     }
 
-    /**
-     * 识别音频的实际格式。
-     *
-     * <p>调用方在 {@link #validate} 之后还要用它，因为任务执行时需要把实际 MIME 交给识别适配器。
-     */
+    @Override
     public String detect(byte[] audio) {
         return mediaTypeDetector.detect(head(audio));
     }
 
-    /**
-     * 校验通过后返回音频时长（毫秒）。
-     *
-     * @param declaredMime multipart 声明的 Content-Type，可为 null
-     * @throws BusinessException 格式无法识别、格式无法校验时长、声明与实际不符、超体积或超时长
-     */
+    @Override
     public long validate(byte[] audio, String declaredMime) {
         String detected = detect(audio);
         if (detected == null) {

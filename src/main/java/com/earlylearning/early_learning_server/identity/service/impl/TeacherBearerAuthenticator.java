@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.identity.service;
+package com.earlylearning.early_learning_server.identity.service.impl;
 
 import org.springframework.stereotype.Component;
 

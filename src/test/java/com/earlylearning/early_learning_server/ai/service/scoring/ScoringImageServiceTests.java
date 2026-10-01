@@ -9,11 +9,12 @@ import com.earlylearning.early_learning_server.ai.model.scoring.ImageKind;
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageRef;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
+import com.earlylearning.early_learning_server.ai.service.scoring.impl.ScoringImageServiceImpl;
+import com.earlylearning.early_learning_server.common.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.common.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.enums.CloudFileKind;
-import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 
@@ -31,12 +32,12 @@ import static org.mockito.Mockito.when;
  * <p>这是本次需求新增的能力——服务端按 {@code file_code} 取回图片内容交给模型。
  * 重点是失败语义跟签发/元数据接口保持一致，别出现"下载拿不到、评分却能拿到"。
  */
-class ScoringImageResolverTests {
+class ScoringImageServiceTests {
 
     private final CloudFileQueryService files = mock(CloudFileQueryService.class);
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
     private final ScoringLimits limits = new ScoringLimits(20000, 20, 4096);
-    private final ScoringImageResolver resolver = new ScoringImageResolver(files, storage, limits);
+    private final ScoringImageService resolver = new ScoringImageServiceImpl(files, storage, limits);
 
     @Test
     void serverFetchReadsTheObjectByFileCode() {
