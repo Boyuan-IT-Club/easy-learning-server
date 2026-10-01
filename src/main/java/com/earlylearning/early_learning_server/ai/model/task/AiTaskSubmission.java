@@ -4,6 +4,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
@@ -24,6 +26,8 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
  */
 @Component
 public class AiTaskSubmission {
+
+    private static final Logger log = LoggerFactory.getLogger(AiTaskSubmission.class);
 
     /** 首次提交的序号。三个提交服务共用，写在这里避免各自再抄一份。 */
     public static final int FIRST_ATTEMPT = 0;
@@ -113,6 +117,8 @@ public class AiTaskSubmission {
                                Function<AiTask, AiTask> run,
                                Function<AiTask, AiTask> restart) {
         Outcome outcome = resolveAndRegister(requestId, inputFingerprint, retryAttempt, newTask);
+        log.info("AI 任务提交 taskId={} action={} retryAttempt={}",
+                outcome.task().getTaskId(), outcome.action(), retryAttempt);
         return switch (outcome.action()) {
             case CREATE -> run.apply(outcome.task());
             case RESTART -> restart.apply(outcome.task());

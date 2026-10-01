@@ -11,6 +11,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,7 +22,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.common.logging.TraceIdFilter;
+import com.earlylearning.early_learning_server.security.model.AdminPrincipal;
 import com.earlylearning.early_learning_server.security.model.AuthPrincipal;
+import com.earlylearning.early_learning_server.security.model.TeacherPrincipal;
 import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 
@@ -39,6 +45,8 @@ import com.earlylearning.early_learning_server.security.service.BearerAuthentica
  * <p>不是 Spring Bean：否则 Boot 会把它再注册成一个普通 Servlet 过滤器，每个请求执行两遍。
  */
 public final class BearerTokenFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(BearerTokenFilter.class);
 
     private static final String BEARER = "Bearer ";
 
@@ -75,6 +83,7 @@ public final class BearerTokenFilter extends OncePerRequestFilter {
         String token = header.substring(BEARER.length()).trim();
         Optional<BearerAuthenticator> authenticator = TokenType.of(token).map(authenticators::get);
         if (authenticator.isEmpty()) {
+            log.warn("认证失败：无法识别的 Token 类型 {} {}", request.getMethod(), request.getRequestURI());
             securityErrorWriter.write(response, ErrorCode.TOKEN_INVALID);
             return;
         }
@@ -83,9 +92,16 @@ public final class BearerTokenFilter extends OncePerRequestFilter {
         try {
             principal = authenticator.get().authenticate(token);
         } catch (BusinessException e) {
+            if (e.getHttpStatus().is5xxServerError()) {
+                log.error("认证依赖不可用 {} {} code={}", request.getMethod(), request.getRequestURI(),
+                        e.getErrorCode().name(), e);
+            } else {
+                log.warn("认证失败 {} {} code={}", request.getMethod(), request.getRequestURI(), e.getErrorCode().name());
+            }
             securityErrorWriter.write(response, e);
             return;
         }
+        MDC.put(TraceIdFilter.PRINCIPAL_MDC_KEY, describe(principal));
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(new PrincipalAuthentication(principal));
@@ -95,5 +111,13 @@ public final class BearerTokenFilter extends OncePerRequestFilter {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    /** 访问日志里的调用方标识，只含类型与 id。 */
+    private static String describe(AuthPrincipal principal) {
+        return switch (principal) {
+            case AdminPrincipal admin -> "admin:" + admin.adminId();
+            case TeacherPrincipal teacher -> "teacher:" + teacher.userId();
+        };
     }
 }

@@ -1,5 +1,6 @@
 package com.earlylearning.early_learning_server.ai.service.task;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -90,12 +91,18 @@ public class AiTaskRunner {
                     Callable<Object> work) {
         try {
             Future<Object> running = pool.submit(() -> {
-                task.moveTo(workingStage, Instant.now());
+                Instant startedAt = Instant.now();
+                task.moveTo(workingStage, startedAt);
                 try {
                     Object result = work.call();
                     // 超时后工作线程可能才返回：只有仍在执行阶段才写成功，否则会覆盖掉失败
-                    task.succeedIfIn(workingStage, result,
-                            Instant.now().plusSeconds(resultTtlSeconds), Instant.now());
+                    long costMs = Duration.between(startedAt, Instant.now()).toMillis();
+                    if (task.succeedIfIn(workingStage, result,
+                            Instant.now().plusSeconds(resultTtlSeconds), Instant.now())) {
+                        log.info("任务完成 taskId={} stage={} costMs={}", task.getTaskId(), workingStage, costMs);
+                    } else {
+                        log.info("任务已按超时处理，丢弃迟到的结果 taskId={} costMs={}", task.getTaskId(), costMs);
+                    }
                     return result;
                 } catch (AiTaskFailedException ex) {
                     // 只记失败码，不记 message：适配器可能把识别原文写进 message

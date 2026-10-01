@@ -41,7 +41,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if (ex.getHttpStatus().is5xxServerError()) {
             log.error("业务异常 {} {} code={}", request.getMethod(), request.getRequestURI(), code.name(), ex);
         } else {
-            log.info("业务异常 {} {} code={} status={}",
+            log.warn("业务异常 {} {} code={} status={}",
                     request.getMethod(), request.getRequestURI(), code.name(), ex.getHttpStatus().value());
         }
         return build(ex.getHttpStatus(), code, ex.getMessage(), ex.getDetails(), null);
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .findFirst()
                 .map(violation -> "/" + violation.getPropertyPath())
                 .orElse(null);
-        log.info("参数校验失败 field={}", fieldPath);
+        log.warn("参数校验失败 field={}", fieldPath);
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, null,
                 fieldPath == null ? null : ApiErrorDetails.atField(fieldPath), null);
     }
@@ -62,7 +62,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** 其它 multipart 解析失败，属于请求本身不合法。 */
     @ExceptionHandler(MultipartException.class)
     public ResponseEntity<Object> handleMultipart(MultipartException ex) {
-        log.info("multipart 解析失败: {}", ex.getMessage());
+        log.warn("multipart 解析失败: {}", ex.getMessage());
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, null, null, null);
     }
 
@@ -83,7 +83,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .findFirst()
                 .map(error -> "/" + error.getField())
                 .orElse(null);
-        log.info("请求体校验失败 field={}", fieldPath);
+        log.warn("请求体校验失败 field={}", fieldPath);
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, null,
                 fieldPath == null ? null : ApiErrorDetails.atField(fieldPath), headers);
     }
@@ -97,7 +97,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(org.apache.tomcat.util.http.InvalidParameterException.class)
     public ResponseEntity<Object> handleInvalidParameter(org.apache.tomcat.util.http.InvalidParameterException ex,
                                                          WebRequest request) {
-        log.info("URL 参数解码失败 {}", request instanceof ServletWebRequest servletRequest
+        log.warn("URL 参数解码失败 {}", request instanceof ServletWebRequest servletRequest
                 ? servletRequest.getRequest().getRequestURI() : "");
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
                 ErrorCode.INVALID_REQUEST.defaultMessage(), null, HttpHeaders.EMPTY);
@@ -117,7 +117,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if (status.is5xxServerError()) {
             log.error("框架异常 {} code={}", path, code.name(), ex);
         } else {
-            log.info("框架异常 {} code={} status={}", path, code.name(), status.value());
+            log.warn("框架异常 {} code={} status={}", path, code.name(), status.value());
         }
         // message 用错误码的默认文案：它非空（minLength 1、pattern \\S），
         // 传 null 会让客户端拿到 "message": null

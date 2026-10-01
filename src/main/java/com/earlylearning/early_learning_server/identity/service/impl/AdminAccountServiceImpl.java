@@ -3,6 +3,8 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,8 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class AdminAccountServiceImpl implements AdminAccountService {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminAccountServiceImpl.class);
+
     private static final IdempotencyScope CREATE = IdempotencyScope.ADMIN_ACCOUNT_CREATE;
 
     private final AdminAccountMapper adminAccountMapper;
@@ -67,10 +71,12 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         String fingerprint = InputFingerprint.of(username, keyedHasher.hash(password));
         Optional<StoredResponse> replayed = idempotencyService.claim(CREATE, idempotencyKey, fingerprint);
         if (replayed.isPresent()) {
+            log.info("创建管理员请求重放，返回首次结果 username={}", username);
             return objectMapper.readValue(replayed.get().body(), AdminAccountResponse.class);
         }
         AdminAccountResponse created = AdminAccountResponse.from(insert(username, password));
         idempotencyService.record(CREATE, idempotencyKey, 201, created);
+        log.info("创建管理员 adminId={} username={}", created.id(), created.username());
         return created;
     }
 
@@ -122,6 +128,8 @@ public class AdminAccountServiceImpl implements AdminAccountService {
         if (revokeTokens) {
             tokenService.revokeAdminAfterCommit(id);
         }
+        log.info("更新管理员 adminId={} passwordChanged={} status={} tokensRevoked={}",
+                id, password != null, target == null ? account.getStatus() : target, revokeTokens);
         // 回读：拿到 ON UPDATE 刷新后的 updated_at
         return AdminAccountResponse.from(adminAccountMapper.selectById(id));
     }

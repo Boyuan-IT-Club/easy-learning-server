@@ -200,6 +200,18 @@ MySQL 保存文件元数据和对象引用；OSS 保存实际大文件。
 - 不把内部 Entity 无条件直接返回给客户端。
 - 不在日志中输出敏感信息。
 
+### 日志
+
+- `private static final Logger log = LoggerFactory.getLogger(Xxx.class);`，消息用中文，参数写成 `key={}`。
+- 级别：`info` 记业务成功事件（登录、注册、发布、撤销、状态变更等）；`warn` 记被拒绝的请求（4xx、限流、锁定、
+  疑似凭证重放）；`error` 记服务端故障，异常对象作为最后一个参数带出堆栈
+  （message 可能带识别原文等内容的异常只记类型，见 `AiTaskRunner`）；`debug` 记排查细节（签发 Token 等）。
+- 每个请求由 `AccessLogFilter` 记一行：方法、路径、状态码、耗时、调用方（`admin:3` / `teacher:12`），不记查询串与请求体；
+  traceId 由 `TraceIdFilter` 写进每一行。
+- 被拒绝的业务请求已由 `GlobalExceptionHandler` 记下错误码与路径，service 里不重复记；只在需要补充上下文时再记
+  （如是哪条限流规则、哪个用户名被锁）。
+- 不进日志：密码、Token、激活码原文及其哈希、预签名地址、录音与识别原文、儿童个人信息、请求体。
+
 ---
 
 ## 9. 前后端边界

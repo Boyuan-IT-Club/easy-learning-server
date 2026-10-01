@@ -3,6 +3,8 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +34,10 @@ import com.earlylearning.early_learning_server.identity.service.LicenseService;
 @Service
 public class LicenseServiceImpl implements LicenseService {
 
+    private static final Logger log = LoggerFactory.getLogger(LicenseServiceImpl.class);
+
     /** 单次最多生成的激活码数量。 */
-    public static final int MAX_BATCH = 100;
+    private static final int MAX_BATCH = 100;
 
     /** 80 bit 的码撞上已有哈希的概率可以忽略；重试只是为了不让极小概率变成 500。 */
     private static final int MAX_COLLISION_RETRIES = 3;
@@ -60,7 +64,7 @@ public class LicenseServiceImpl implements LicenseService {
         }
         String fingerprint = InputFingerprint.of(Integer.toString(count), Integer.toString(adminId));
         return sensitiveIdempotency.execute(IdempotencyScope.LICENSE_CREATE, idempotencyKey, fingerprint, 201,
-                CreateLicensesResponse.class, () -> issue(count),
+                CreateLicensesResponse.class, () -> issue(count, adminId),
                 IssuedLicenseIds.class, CreateLicensesResponse::ids,
                 LicenseServiceImpl::expiredDetails, result -> { });
     }
@@ -80,6 +84,7 @@ public class LicenseServiceImpl implements LicenseService {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         }
         if (license.isRevoked()) {
+            log.info("激活码已是撤销状态，直接返回 licenseId={}", id);
             return LicenseResponse.from(license);
         }
         boolean disableTeacher = license.revoke();
@@ -89,14 +94,18 @@ public class LicenseServiceImpl implements LicenseService {
         if (disableTeacher) {
             teacherAccountMapper.updateStatus(license.getUserId(), TeacherStatus.DISABLED.value());
         }
+        log.info("撤销激活码 licenseId={} disabledUserId={}", id, disableTeacher ? license.getUserId() : null);
         return LicenseResponse.from(license);
     }
 
-    private CreateLicensesResponse issue(int count) {
+    private CreateLicensesResponse issue(int count, int adminId) {
         List<IssuedLicenseResponse> issued = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             issued.add(insertUnique());
         }
+        // 只记 id，激活码原文不进日志
+        log.info("生成激活码 adminId={} count={} firstId={} lastId={}",
+                adminId, count, issued.getFirst().id(), issued.getLast().id());
         return new CreateLicensesResponse(issued);
     }
 
@@ -113,6 +122,7 @@ public class LicenseServiceImpl implements LicenseService {
                 if (attempt >= MAX_COLLISION_RETRIES) {
                     throw e;
                 }
+                log.warn("激活码哈希与已有记录冲突，重新生成 attempt={}", attempt + 1);
             }
         }
     }

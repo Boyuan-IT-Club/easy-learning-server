@@ -2,6 +2,8 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 
 import java.time.Duration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,8 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
  */
 @Service
 public class AdminLoginServiceImpl implements AdminLoginService {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminLoginServiceImpl.class);
 
     /** 同一 IP 每分钟最多 20 次登录请求。 */
     public static final RateLimitRule LOGIN_PER_IP = new RateLimitRule("admin-login-ip", Duration.ofMinutes(1), 20);
@@ -62,11 +66,13 @@ public class AdminLoginServiceImpl implements AdminLoginService {
     @Override
     public AdminSessionResponse login(String rawUsername, String password) {
         if (!slidingWindowRateLimiter.tryAcquire(LOGIN_PER_IP, RequestOrigin.clientIp())) {
+            log.warn("管理员登录触发 IP 限流 clientIp={}", RequestOrigin.clientIp());
             throw new BusinessException(ErrorCode.RATE_LIMITED);
         }
         String username = Usernames.normalize(rawUsername, "/username");
         AdminPasswordPolicy.require(password, "/password");
         if (failureLockout.lockedFor(LOGIN_FAILURES, username).isPresent()) {
+            log.warn("管理员登录被拒：用户名处于锁定期 username={}", username);
             throw new BusinessException(ErrorCode.RATE_LIMITED);
         }
 
@@ -74,14 +80,18 @@ public class AdminLoginServiceImpl implements AdminLoginService {
         boolean matches = passwordEncoder.matches(password, account == null ? dummyHash : account.getPasswordHash());
         if (account == null || !matches) {
             if (failureLockout.recordFailure(LOGIN_FAILURES, username, LOCK_DURATION)) {
+                log.warn("管理员连续登录失败达到上限，锁定 {} 分钟 username={}", LOCK_DURATION.toMinutes(), username);
                 throw new BusinessException(ErrorCode.RATE_LIMITED);
             }
+            log.warn("管理员登录失败：用户名或密码错误 username={} accountExists={}", username, account != null);
             throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
         if (!account.isActive()) {
+            log.warn("已停用的管理员尝试登录 adminId={}", account.getId());
             throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
         }
         failureLockout.recordSuccess(LOGIN_FAILURES, username);
+        log.info("管理员登录成功 adminId={} username={}", account.getId(), username);
         return AdminSessionResponse.of(tokenService.issueAdmin(account.getId()), account);
     }
 }

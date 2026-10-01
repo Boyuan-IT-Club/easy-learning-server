@@ -123,6 +123,7 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
 
             Optional<StoredResponse> replayed = idempotencyService.peek(SCOPE, idempotencyKey, fingerprint);
             if (replayed.isPresent()) {
+                log.info("材料发布请求重放，返回首次结果 zipBytes={}", zip.size());
                 return fromSnapshot(replayed.get().body());
             }
 
@@ -181,6 +182,8 @@ public class AssessmentMaterialPublishServiceImpl implements AssessmentMaterialP
 
             AssessmentMaterial saved = assessmentMaterialMapper.selectById(entity.getId());
             idempotencyService.record(SCOPE, idempotencyKey, 201, saved);
+            log.info("发布评估材料 materialId={} code={} version={} previousVersions={}",
+                    saved.getId(), saved.getOfficialMaterialCode(), saved.getContentVersion(), existing.size());
             return saved;
         });
     }

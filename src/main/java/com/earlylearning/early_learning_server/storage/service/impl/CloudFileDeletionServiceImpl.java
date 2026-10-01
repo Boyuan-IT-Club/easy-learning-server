@@ -2,6 +2,8 @@ package com.earlylearning.early_learning_server.storage.service.impl;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -17,6 +19,8 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileDeletion
 /** {@link CloudFileDeletionService} 的实现。 */
 @Service
 public class CloudFileDeletionServiceImpl implements CloudFileDeletionService {
+
+    private static final Logger log = LoggerFactory.getLogger(CloudFileDeletionServiceImpl.class);
 
     private final CloudFileMapper cloudFileMapper;
     private final CloudFileQueryMapper cloudFileQueryMapper;
@@ -50,6 +54,7 @@ public class CloudFileDeletionServiceImpl implements CloudFileDeletionService {
                 throw new BusinessException(ErrorCode.RESOURCE_IN_USE);
             }
             cloudFileMapper.updateStatus(file.getId(), CloudFileStatus.DELETED.value());
+            log.info("标记删除文件 fileCode={} kind={}", fileCode, file.getFileKind());
             return cloudFileMapper.selectById(file.getId());
         });
     }

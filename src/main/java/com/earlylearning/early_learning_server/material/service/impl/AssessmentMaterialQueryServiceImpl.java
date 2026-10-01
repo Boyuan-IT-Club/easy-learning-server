@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,6 +38,8 @@ import tools.jackson.databind.ObjectMapper;
 /** {@link AssessmentMaterialQueryService} 的实现。 */
 @Service
 public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQueryService {
+
+    private static final Logger log = LoggerFactory.getLogger(AssessmentMaterialQueryServiceImpl.class);
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final String CODE_PATTERN = "^[A-Za-z0-9_-]+$";
@@ -91,6 +95,8 @@ public class AssessmentMaterialQueryServiceImpl implements AssessmentMaterialQue
                 return row;
             }
             assessmentMaterialMapper.disableById(id);
+            log.info("禁用评估材料版本 materialId={} code={} version={}",
+                    id, row.getOfficialMaterialCode(), row.getContentVersion());
             return assessmentMaterialMapper.selectById(id);
         });
     }

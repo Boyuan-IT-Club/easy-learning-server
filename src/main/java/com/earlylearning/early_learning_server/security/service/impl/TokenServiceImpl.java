@@ -3,6 +3,8 @@ package com.earlylearning.early_learning_server.security.service.impl;
 import java.time.Clock;
 import java.time.Instant;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
@@ -19,6 +21,8 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
 /** {@link TokenService} 的实现。 */
 @Service
 public class TokenServiceImpl implements TokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(TokenServiceImpl.class);
 
     private final RedisTokenStore redisTokenStore;
     private final AuthProperties authProperties;
@@ -37,6 +41,7 @@ public class TokenServiceImpl implements TokenService {
         RedisTokenStore.TeacherGrant grant = new RedisTokenStore.TeacherGrant(userId, access.expiresAt());
         AfterCommit.run("save-teacher-access", () -> redisTokenStore.saveTeacher(access.hash(), grant,
                 authProperties.accessTokenTtl().plus(authProperties.expiredRetention())));
+        log.debug("签发教师凭证 userId={} accessExpiresAt={}", userId, access.expiresAt());
         return new TeacherTokens(access, refresh);
     }
 
@@ -46,6 +51,7 @@ public class TokenServiceImpl implements TokenService {
         RedisTokenStore.AdminGrant grant = new RedisTokenStore.AdminGrant(adminId, token.expiresAt());
         AfterCommit.run("save-admin-token", () -> redisTokenStore.saveAdmin(token.hash(), grant,
                 authProperties.adminTokenTtl().plus(authProperties.expiredRetention())));
+        log.debug("签发管理员 Token adminId={} expiresAt={}", adminId, token.expiresAt());
         return token;
     }
 
@@ -67,7 +73,10 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public void revokeAdminAfterCommit(int adminId) {
-        AfterCommit.run("revoke-admin", () -> redisTokenStore.deleteAllForAdmin(adminId));
+        AfterCommit.run("revoke-admin", () -> {
+            redisTokenStore.deleteAllForAdmin(adminId);
+            log.info("已吊销管理员的全部 Token adminId={}", adminId);
+        });
     }
 
     private IssuedToken issue(TokenType type, Instant expiresAt) {

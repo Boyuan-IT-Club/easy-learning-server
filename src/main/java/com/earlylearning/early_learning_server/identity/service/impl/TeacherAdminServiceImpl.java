@@ -3,6 +3,8 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.util.List;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,8 @@ import com.earlylearning.early_learning_server.identity.service.TeacherAdminServ
 /** {@link TeacherAdminService} 的实现。 */
 @Service
 public class TeacherAdminServiceImpl implements TeacherAdminService {
+
+    private static final Logger log = LoggerFactory.getLogger(TeacherAdminServiceImpl.class);
 
     private final TeacherAccountMapper teacherAccountMapper;
     private final LicenseMapper licenseMapper;
@@ -53,6 +57,7 @@ public class TeacherAdminServiceImpl implements TeacherAdminService {
             account.ensureCanEnable(licenseMapper.selectByUserId(id));
         }
         teacherAccountMapper.updateStatus(id, target.value());
+        log.info("教师状态变更 userId={} from={} to={}", id, account.getStatus(), target);
         account.setStatus(target);
         return UserAccountResponse.from(account);
     }

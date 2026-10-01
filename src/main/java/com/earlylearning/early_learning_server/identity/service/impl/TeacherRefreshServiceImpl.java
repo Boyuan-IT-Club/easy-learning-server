@@ -1,5 +1,7 @@
 package com.earlylearning.early_learning_server.identity.service.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
@@ -38,6 +40,8 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Service
 public class TeacherRefreshServiceImpl implements TeacherRefreshService {
+
+    private static final Logger log = LoggerFactory.getLogger(TeacherRefreshServiceImpl.class);
 
     private final TeacherAccountMapper teacherAccountMapper;
     private final LicenseMapper licenseMapper;
@@ -87,6 +91,7 @@ public class TeacherRefreshServiceImpl implements TeacherRefreshService {
         TokenPairResponse pair = TokenPairResponse.of(tokens, account);
         refreshGraceStore.remember(oldHash, new RefreshGrace(account.getId(), tokens.refresh().hash(),
                 objectMapper.writeValueAsString(pair)));
+        log.info("教师刷新凭证 userId={}", account.getId());
         return pair;
     }
 
@@ -96,9 +101,12 @@ public class TeacherRefreshServiceImpl implements TeacherRefreshService {
         // 锁住账号再比对：与正在进行的轮换串行
         TeacherAccount account = teacherAccountMapper.selectForUpdate(grace.userId());
         if (account == null || !grace.stillCurrent(account.getRefreshTokenHash())) {
+            // 旧凭证在宽限期内又被拿来用，而新凭证已经再次轮换：可能是凭证泄露后的重放
+            log.warn("宽限期内的旧凭证已被再次轮换，拒绝使用 userId={}", grace.userId());
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
         account.ensureCloudAccess(licenseMapper.selectByUserId(account.getId()));
+        log.info("宽限期内重复刷新，返回同一组新凭证 userId={}", account.getId());
         return objectMapper.readValue(grace.pairJson(), TokenPairResponse.class);
     }
 

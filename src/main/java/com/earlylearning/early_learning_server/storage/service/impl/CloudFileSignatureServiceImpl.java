@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -23,6 +25,8 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileSignatur
 /** {@link CloudFileSignatureService} 的实现。 */
 @Service
 public class CloudFileSignatureServiceImpl implements CloudFileSignatureService {
+
+    private static final Logger log = LoggerFactory.getLogger(CloudFileSignatureServiceImpl.class);
 
     private static final int MAX_BATCH_SIZE = 100;
 
@@ -52,6 +56,8 @@ public class CloudFileSignatureServiceImpl implements CloudFileSignatureService 
         for (String fileCode : fileCodes) {
             items.add(signOne(found.get(fileCode)));
         }
+        // 签名地址本身不进日志
+        log.debug("签发下载地址 count={}", items.size());
         return List.copyOf(items);
     }
 

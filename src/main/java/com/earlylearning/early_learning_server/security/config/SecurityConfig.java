@@ -4,6 +4,8 @@ import java.util.List;
 
 import jakarta.servlet.DispatcherType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,6 +55,8 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Configuration(proxyBeanMethods = false)
 public class SecurityConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     private static final String TEACHER = TeacherPrincipal.ROLE;
     private static final String ADMIN = AdminPrincipal.ROLE;
@@ -106,10 +110,14 @@ public class SecurityConfig {
                 .addFilterBefore(new BearerTokenFilter(authenticators, publicEndpoints, errorWriter),
                         AnonymousAuthenticationFilter.class)
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint((request, response, e) ->
-                                errorWriter.write(response, ErrorCode.TOKEN_MISSING))
-                        .accessDeniedHandler((request, response, e) ->
-                                errorWriter.write(response, ErrorCode.AUTH_ROLE_MISMATCH)))
+                        .authenticationEntryPoint((request, response, e) -> {
+                            log.warn("未携带凭证访问受保护接口 {} {}", request.getMethod(), request.getRequestURI());
+                            errorWriter.write(response, ErrorCode.TOKEN_MISSING);
+                        })
+                        .accessDeniedHandler((request, response, e) -> {
+                            log.warn("身份与接口不匹配 {} {}", request.getMethod(), request.getRequestURI());
+                            errorWriter.write(response, ErrorCode.AUTH_ROLE_MISMATCH);
+                        }))
                 .authorizeHttpRequests(auth -> auth
                         // 异常转发到 /error 时沿用原请求已经通过的判定，避免把真实错误掩盖成 401
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()

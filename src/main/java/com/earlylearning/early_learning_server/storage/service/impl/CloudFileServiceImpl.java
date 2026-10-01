@@ -127,6 +127,7 @@ public class CloudFileServiceImpl implements CloudFileService {
 
             String detectedMime = mediaTypeDetector.detect(readHead(staged));
             if (detectedMime == null || KIND_BY_MIME.get(detectedMime) != declaredKind) {
+                log.warn("上传文件的实际类型与声明不符 declaredKind={} detectedMime={}", declaredKind, detectedMime);
                 throw new BusinessException(ErrorCode.UNSUPPORTED_MEDIA_TYPE);
             }
             requireDeclarationAgrees(file.declaredContentType(), detectedMime);
@@ -136,6 +137,7 @@ public class CloudFileServiceImpl implements CloudFileService {
 
             Optional<StoredResponse> replayed = idempotencyService.peek(SCOPE, idempotencyKey, fingerprint);
             if (replayed.isPresent()) {
+                log.info("文件上传请求重放，返回首次结果 kind={} sizeBytes={}", declaredKind, size);
                 return fromSnapshot(replayed.get().body());
             }
 
@@ -163,7 +165,12 @@ public class CloudFileServiceImpl implements CloudFileService {
                     idempotencyService.record(SCOPE, idempotencyKey, 201, saved);
                     return saved;
                 });
-                if (!rowWritten.get()) {
+                if (rowWritten.get()) {
+                    log.info("上传官方文件 fileCode={} kind={} mime={} sizeBytes={}",
+                            stored.getFileCode(), declaredKind, detectedMime, size);
+                } else {
+                    // 并发的同键请求先完成了，这次上传的对象用不上
+                    log.info("同键上传已由并发请求完成，返回其结果并清理本次对象 kind={}", declaredKind);
                     deleteUploadedObject(objectKey, null);
                 }
                 return stored;

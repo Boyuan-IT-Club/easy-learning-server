@@ -3,6 +3,8 @@ package com.earlylearning.early_learning_server.identity.service.impl;
 import java.time.Clock;
 import java.time.Duration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +38,8 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
 @Service
 public class TeacherRegistrationServiceImpl implements TeacherRegistrationService {
 
+    private static final Logger log = LoggerFactory.getLogger(TeacherRegistrationServiceImpl.class);
+
     /** 同一 IP 每分钟最多 10 次注册请求。 */
     public static final RateLimitRule PER_IP = new RateLimitRule("register", Duration.ofMinutes(1), 10);
 
@@ -66,6 +70,7 @@ public class TeacherRegistrationServiceImpl implements TeacherRegistrationServic
     @Override
     public TokenPairResponse register(String activationCode, String rawUsername, String idempotencyKey) {
         if (!slidingWindowRateLimiter.tryAcquire(PER_IP, RequestOrigin.clientIp())) {
+            log.warn("教师注册触发 IP 限流 clientIp={}", RequestOrigin.clientIp());
             throw new BusinessException(ErrorCode.RATE_LIMITED);
         }
         if (activationCode == null || activationCode.isBlank()) {
@@ -95,6 +100,7 @@ public class TeacherRegistrationServiceImpl implements TeacherRegistrationServic
 
         TeacherTokens tokens = tokenService.issueTeacher(account.getId());
         teacherAccountMapper.updateRefreshHash(account.getId(), tokens.refresh().hash());
+        log.info("教师注册成功 userId={} username={} licenseId={}", account.getId(), username, license.getId());
         return TokenPairResponse.of(tokens, account);
     }
 
