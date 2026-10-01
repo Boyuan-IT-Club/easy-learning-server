@@ -60,4 +60,10 @@
     <!-- 本项目代码开到 DEBUG 便于排查；第三方保持 INFO -->
     <logger name="com.earlylearning" level="DEBUG"/>
 
+    <!-- 这几个 Mapper 的 SQL 日志会带出密码哈希、refresh 哈希、激活码哈希与幂等快照，不开 DEBUG -->
+    <logger name="com.earlylearning.early_learning_server.admin.AdminAccountMapper" level="INFO"/>
+    <logger name="com.earlylearning.early_learning_server.teacher.TeacherAccountMapper" level="INFO"/>
+    <logger name="com.earlylearning.early_learning_server.license.LicenseMapper" level="INFO"/>
+    <logger name="com.earlylearning.early_learning_server.common.idempotency.IdempotencyRecordMapper" level="INFO"/>
+
 </configuration>

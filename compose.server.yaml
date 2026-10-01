@@ -11,6 +11,11 @@ services:
     ports: !reset []
     restart: unless-stopped
 
+  redis:
+    # 与数据库一样只在 compose 网络内访问。
+    ports: !reset []
+    restart: unless-stopped
+
   app:
     restart: unless-stopped
     # 端口沿用 compose.yaml 的 127.0.0.1:8080：由宿主机的 Nginx 反代，

@@ -1679,6 +1679,1227 @@
         ],
         "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
       }
+    },
+    "/admin/login": {
+      "post": {
+        "summary": "管理员登录",
+        "deprecated": false,
+        "description": "内部管理员登录，无公开注册。停用账号拒绝登录。密码仅传输校验，错误凭据不透露用户名是否存在；token 有效期由 expires_at 返回。无管理员刷新接口，过期重新登录。",
+        "operationId": "adminLogin",
+        "tags": [
+          "管理员"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "username": {
+                    "$ref": "#/components/schemas/Username"
+                  },
+                  "password": {
+                    "$ref": "#/components/schemas/AdminPassword"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ]
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "username": "admin_example",
+                    "password": "EXAMPLE_PASSWORD_ONLY"
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/adminLoginResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "token": "EXAMPLE_ADMIN_TOKEN_NOT_VALID",
+                    "token_type": "Bearer",
+                    "expires_at": "2026-09-24T08:00:00.000Z",
+                    "account": {
+                      "id": 1,
+                      "username": "admin_example",
+                      "status": "ACTIVE",
+                      "created_at": "2026-09-24T00:00:00.000Z",
+                      "updated_at": "2026-09-24T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/accounts": {
+      "post": {
+        "summary": "创建管理员账号",
+        "deprecated": false,
+        "description": "仅已有管理员可创建；首次管理员由部署初始化。账号名转换小写后唯一，默认 ACTIVE，所有管理员同权限，无 RBAC。Idempotency-Key 防止响应丢失后重复创建。",
+        "operationId": "createAdminAccount",
+        "tags": [
+          "管理员"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "防止重复提交。客户端生成 UUID，同一次操作重试沿用；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "username": {
+                    "$ref": "#/components/schemas/Username"
+                  },
+                  "password": {
+                    "$ref": "#/components/schemas/AdminPassword"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ]
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "username": "admin_example",
+                    "password": "EXAMPLE_PASSWORD_ONLY"
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/createAdminAccountResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "username": "admin_example",
+                    "status": "ACTIVE",
+                    "created_at": "2026-09-24T00:00:00.000Z",
+                    "updated_at": "2026-09-24T00:00:00.000Z"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      },
+      "get": {
+        "summary": "查询管理员账号",
+        "deprecated": false,
+        "description": "分页读取已有管理员，返回 id、账号、状态和时间，供现有 PATCH 使用；不返回密码或密码哈希。默认 id 降序，筛选条件同时满足。",
+        "operationId": "listAdminAccounts",
+        "tags": [
+          "管理员"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码。",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "每页条数，默认 20，最大 100。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "每页条数。",
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "description": "规范化为小写后精确匹配。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Username"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "账号状态。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/AdminStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/listAdminAccountsResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "id": 1,
+                        "username": "admin_example",
+                        "status": "ACTIVE",
+                        "created_at": "2026-09-24T00:00:00.000Z",
+                        "updated_at": "2026-09-24T00:00:00.000Z"
+                      }
+                    ],
+                    "page": 1,
+                    "page_size": 20,
+                    "total": 1
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/accounts/{id}": {
+      "patch": {
+        "summary": "修改管理员密码或状态",
+        "deprecated": false,
+        "description": "至少传 password/status 一项，未传字段保持原值。修改密码或停用后，该管理员已签发 token 全部失效。重复提交相同目标状态不产生额外状态变化。",
+        "operationId": "updateAdminAccount",
+        "tags": [
+          "管理员"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "云端记录 ID。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "password": {
+                    "$ref": "#/components/schemas/AdminPassword"
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/AdminStatus"
+                  }
+                },
+                "minProperties": 1
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "status": "DISABLED"
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/updateAdminAccountResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "username": "admin_example",
+                    "status": "DISABLED",
+                    "created_at": "2026-09-24T00:00:00.000Z",
+                    "updated_at": "2026-09-24T00:00:00.000Z"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/licenses": {
+      "post": {
+        "summary": "单个或批量生成激活码",
+        "deprecated": false,
+        "description": "count=1 为单个，一批最多 100 个，整批创建。原码只在成功响应和短时内存重放返回，服务端只持久保存哈希。同键不重复生成；原码无法重放时返回 409 SENSITIVE_RESULT_EXPIRED，并从原请求结果关联返回 details.license_ids，供逐个撤销。不得按最新列表猜本批 ID。",
+        "operationId": "createLicenses",
+        "tags": [
+          "激活码"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "防止重复提交。客户端生成 UUID，同一次操作重试沿用；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "生成数量。",
+                    "maximum": 100
+                  }
+                },
+                "required": [
+                  "count"
+                ]
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "count": 1
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/createLicensesResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "id": 1,
+                        "activation_code": "EXAMPLE_ACTIVATION_CODE_NOT_VALID",
+                        "status": "UNUSED"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConflictResponse"
+                },
+                "example": {
+                  "code": "SENSITIVE_RESULT_EXPIRED",
+                  "message": "原码已无法重放，可按本次生成的记录 ID 撤销。",
+                  "data": null,
+                  "details": {
+                    "license_ids": [
+                      1
+                    ]
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      },
+      "get": {
+        "summary": "查询激活码状态",
+        "deprecated": false,
+        "description": "按 id 降序分页。筛选条件同时满足；不提供原码、激活码哈希的查询或返回。",
+        "operationId": "listLicenses",
+        "tags": [
+          "激活码"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码。",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "每页条数，默认 20，最大 100。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "每页条数。",
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "状态筛选。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/LicenseStatus"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "精确匹配绑定教师云端 ID。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/listLicensesResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "id": 1,
+                        "user_id": null,
+                        "status": "UNUSED",
+                        "activated_at": null
+                      }
+                    ],
+                    "page": 1,
+                    "page_size": 20,
+                    "total": 1
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/licenses/{id}/revoke": {
+      "post": {
+        "summary": "撤销激活码",
+        "deprecated": false,
+        "description": "无请求体，路径 id 即激活码 ID。UNUSED/ACTIVE 均可撤销；ACTIVE 撤销与绑定教师禁用同一事务提交，同时阻断其云端访问和刷新。已 REVOKED 幂等返回。不可恢复或更换绑定，不影响本地离线业务。",
+        "operationId": "revokeLicense",
+        "tags": [
+          "激活码"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "云端记录 ID。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/revokeLicenseResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "user_id": 1,
+                    "status": "REVOKED",
+                    "activated_at": "2026-09-24T00:00:00.000Z"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "教师首次注册并激活",
+        "deprecated": false,
+        "description": "仅提交 activation_code/username，禁止提交 password 或 password_hash。教师密码只在本地哈希保存。创建账户、绑定 UNUSED 激活码和 refresh_token_hash 同一事务。签发短期 access_token 和不设到期时间的 refresh_token；不返回 refresh_expires_at。用户名唯一；成功响应短时内存幂等重放，缓存丢失后返回 409 SENSITIVE_RESULT_EXPIRED，不重复消耗激活码；无旧账户云端恢复接口。",
+        "operationId": "registerTeacher",
+        "tags": [
+          "教师鉴权"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "防止重复提交。客户端生成 UUID，同一次操作重试沿用；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "activation_code": {
+                    "type": "string",
+                    "description": "管理员分发的激活码，原样校验，不日志记录。",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  },
+                  "username": {
+                    "$ref": "#/components/schemas/Username"
+                  }
+                },
+                "required": [
+                  "activation_code",
+                  "username"
+                ]
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "activation_code": "EXAMPLE_ACTIVATION_CODE_NOT_VALID",
+                    "username": "teacher_example"
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/registerTeacherResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "access_token": "EXAMPLE_ACCESS_TOKEN_NOT_VALID",
+                    "refresh_token": "EXAMPLE_REFRESH_TOKEN_NOT_VALID",
+                    "token_type": "Bearer",
+                    "access_expires_at": "2026-09-24T00:30:00.000Z",
+                    "user": {
+                      "id": 1,
+                      "username": "teacher_example",
+                      "status": 1,
+                      "created_at": "2026-09-24T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "轮换教师访问与刷新凭证",
+        "deprecated": false,
+        "description": "仅在需要刷新访问凭证时调用；当前 refresh_token 不设到期时间，不因长期离线自然失效。同一账号在客户端和服务端均串行刷新，同次网络重试沿用 Idempotency-Key。\n\n收到当前 refresh_token：校验账号、激活码及凭证后，签发新 access_token 和新 refresh_token，原子替换数据库中的 refresh_token_hash。复用现有内存重放缓存，暂存该账号、上一枚凭证的哈希、本次新凭证响应及固定截止时间；从本次轮换提交成功起保留 30 秒。无需新增表、字段或响应参数。\n\n收到上一枚 refresh_token：仅在 30 秒内且缓存中的新凭证仍对应数据库当前哈希时，返回已生成的同一组新凭证，不再次轮换、不延长窗口。即使使用新的幂等键也复用该结果；同一幂等键不同输入仍返回 409 IDEMPOTENCY_CONFLICT。若新凭证又完成一次轮换，更早的凭证立即失效；最多保留紧邻当前的一枚旧凭证。\n\n首次刷新及缓存重放均须校验账号和激活码，停用或撤销返回 403。仅在数据库轮换提交成功后才返回新凭证；失败不返回未提交结果。客户端在一个本地短事务中同时保存两个新 Token，再重试原业务请求。\n\n宽限期届满、缓存丢失或凭证早于上一枚时，旧凭证不能恢复刷新，返回 401 REFRESH_TOKEN_INVALID；若同一幂等请求已确认成功但其敏感结果无法重放，沿用 409 SENSITIVE_RESULT_EXPIRED。缓存仅临时内存保存、到期清理，不记录凭证明文日志；进程重启会丢失宽限期，多实例处理同一账号须使用同一份短时缓存与串行控制。",
+        "operationId": "refreshTeacherToken",
+        "tags": [
+          "教师鉴权"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "防止重复提交。客户端生成 UUID，同一次操作重试沿用；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "refresh_token": {
+                    "type": "string",
+                    "description": "本地持有的刷新凭证；当前凭证不设到期时间，上一枚仅在轮换后的 30 秒宽限期内可用于取回同一组新凭证。不得写日志。",
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "refresh_token"
+                ]
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "refresh_token": "EXAMPLE_REFRESH_TOKEN_NOT_VALID"
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "首次刷新返回新凭证；30 秒宽限期内用上一枚凭证重试返回同一组结果，不再次轮换。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/refreshTeacherTokenResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "access_token": "EXAMPLE_ACCESS_TOKEN_NOT_VALID",
+                    "refresh_token": "EXAMPLE_REFRESH_TOKEN_NOT_VALID",
+                    "token_type": "Bearer",
+                    "access_expires_at": "2026-09-24T00:30:00.000Z",
+                    "user": {
+                      "id": 1,
+                      "username": "teacher_example",
+                      "status": 1,
+                      "created_at": "2026-09-24T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "summary": "查询教师云端账号",
+        "deprecated": false,
+        "description": "按 id 降序分页；只返回云端账号元数据，不返回密码、凭证哈希或任何儿童业务数据。",
+        "operationId": "listTeachers",
+        "tags": [
+          "教师管理"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码。",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "每页条数，默认 20，最大 100。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "每页条数。",
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "description": "按小写账号名包含匹配，% 和 _ 按普通字符处理。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "description": "账号名搜索。"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "状态筛选。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/UserStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/listTeachersResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "id": 1,
+                        "username": "teacher_example",
+                        "status": 1,
+                        "created_at": "2026-09-24T00:00:00.000Z"
+                      }
+                    ],
+                    "page": 1,
+                    "page_size": 20,
+                    "total": 1
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/users/{id}/status": {
+      "patch": {
+        "summary": "启用或禁用教师云端账号",
+        "deprecated": false,
+        "description": "status=1 时必须存在绑定且 ACTIVE 的激活码；REVOKED 返回 409 LICENSE_REVOKED。status=0 阻断后续云端请求和刷新，不删除本地数据；管理员临时禁用再启用后，未轮换的刷新凭证可继续换取新访问凭证，尚未过期的访问凭证可继续使用。重复设置同值幂等。",
+        "operationId": "updateTeacherStatus",
+        "tags": [
+          "教师管理"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "云端记录 ID。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "$ref": "#/components/schemas/UserStatus"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "examples": {
+                "structure": {
+                  "value": {
+                    "status": 0
+                  },
+                  "summary": "仅结构示例；不代表可用于生产的内容或凭证"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/updateTeacherStatusResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "username": "teacher_example",
+                    "status": 0,
+                    "created_at": "2026-09-24T00:00:00.000Z"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
     }
   },
   "components": {
@@ -4432,6 +5653,623 @@
           },
           "details": {
             "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "NullableTimestamp": {
+        "type": "string",
+        "description": "UTC ISO 8601 时间戳。",
+        "format": "date-time",
+        "nullable": true
+      },
+      "AdminStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "DISABLED"
+        ],
+        "description": "管理员状态；本次补充明确取值。"
+      },
+      "UserStatus": {
+        "type": "integer",
+        "enum": [
+          0,
+          1
+        ],
+        "description": "教师云端状态：0 禁用，1 启用。与本地离线登录无关。"
+      },
+      "LicenseStatus": {
+        "type": "string",
+        "enum": [
+          "UNUSED",
+          "ACTIVE",
+          "REVOKED"
+        ],
+        "description": "激活码状态；REVOKED 不可恢复。"
+      },
+      "Username": {
+        "type": "string",
+        "description": "账号名；本次约定 3—64 位 ASCII 字母、数字、下划线、点或连字符，服务端转换为小写后唯一。",
+        "minLength": 3,
+        "pattern": "^[A-Za-z0-9_.-]+$",
+        "maxLength": 64
+      },
+      "AdminPassword": {
+        "type": "string",
+        "description": "管理员明文密码，仅 HTTPS 传输，服务端仅存哈希，不记录日志。8—128 字符，不裁剪空白。",
+        "minLength": 8,
+        "maxLength": 128,
+        "format": "password",
+        "writeOnly": true
+      },
+      "AdminAccount": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "username": {
+            "$ref": "#/components/schemas/Username"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AdminStatus"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "UserAccount": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "username": {
+            "$ref": "#/components/schemas/Username"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "status",
+          "created_at"
+        ]
+      },
+      "License": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "user_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "云端数据库 ID；不能作为本地 SQLite 外键直接保存。",
+            "maximum": 9007199254740991,
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/LicenseStatus"
+          },
+          "activated_at": {
+            "$ref": "#/components/schemas/NullableTimestamp"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "status",
+          "activated_at"
+        ]
+      },
+      "IssuedLicense": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "activation_code": {
+            "type": "string",
+            "description": "仅本次生成结果返回的可分发激活码。不得写日志。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNUSED"
+            ],
+            "description": "新生成状态。"
+          }
+        },
+        "required": [
+          "id",
+          "activation_code",
+          "status"
+        ]
+      },
+      "TokenPair": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "教师云端短期访问凭证。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "当前刷新凭证不设到期时间；刷新成功时轮换，上一枚通过内存缓存保留 30 秒重试宽限期。数据库仅持久保存当前凭证哈希；账号停用或激活码撤销仍阻断刷新。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ],
+            "description": "Authorization 认证方案。"
+          },
+          "access_expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserAccount"
+          }
+        },
+        "required": [
+          "access_token",
+          "refresh_token",
+          "token_type",
+          "access_expires_at",
+          "user"
+        ]
+      },
+      "AdminSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "管理员访问凭证。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ],
+            "description": "认证方案。"
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "account": {
+            "$ref": "#/components/schemas/AdminAccount"
+          }
+        },
+        "required": [
+          "token",
+          "token_type",
+          "expires_at",
+          "account"
+        ]
+      },
+      "adminLoginResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminSession"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "createAdminAccountResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminAccount"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "updateAdminAccountResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminAccount"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "createLicensesResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/IssuedLicense"
+                },
+                "description": "仅本次生成的可分发激活码。",
+                "minItems": 1,
+                "maxItems": 100
+              }
+            },
+            "required": [
+              "items"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "LicensePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/License"
+            },
+            "description": "当前页记录。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "listLicensesResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LicensePage"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "revokeLicenseResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/License"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "registerTeacherResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TokenPair"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "refreshTeacherTokenResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TokenPair"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "TeacherPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserAccount"
+            },
+            "description": "当前页记录。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "listTeachersResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TeacherPage"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "updateTeacherStatusResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserAccount"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "AdminAccountPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAccount"
+            },
+            "description": "当前页记录。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "listAdminAccountsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminAccountPage"
           }
         },
         "required": [

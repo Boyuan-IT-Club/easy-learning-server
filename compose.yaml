@@ -1,7 +1,7 @@
 # 本地开发用的依赖服务。
 #
-# 三个服务：mysql（数据库）、app（后端）、web（管理端前端，nginx 托管构建产物并反代后端接口）。
-# 默认只起 MySQL，应用仍在 IDE / ./mvnw 里跑——改一行代码不用重建镜像，这是最快的循环。
+# 四个服务：mysql（数据库）、redis（短时数据）、app（后端）、web（管理端前端，nginx 托管构建产物并反代后端接口）。
+# 默认只起 MySQL 与 Redis，应用仍在 IDE / ./mvnw 里跑——改一行代码不用重建镜像，这是最快的循环。
 # 看完整效果（含前端页面）：docker compose up -d --build
 #
 # 服务器部署在这份之上叠加 compose.server.yaml，差异只有「暴露面」与「重启策略」：
@@ -35,11 +35,27 @@ services:
       retries: 30
       start_period: 20s
 
+  redis:
+    image: redis:7
+    container_name: early-learning-redis
+    # 只放 Token、刷新宽限、敏感结果重放与限流计数，都是短时数据：
+    # 关掉 RDB 与 AOF，凭证明文不落盘；重启后全部失效是预期行为（契约：进程重启会丢失宽限期）。
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   app:
     build: .
     image: early-learning-server:local
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
@@ -47,6 +63,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/early_learning?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       DB_USERNAME: root
       DB_PASSWORD: ${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD，模板见 .env.example}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AUTH_CODE_PEPPER: ${AUTH_CODE_PEPPER:?请在 .env 中设置 AUTH_CODE_PEPPER，模板见 .env.example}
+      ADMIN_BOOTSTRAP_USERNAME: ${ADMIN_BOOTSTRAP_USERNAME:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
       # OSS 五项在 OssProperties 上是 @NotBlank：缺任何一个应用都不会启动，这是有意的启动期校验。
       OSS_ENDPOINT: ${OSS_ENDPOINT:-}
       OSS_REGION: ${OSS_REGION:-}
