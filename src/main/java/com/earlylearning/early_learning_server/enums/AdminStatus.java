@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.entity;
+package com.earlylearning.early_learning_server.enums;
 
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;

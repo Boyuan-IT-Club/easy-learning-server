@@ -11,7 +11,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.entity.CloudFileStatus;
+import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
 import com.earlylearning.early_learning_server.storage.mapper.CloudFileQueryMapper;
 import com.earlylearning.early_learning_server.storage.service.CloudFileDeletionService;

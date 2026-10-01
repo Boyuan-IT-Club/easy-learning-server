@@ -21,7 +21,7 @@ import com.earlylearning.early_learning_server.common.ratelimit.SlidingWindowRat
 import com.earlylearning.early_learning_server.common.secret.KeyedHasher;
 import com.earlylearning.early_learning_server.entity.License;
 import com.earlylearning.early_learning_server.entity.TeacherAccount;
-import com.earlylearning.early_learning_server.entity.TeacherStatus;
+import com.earlylearning.early_learning_server.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.dto.TokenPairResponse;
 import com.earlylearning.early_learning_server.identity.dto.UserAccountResponse;
 import com.earlylearning.early_learning_server.identity.mapper.LicenseMapper;

@@ -13,7 +13,7 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
 import com.earlylearning.early_learning_server.entity.TeacherAccount;
-import com.earlylearning.early_learning_server.entity.TeacherStatus;
+import com.earlylearning.early_learning_server.enums.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.dto.UserAccountResponse;
 import com.earlylearning.early_learning_server.identity.mapper.LicenseMapper;
 import com.earlylearning.early_learning_server.identity.mapper.TeacherAccountMapper;

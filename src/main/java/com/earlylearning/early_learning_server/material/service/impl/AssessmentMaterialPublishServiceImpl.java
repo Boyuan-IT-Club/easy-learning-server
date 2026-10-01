@@ -31,8 +31,8 @@ import com.earlylearning.early_learning_server.common.idempotency.StoredResponse
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
 import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.entity.CloudFileKind;
-import com.earlylearning.early_learning_server.entity.ContentStatus;
+import com.earlylearning.early_learning_server.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.enums.ContentStatus;
 import com.earlylearning.early_learning_server.material.client.json.ConfigJson;
 import com.earlylearning.early_learning_server.material.client.zip.MaterialZipReader;
 import com.earlylearning.early_learning_server.material.client.zip.ZipPackage;

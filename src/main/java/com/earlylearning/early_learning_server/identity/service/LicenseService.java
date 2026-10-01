@@ -2,7 +2,7 @@ package com.earlylearning.early_learning_server.identity.service;
 
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
-import com.earlylearning.early_learning_server.entity.LicenseStatus;
+import com.earlylearning.early_learning_server.enums.LicenseStatus;
 import com.earlylearning.early_learning_server.identity.dto.CreateLicensesResponse;
 import com.earlylearning.early_learning_server.identity.dto.LicenseResponse;
 

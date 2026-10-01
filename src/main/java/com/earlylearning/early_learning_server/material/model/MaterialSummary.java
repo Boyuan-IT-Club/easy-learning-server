@@ -3,7 +3,7 @@ package com.earlylearning.early_learning_server.material.model;
 import java.time.LocalDateTime;
 
 import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
-import com.earlylearning.early_learning_server.entity.ContentStatus;
+import com.earlylearning.early_learning_server.enums.ContentStatus;
 
 /**
  * 管理端列表的版本概要。不含活动配置；完整配置走指定编号加版本的下载接口。

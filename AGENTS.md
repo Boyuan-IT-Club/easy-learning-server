@@ -41,8 +41,9 @@ security/  ← 鉴权机制：安全链、Token 签发 / 校验 / 吊销、已�
 ai/        ← 录音转写与评分
 material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
 storage/   ← 官方资源文件（对象存储）
-entity/    ← 全部表映射实体与枚举，集中存放，任何模块都可以用；只依赖 common
-common/    ← 共享能力，只被依赖、不依赖任何模块与 entity，任何模块都可以用：
+entity/    ← 表映射类，每个类对应一张表（@TableName），集中存放，任何模块都可以用；只依赖 common 与 enums
+enums/     ← 实体字段的取值枚举（状态、种类），任何模块都可以用；只依赖 common
+common/    ← 共享能力，只被依赖、不依赖任何模块与 entity / enums，任何模块都可以用：
              web（响应信封、分页响应）/ error / idempotency / logging / media / paging /
              identity（用户名规则）/ secret / ratelimit / tx / time
 ```
@@ -74,10 +75,11 @@ common/    ← 共享能力，只被依赖、不依赖任何模块与 entity，�
 - **service 一律接口 + 实现**：`service/XxxService` 是接口，`service/impl/XxxServiceImpl` 加 `@Service` 并实现它；
   除 impl 自己外谁都不依赖 impl（注入一律用接口）。接口写契约语义（做什么、失败返回什么），
   实现细节（锁、事务边界、并发处理）写在 impl 上；impl 方法只加 `@Override`，不重复接口注释；常量放 impl 里。
-- **实体集中在顶层 `entity/`**，状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）。
+- **实体集中在顶层 `entity/`，只放表映射类**；状态、种类等取值枚举放顶层 `enums/`。
+  状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）。
   表归属由 Mapper 决定：同一实体的 BaseMapper 只能出现在一个模块，别的模块经该模块的 service 读写。
 - **Controller 不把实体直接返回给客户端**：返回类型（含泛型参数）里不得出现 entity。
-- entity 只依赖 common；model 不依赖任何上层（controller、filter、dto、service、mapper、client、config）；两者都不依赖 Spring Web。
+- entity、enums 只依赖 common（entity 可以用 enums）；model 不依赖任何上层（controller、filter、dto、service、mapper、client、config）；两者都不依赖 Spring Web。
 - dto、mapper 不依赖 service、client。
 - 跨模块只能用 `ArchitectureTests.CROSS_MODULE_API` 白名单里的包，模块之间不许成环。当前白名单：
   `ai.service.rubric`、`storage.service`、`storage.model`、`security.service`、`security.model`。
@@ -86,7 +88,7 @@ common/    ← 共享能力，只被依赖、不依赖任何模块与 entity，�
 - service 之外，**存在第二个真实实现才立接口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。
 - 含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开 service，对外与幂等快照都用 dto。
 - `ArchitectureTests` 同时扫描源码 import：只在 Javadoc 里出现的 import 不进字节码、ArchUnit 看不到，
-  但同样让 entity / model 指向上层，一律改用 `{@code}` 引用。
+  但同样让 entity / enums / model 指向上层，一律改用 `{@code}` 引用。
 
 ---
 

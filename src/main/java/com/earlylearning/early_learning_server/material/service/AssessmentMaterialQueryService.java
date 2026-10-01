@@ -3,7 +3,7 @@ package com.earlylearning.early_learning_server.material.service;
 import java.util.List;
 
 import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
-import com.earlylearning.early_learning_server.entity.ContentStatus;
+import com.earlylearning.early_learning_server.enums.ContentStatus;
 import com.earlylearning.early_learning_server.material.model.MaterialDownload;
 import com.earlylearning.early_learning_server.material.model.MaterialPage;
 import com.earlylearning.early_learning_server.material.model.MaterialVersionSummary;

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.enums.TeacherStatus;
 
 /**
  * 教师云端账号（{@code user_account}）。云端不保存教师密码，只保存当前 refresh_token 的哈希。

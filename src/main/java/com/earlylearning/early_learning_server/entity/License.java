@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.enums.LicenseStatus;
 
 /**
  * 一枚激活码（{@code user_license}）。库里只有哈希，原码只在生成的那次响应里出现。

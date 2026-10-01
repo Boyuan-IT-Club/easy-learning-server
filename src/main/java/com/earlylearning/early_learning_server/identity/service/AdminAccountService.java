@@ -2,7 +2,7 @@ package com.earlylearning.early_learning_server.identity.service;
 
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
-import com.earlylearning.early_learning_server.entity.AdminStatus;
+import com.earlylearning.early_learning_server.enums.AdminStatus;
 import com.earlylearning.early_learning_server.identity.dto.AdminAccountResponse;
 
 /**

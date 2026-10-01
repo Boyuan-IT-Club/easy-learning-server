@@ -6,8 +6,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.entity.CloudFileKind;
-import com.earlylearning.early_learning_server.entity.CloudFileStatus;
+import com.earlylearning.early_learning_server.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

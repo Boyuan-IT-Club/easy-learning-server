@@ -21,7 +21,7 @@ import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.secret.KeyedHasher;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
 import com.earlylearning.early_learning_server.entity.AdminAccount;
-import com.earlylearning.early_learning_server.entity.AdminStatus;
+import com.earlylearning.early_learning_server.enums.AdminStatus;
 import com.earlylearning.early_learning_server.identity.dto.AdminAccountResponse;
 import com.earlylearning.early_learning_server.identity.mapper.AdminAccountMapper;
 import com.earlylearning.early_learning_server.identity.model.AdminPasswordPolicy;

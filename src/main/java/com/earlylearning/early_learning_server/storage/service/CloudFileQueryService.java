@@ -1,8 +1,8 @@
 package com.earlylearning.early_learning_server.storage.service;
 
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.entity.CloudFileKind;
-import com.earlylearning.early_learning_server.entity.CloudFileStatus;
+import com.earlylearning.early_learning_server.enums.CloudFileKind;
+import com.earlylearning.early_learning_server.enums.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.model.FilePage;
 
 /**

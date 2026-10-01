@@ -19,7 +19,7 @@ import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
 import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.entity.ContentStatus;
+import com.earlylearning.early_learning_server.enums.ContentStatus;
 import com.earlylearning.early_learning_server.material.mapper.AssessmentMaterialMapper;
 import com.earlylearning.early_learning_server.material.mapper.AssessmentMaterialQueryMapper;
 import com.earlylearning.early_learning_server.material.mapper.GrammarRefMapper;

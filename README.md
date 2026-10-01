@@ -124,7 +124,8 @@ early-learning-server/
     │   │       ├── ai/                    录音转写与评分
     │   │       ├── material/              评估材料（ZIP 发布、版本下载）
     │   │       ├── storage/               官方资源文件（对象存储）
-    │   │       ├── entity/                全部表映射实体（各模块共用）
+    │   │       ├── entity/                表映射类（各模块共用）
+    │   │       ├── enums/                 实体字段的取值枚举（状态、种类）
     │   │       └── common/                共享能力（web、error、idempotency、paging 等）
     │   │
     │   │       每个模块内部：controller / dto / service（接口）+ service/impl / mapper（按需 model / client / config），

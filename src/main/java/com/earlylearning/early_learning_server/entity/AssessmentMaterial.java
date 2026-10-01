@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.earlylearning.early_learning_server.enums.ContentStatus;
 
 /**
  * 已发布的评估材料版本。同一 official_material_code 下最多一个 ACTIVE 版本；
