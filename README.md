@@ -119,16 +119,14 @@ early-learning-server/
     ├── main/
     │   ├── java/
     │   │   └── com/earlylearning/early_learning_server/
-    │   │       ├── admin/                 管理员控制（登录、账号维护）
-    │   │       ├── auth/                  鉴权：安全链、Token、教师注册与刷新
-    │   │       ├── license/               激活码
-    │   │       ├── teacher/               教师云端账号
+    │   │       ├── identity/              账号与鉴权（管理员、激活码、教师、注册与刷新）
+    │   │       ├── security/              鉴权机制（安全链、Token）
     │   │       ├── ai/                    录音转写与评分
     │   │       ├── material/              评估材料（ZIP 发布、版本下载）
     │   │       ├── storage/               官方资源文件（对象存储）
-    │   │       └── common/                共享能力（web、error、idempotency、security、paging 等）
+    │   │       └── common/                共享能力（web、error、idempotency、paging 等）
     │   │
-    │   │       每个业务模块内部统一四层：interfaces / application / domain / infrastructure，
+    │   │       每个模块内部：controller / dto / service / entity / mapper（按需 model / client / config），
     │   │       规则见 AGENTS.md 第 3 节，由 ArchitectureTests 强制
     │   └── resources/
     │       ├── application.yaml          公共配置

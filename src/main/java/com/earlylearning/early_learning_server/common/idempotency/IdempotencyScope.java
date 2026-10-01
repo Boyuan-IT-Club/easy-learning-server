@@ -5,7 +5,7 @@ package com.earlylearning.early_learning_server.common.idempotency;
  *
  * <p>官方文件上传、评估材料 ZIP 发布与账号类写接口走这张幂等表；含凭证的结果（激活码、Token）
  * 另见 {@link SensitiveIdempotency}。AI 三个提交接口不走这里——
- * 它们用内存里的任务登记处（见 {@code ai.domain.task.AiTaskSubmission}）：
+ * 它们用内存里的任务登记处（见 {@code ai.model.task.AiTaskSubmission}）：
  * 幂等判据必须和任务同在内存，否则进程重启后表还在、任务没了，
  * 会返回指向已消失任务的凭据。原设计里的 {@code ai.task.submit} 键空间因此作废。
  */

@@ -31,7 +31,7 @@ import tools.jackson.databind.ObjectMapper;
  * </pre>
  *
  * <p>与 {@link IdempotencyService} 一样，结果与快照都是调用方的领域对象，不假定 HTTP 形状；
- * 转成响应是调用方 interfaces 层的事，重放时按同样方式映射即可。
+ * 转成响应是调用方 controller 层的事，重放时按同样方式映射即可。
  *
  * <p>Redis 必须关闭持久化，否则 Token 与激活码明文会落到磁盘。
  * 本方法自己开启（或加入）事务：业务失败回滚后，占用的键一并消失，可以重试。

@@ -31,48 +31,53 @@
 
 ## 3. 模块组织
 
-完整规范见外层仓库 `reference/adr/0008-repo-code-organization.md`，并由 `ArchitectureTests` 强制执行（违反即测试红）。要点：
+由 `ArchitectureTests` 强制执行（违反即测试红）。
 
-**第一轴：顶层包 = 限界上下文（业务模块）。** 当前实际存在的模块：
+**第一层：按业务模块分包。** 当前模块：
 
 ```text
-admin/     ← 管理员控制（登录、账号维护、首个管理员初始化）
-auth/      ← 鉴权：安全链与 Token 机制、教师注册与刷新、每个请求的账号校验
-license/   ← 激活码（生成、查询、撤销、注册时占码）
-teacher/   ← 教师云端账号（启用 / 停用、供 auth 读写 refresh 哈希）
+identity/  ← 账号与鉴权：管理员、激活码、教师账号、教师注册与刷新
+security/  ← 鉴权机制：安全链、Token 签发 / 校验 / 吊销、已认证身份类型（不含账号业务）
 ai/        ← 录音转写与评分
 material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
-storage/   ← 官方资源文件目录（对象存储）
-common/    ← 共享能力，只被依赖、不依赖任何模块；每个子包都是 @NamedInterface 暴露的对外 API：
-             web（响应信封、分页响应）/ error / idempotency / logging / media（MIME 探测与音频时长）/
-             security（已认证身份类型）/ paging / identity（用户名规则）/ secret / ratelimit / tx / time
+storage/   ← 官方资源文件（对象存储）
+common/    ← 共享能力，只被依赖、不依赖任何模块；每个子包都是 @NamedInterface：
+             web（响应信封、分页响应）/ error / idempotency / logging / media / paging /
+             identity（用户名规则）/ secret / ratelimit / tx / time
 ```
 
-模块依赖单向、无环：`admin → auth → teacher → license`，`auth → license`；ai、material、storage 之间按各自需要。
+模块依赖单向、无环：`identity → security`；`ai → storage`；`material → storage, ai`。
 
 业务代码应留在所属业务模块；跨业务复用的机械能力才抽成公共模块。不要建立一个掌握所有课程、评估、字典规则的巨大 `contentimport` 模块——将来做 `course/importer/`、`assessment/importer/` 时，各自负责对应资源的解析和业务校验。
 
-**第二轴：模块内部统一四层，依赖单向 `interfaces → application → domain ← infrastructure`：**
+**第二层：模块内部按职责分包，入口与层次一眼可见：**
 
 ```text
 <module>/
-├── interfaces/       controller/ + dto/（Jackson 注解只在这里）+ 请求形状校验；HTTP 是这一层的事
-│                     （auth 另有 security/：Spring Security 安全链与 Bearer 过滤器）
-├── application/      应用服务（XxxService）：编排、事务、幂等、限流；返回领域对象，不返回 DTO
-├── domain/           Entity（允许带 MyBatis 注解）+ 领域规则 + 只读快照（XxxSummary）+ 事件 + 端口
-└── infrastructure/   Mapper + Redis 存储 + 对外适配器（OSS / ECNU / fake）+ 字节级解析；实现 domain 的端口
+├── controller/   入口：HTTP 接口（以后有 MQ、定时任务，在同级加 listener/、job/；security 的过滤器在 filter/）
+├── dto/          请求与响应（契约的 JSON 形状，Jackson 注解只在这里）
+├── service/      业务逻辑、事务、幂等、限流、编排（XxxService，不配 IXxxService 接口）
+├── entity/       表映射实体与枚举；状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）
+├── mapper/       MyBatis Mapper
+├── model/        （可选）不落库的业务对象与规则，以及外部能力的接口（如 ChatModel、ObjectStorageService）
+├── client/       （可选）外部系统与底层 I/O 适配：OSS、ECNU、Redis、ZIP / JSON 解析；实现 model 里的接口
+└── config/       （可选）Spring 装配与配置项
 ```
 
-- 一律用标准四层；根包只放 package-info（写清本模块职责、四层各放什么、依赖谁）。
-- 跨模块只走对方**根包或 @NamedInterface 暴露的子包**（通常是 `application`、`domain`）里的类型，
-  Spring Modulith verify 强制，违反即 `ArchitectureTests` 红。
-- 反向需求不靠互相调用：用同步事件（如撤销激活码发布 `LicenseRevoked`，teacher 在同一事务里停用教师）。
-  需要同一事务时用 `@EventListener`，不要用提交后才执行的 `@TransactionalEventListener` / `@ApplicationModuleListener`。
-- 接口与实现的判据：**存在第二个真实实现才立端口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。不做一实现一接口的仪式。
-- 服务返回**领域对象**（如 `CloudFile`、`AiTask`、`LicenseSummary`），HTTP 形状（状态码、信封、DTO）只在 interfaces 层出现。
-  含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开应用层，对外与幂等快照都用 `XxxSummary`。
+依赖规则：
+
+- controller 只调 service，使用 dto（可用 entity / model 做转换）；**不碰 mapper、client**，不写业务。
+- service 可以用 mapper、entity、model、client、dto；**不产出 `ApiResponse` / `ResponseEntity`**，包络由 controller 套。
+- **Controller 不把实体直接返回给客户端**：返回类型（含泛型参数）里不得出现 entity。
+- entity、model 不依赖任何上层（controller、filter、dto、service、mapper、client、config），也不依赖 Spring Web。
+- dto、mapper 不依赖 service、client。
+- 跨模块只用对方 `@NamedInterface` 暴露的包：默认只暴露 service（如 `ai.service.rubric`）；
+  storage 另外暴露 entity 与 model（`CloudFile`、`IncomingFile`、`ObjectStorageService`），security 暴露 service 与 model。
+- 事务只开在 service 上；Redis、MQ、OSS 等外部写入放在事务外或提交之后（`AfterCommit`）。
+- 接口与实现的判据：**存在第二个真实实现才立接口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。
+- 含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开 service，对外与幂等快照都用 dto。
 - `ArchitectureTests` 同时扫描源码 import：只在 Javadoc 里出现的 import 不进字节码、ArchUnit 看不到，
-  但同样让 domain 指向外层，一律改用 `{@code}` 引用。
+  但同样让 entity / model 指向上层，一律改用 `{@code}` 引用。
 
 ---
 
