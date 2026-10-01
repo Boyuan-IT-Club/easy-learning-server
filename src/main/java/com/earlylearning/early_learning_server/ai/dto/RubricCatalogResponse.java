@@ -2,8 +2,6 @@ package com.earlylearning.early_learning_server.ai.dto;
 
 import java.util.List;
 
-import java.util.List;
-
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalog;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalogEntry;
 import com.earlylearning.early_learning_server.ai.model.task.BusinessType;

@@ -1,12 +1,13 @@
 package com.earlylearning.early_learning_server.storage.client;
-import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 import java.util.Arrays;
 
-import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+
+import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;

@@ -1,6 +1,7 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
 
 import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
+
 import tools.jackson.core.StreamReadFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;

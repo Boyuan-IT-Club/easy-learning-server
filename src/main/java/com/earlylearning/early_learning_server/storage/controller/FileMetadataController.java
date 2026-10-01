@@ -1,16 +1,17 @@
 package com.earlylearning.early_learning_server.storage.controller;
-import com.earlylearning.early_learning_server.storage.dto.CloudFileResponse;
-import com.earlylearning.early_learning_server.storage.dto.DownloadSignatureBatchResponse;
-import com.earlylearning.early_learning_server.storage.dto.SignDownloadUrlsRequest;
 
-import com.earlylearning.early_learning_server.common.web.ApiResponse;
-import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
-import com.earlylearning.early_learning_server.storage.service.CloudFileSignatureService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.earlylearning.early_learning_server.common.web.ApiResponse;
+import com.earlylearning.early_learning_server.storage.dto.CloudFileResponse;
+import com.earlylearning.early_learning_server.storage.dto.DownloadSignatureBatchResponse;
+import com.earlylearning.early_learning_server.storage.dto.SignDownloadUrlsRequest;
+import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
+import com.earlylearning.early_learning_server.storage.service.CloudFileSignatureService;
 
 /**
  * 教师端的文件读取接口：元数据与批量下载地址签发。

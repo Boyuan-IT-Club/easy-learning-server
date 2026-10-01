@@ -1,22 +1,20 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
-import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceLocator;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
-import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
-import com.earlylearning.early_learning_server.ai.model.task.Attempt;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricConfig;
+import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceLocator;
+import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
-import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
+import com.earlylearning.early_learning_server.ai.model.task.Attempt;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -32,7 +30,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * </ul>
  */
 public class ChatModelAnswerScorer implements AnswerScorer {
-
 
     /** 提示词版本:随 prompt 演进,写进结果的 model_meta,便于追溯。 */
     private static final String PROMPT_VERSION = "QUESTION_SCORING_PROMPT_V1";
@@ -133,7 +130,6 @@ public class ChatModelAnswerScorer implements AnswerScorer {
         }
         return parts;
     }
-
 
     /** 模型该回答的部分；版本与服务端标识不在这里。 */
     /**

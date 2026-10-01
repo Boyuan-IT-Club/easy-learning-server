@@ -5,10 +5,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.earlylearning.early_learning_server.ai.model.task.AiTask;
-import com.earlylearning.early_learning_server.ai.model.task.AiTaskStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.earlylearning.early_learning_server.ai.model.task.AiTask;
+import com.earlylearning.early_learning_server.ai.model.task.AiTaskStore;
 
 /**
  * 任务登记处的内存实现。

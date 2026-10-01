@@ -1,18 +1,19 @@
 package com.earlylearning.early_learning_server.common.logging;
 
+import java.io.IOException;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * 为每个请求建立 traceId，写入 MDC 与响应头。

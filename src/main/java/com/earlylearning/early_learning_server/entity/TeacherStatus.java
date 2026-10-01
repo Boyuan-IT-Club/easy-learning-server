@@ -1,7 +1,6 @@
 package com.earlylearning.early_learning_server.entity;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
-
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;

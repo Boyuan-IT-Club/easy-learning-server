@@ -1,13 +1,11 @@
 package com.earlylearning.early_learning_server.material.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
+
+import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
@@ -16,7 +14,7 @@ import com.earlylearning.early_learning_server.material.model.config.ActivityCon
 import com.earlylearning.early_learning_server.material.model.config.NarrationActivity;
 import com.earlylearning.early_learning_server.material.model.config.QuestioningActivity;
 import com.earlylearning.early_learning_server.material.model.config.SortingActivity;
-import org.springframework.stereotype.Component;
+
 import tools.jackson.databind.JsonNode;
 
 /**

@@ -1,10 +1,11 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.question;
-import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 
 import java.util.Objects;
 
 import org.springframework.stereotype.Component;
+
+import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 
 /**
  * 单题评分的运行时语义校验。

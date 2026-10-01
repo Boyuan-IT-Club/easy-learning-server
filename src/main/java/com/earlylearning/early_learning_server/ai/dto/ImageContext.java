@@ -1,7 +1,7 @@
 package com.earlylearning.early_learning_server.ai.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageKind;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * 一张图片的上下文：契约用 {@code kind} 区分两种形态。

@@ -1,6 +1,4 @@
 package com.earlylearning.early_learning_server.ai.controller;
-import com.earlylearning.early_learning_server.ai.model.task.Attempt;
-import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionTarget;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -11,6 +9,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
 import com.earlylearning.early_learning_server.ai.client.task.InMemoryAiTaskStore;
@@ -19,6 +24,7 @@ import com.earlylearning.early_learning_server.ai.model.task.AiTask;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskStore;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskSubmission;
+import com.earlylearning.early_learning_server.ai.model.task.Attempt;
 import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
 import com.earlylearning.early_learning_server.ai.model.task.FailedStage;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
@@ -28,19 +34,15 @@ import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscri
 import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTranscriber;
 import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionCommand;
 import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionResult;
+import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionTarget;
 import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
 import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
+import com.earlylearning.early_learning_server.ai.service.transcription.impl.AiTranscriptionServiceImpl;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,7 +75,7 @@ class AiTranscriptionTests {
         transcriptionCalls.set(0);
         // 每次都取当前的 transcriber，便于单个用例替换行为
         AiTaskRunner runner = new AiTaskRunner(new AiTaskProperties(1800, 600));
-        service = new AiTranscriptionService(new AiTaskSubmission(store), runner,
+        service = new AiTranscriptionServiceImpl(new AiTaskSubmission(store), runner,
                 (audio, mimeType) -> transcriber.transcribe(audio, mimeType));
         AudioValidator validator = new AudioValidator(new MediaTypeDetector(), new AudioDurationParser(),
                 new AiTranscriptionLimits(50_000_000, 600_000));
@@ -249,7 +251,7 @@ class AiTranscriptionTests {
     void hungAdapterBecomesARetryableTimeoutFailureAndLateResultDoesNotOverwriteIt() throws Exception {
         AiTaskStore localStore = new InMemoryAiTaskStore(MAX_RETAINED);
         CountDownLatch release = new CountDownLatch(1);
-        AiTranscriptionService localService = new AiTranscriptionService(new AiTaskSubmission(localStore),
+        AiTranscriptionService localService = new AiTranscriptionServiceImpl(new AiTaskSubmission(localStore),
                 new AiTaskRunner(new AiTaskProperties(1800, 1)), // 超时 1 秒
                 (audio, mimeType) -> {
                     try {

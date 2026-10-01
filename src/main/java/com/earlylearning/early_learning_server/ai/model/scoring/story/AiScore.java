@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
-import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
 
+import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**

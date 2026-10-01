@@ -41,7 +41,8 @@ security/  ← 鉴权机制：安全链、Token 签发 / 校验 / 吊销、已�
 ai/        ← 录音转写与评分
 material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
 storage/   ← 官方资源文件（对象存储）
-common/    ← 共享能力，只被依赖、不依赖任何模块，任何模块都可以用：
+entity/    ← 全部表映射实体与枚举，集中存放，任何模块都可以用；只依赖 common
+common/    ← 共享能力，只被依赖、不依赖任何模块与 entity，任何模块都可以用：
              web（响应信封、分页响应）/ error / idempotency / logging / media / paging /
              identity（用户名规则）/ secret / ratelimit / tx / time
 ```
@@ -56,9 +57,9 @@ common/    ← 共享能力，只被依赖、不依赖任何模块，任何模�
 <module>/
 ├── controller/   入口：HTTP 接口（以后有 MQ、定时任务，在同级加 listener/、job/；security 的过滤器在 filter/）
 ├── dto/          请求与响应（契约的 JSON 形状，Jackson 注解只在这里）
-├── service/      业务逻辑、事务、幂等、限流、编排（XxxService，不配 IXxxService 接口）
-├── entity/       表映射实体与枚举；状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）
-├── mapper/       MyBatis Mapper
+├── service/      业务接口 XxxService（不加 I 前缀），以及实现要用到的组件（校验器、执行器等）
+│   └── impl/     XxxServiceImpl：业务逻辑、事务、幂等、限流、编排
+├── mapper/       MyBatis Mapper；这个模块的表只由这里的 Mapper 读写
 ├── model/        （可选）不落库的业务对象与规则，以及外部能力的接口（如 ChatModel、ObjectStorageService）
 ├── client/       （可选）外部系统与底层 I/O 适配：OSS、ECNU、Redis、ZIP / JSON 解析；实现 model 里的接口
 └── config/       （可选）Spring 装配与配置项
@@ -66,16 +67,21 @@ common/    ← 共享能力，只被依赖、不依赖任何模块，任何模�
 
 依赖规则：
 
-- controller 只调 service，使用 dto（可用 entity / model 做转换）；**不碰 mapper、client**，不写业务。
+- controller 只调 service 接口，使用 dto（可用 entity / model 做转换）；**不碰 mapper、client**，不写业务。
 - service 可以用 mapper、entity、model、client、dto；**不产出 `ApiResponse` / `ResponseEntity`**，包络由 controller 套。
+- **service 一律接口 + 实现**：`service/XxxService` 是接口，`service/impl/XxxServiceImpl` 加 `@Service` 并实现它；
+  除 impl 自己外谁都不依赖 impl（注入一律用接口）。接口写契约语义（做什么、失败返回什么），
+  实现细节（锁、事务边界、并发处理）写在 impl 上；impl 方法只加 `@Override`，不重复接口注释；常量放 impl 里。
+- **实体集中在顶层 `entity/`**，状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）。
+  表归属由 Mapper 决定：同一实体的 BaseMapper 只能出现在一个模块，别的模块经该模块的 service 读写。
 - **Controller 不把实体直接返回给客户端**：返回类型（含泛型参数）里不得出现 entity。
-- entity、model 不依赖任何上层（controller、filter、dto、service、mapper、client、config），也不依赖 Spring Web。
+- entity 只依赖 common；model 不依赖任何上层（controller、filter、dto、service、mapper、client、config）；两者都不依赖 Spring Web。
 - dto、mapper 不依赖 service、client。
 - 跨模块只能用 `ArchitectureTests.CROSS_MODULE_API` 白名单里的包，模块之间不许成环。当前白名单：
-  `ai.service.rubric`、`storage.service`、`storage.entity`、`storage.model`、`security.service`、`security.model`。
+  `ai.service.rubric`、`storage.service`、`storage.model`、`security.service`、`security.model`。
   新增跨模块依赖要先改白名单并写明谁在用，评审时看得见；不使用 package-info 或注解声明。
 - 事务只开在 service 上；Redis、MQ、OSS 等外部写入放在事务外或提交之后（`AfterCommit`）。
-- 接口与实现的判据：**存在第二个真实实现才立接口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。
+- service 之外，**存在第二个真实实现才立接口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。
 - 含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开 service，对外与幂等快照都用 dto。
 - `ArchitectureTests` 同时扫描源码 import：只在 Javadoc 里出现的 import 不进字节码、ArchUnit 看不到，
   但同样让 entity / model 指向上层，一律改用 `{@code}` 引用。

@@ -1,16 +1,7 @@
 package com.earlylearning.early_learning_server.ai.controller;
-import com.earlylearning.early_learning_server.ai.dto.TaskHandleResponse;
-import com.earlylearning.early_learning_server.ai.dto.TranscriptionContext;
 
 import java.io.IOException;
 
-import com.earlylearning.early_learning_server.ai.model.task.AiTask;
-import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionCommand;
-import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
-import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
-import com.earlylearning.early_learning_server.common.error.BusinessException;
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +10,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.earlylearning.early_learning_server.ai.dto.TaskHandleResponse;
+import com.earlylearning.early_learning_server.ai.dto.TranscriptionContext;
+import com.earlylearning.early_learning_server.ai.model.task.AiTask;
+import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionCommand;
+import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
+import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
 /**
  * 录音转写提交。

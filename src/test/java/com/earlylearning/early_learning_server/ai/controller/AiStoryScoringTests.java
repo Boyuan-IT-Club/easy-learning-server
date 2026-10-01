@@ -1,10 +1,13 @@
 package com.earlylearning.early_learning_server.ai.controller;
-import com.earlylearning.early_learning_server.ai.dto.ImageContext;
-import com.earlylearning.early_learning_server.ai.model.scoring.ImageKind;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScoreSection;
 
 import java.util.List;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.earlylearning.early_learning_server.ai.client.fake.FakeStoryScorerConfig;
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
@@ -24,6 +27,7 @@ import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScore;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScoreSection;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreValidator;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringCommand;
@@ -38,25 +42,21 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiStoryScoringService;
 import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
+import com.earlylearning.early_learning_server.ai.service.scoring.impl.AiStoryScoringServiceImpl;
 import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.mockito.Mockito.mock;
 
 /**
  * 故事评分：版本语义、输出校验、以及请求的语义校验。
@@ -85,7 +85,7 @@ class AiStoryScoringTests {
         ScoringImageResolver imageResolver = new ScoringImageResolver(
                 mock(CloudFileQueryService.class), mock(ObjectStorageService.class),
                 new ScoringLimits(20000, 20, 5242880));
-        service = new AiStoryScoringService(new AiTaskSubmission(store), runner, rubricService,
+        service = new AiStoryScoringServiceImpl(new AiTaskSubmission(store), runner, rubricService,
                 (input, rubricVersion) -> scorer.score(input, rubricVersion),
                 scoreValidator, imageResolver);
         mockMvc = MockMvcBuilders

@@ -1,11 +1,12 @@
 package com.earlylearning.early_learning_server.ai.client.ecnu;
 
-import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
 
 /**
  * provider=ecnu 时装配 ECNU 适配器。
@@ -18,7 +19,6 @@ import org.springframework.context.annotation.Configuration;
 public class EcnuChatModelConfig {
 
     private static final Logger log = LoggerFactory.getLogger(EcnuChatModelConfig.class);
-
 
     @Bean
     public ChatModel ecnuChatModel(EcnuProperties properties) {

@@ -1,11 +1,12 @@
 package com.earlylearning.early_learning_server.ai.controller;
-import com.earlylearning.early_learning_server.ai.dto.AiTaskResponse;
 
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskService;
-import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.earlylearning.early_learning_server.ai.dto.AiTaskResponse;
+import com.earlylearning.early_learning_server.ai.service.task.AiTaskService;
+import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
 /**
  * AI 任务查询。

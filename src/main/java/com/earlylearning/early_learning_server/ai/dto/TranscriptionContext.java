@@ -1,8 +1,8 @@
 package com.earlylearning.early_learning_server.ai.dto;
-import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionTarget;
 
 import com.earlylearning.early_learning_server.ai.model.task.Attempt;
 import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
+import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionTarget;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**

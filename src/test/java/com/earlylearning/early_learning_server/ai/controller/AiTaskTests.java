@@ -4,6 +4,11 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import com.earlylearning.early_learning_server.ai.client.task.InMemoryAiTaskStore;
 import com.earlylearning.early_learning_server.ai.controller.AiTaskController;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
@@ -15,14 +20,10 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.service.task.AiTaskService;
+import com.earlylearning.early_learning_server.ai.service.task.impl.AiTaskServiceImpl;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,7 +44,7 @@ class AiTaskTests {
     private static final int MAX_RETAINED = 3;
 
     private final AiTaskStore store = new InMemoryAiTaskStore(MAX_RETAINED);
-    private final AiTaskService service = new AiTaskService(store);
+    private final AiTaskService service = new AiTaskServiceImpl(store);
 
     private MockMvc mockMvc;
 

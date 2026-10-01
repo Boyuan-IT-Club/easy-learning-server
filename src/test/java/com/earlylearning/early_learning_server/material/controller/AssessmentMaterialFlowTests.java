@@ -8,13 +8,6 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
-import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.material.controller.AssessmentMaterialAdminController;
-import com.earlylearning.early_learning_server.material.controller.AssessmentMaterialCatalogController;
-import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
-import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,9 +15,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
+import com.earlylearning.early_learning_server.entity.CloudFile;
+import com.earlylearning.early_learning_server.material.controller.AssessmentMaterialAdminController;
+import com.earlylearning.early_learning_server.material.controller.AssessmentMaterialCatalogController;
+import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
+import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

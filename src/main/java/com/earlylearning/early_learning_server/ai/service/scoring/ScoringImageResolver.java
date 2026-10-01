@@ -1,12 +1,16 @@
 package com.earlylearning.early_learning_server.ai.service.scoring;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
 
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageRef;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
@@ -14,9 +18,6 @@ import com.earlylearning.early_learning_server.entity.CloudFile;
 import com.earlylearning.early_learning_server.entity.CloudFileKind;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
  * 把提交里的图片引用解析成模型能直接使用的内容,供评分输入组装。

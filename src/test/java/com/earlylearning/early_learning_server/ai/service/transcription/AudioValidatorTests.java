@@ -1,17 +1,18 @@
 package com.earlylearning.early_learning_server.ai.service.transcription;
-import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.api.Test;
+
 import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
 import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscriptionLimits;
 import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
+import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
-import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

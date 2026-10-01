@@ -4,9 +4,10 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.stereotype.Component;
+
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import org.springframework.stereotype.Component;
 
 /**
  * 转写、故事评分、单题评分三个提交接口共用的提交语义。

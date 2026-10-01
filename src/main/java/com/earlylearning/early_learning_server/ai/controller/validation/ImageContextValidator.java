@@ -1,10 +1,11 @@
 package com.earlylearning.early_learning_server.ai.controller.validation;
-import com.earlylearning.early_learning_server.ai.dto.ImageContext;
 
+import org.springframework.stereotype.Component;
+
+import com.earlylearning.early_learning_server.ai.dto.ImageContext;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import org.springframework.stereotype.Component;
 
 /**
  * 单张图片上下文的校验规则：两种形态各自需要哪些字段。

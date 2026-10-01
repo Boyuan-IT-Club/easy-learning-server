@@ -3,10 +3,11 @@ package com.earlylearning.early_learning_server.material.mapper;
 import java.util.Collection;
 import java.util.List;
 
-import com.earlylearning.early_learning_server.material.model.GrammarDefinition;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+
+import com.earlylearning.early_learning_server.material.model.GrammarDefinition;
 
 /**
  * 语法条目的只读查询。语法要素模块尚未建管理接口，评估材料发布校验与依赖展开

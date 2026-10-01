@@ -2,13 +2,13 @@ package com.earlylearning.early_learning_server.entity;
 
 import java.time.Instant;
 
+import org.springframework.http.HttpStatus;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-
-import org.springframework.http.HttpStatus;
 
 /**
  * 一枚激活码（{@code user_license}）。库里只有哈希，原码只在生成的那次响应里出现。

@@ -1,4 +1,5 @@
 package com.earlylearning.early_learning_server.ai.model.task;
+
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
 /**

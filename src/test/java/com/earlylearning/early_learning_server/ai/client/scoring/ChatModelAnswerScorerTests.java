@@ -1,19 +1,20 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.Test;
+
 import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricConfig;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.Attempt;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
-import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

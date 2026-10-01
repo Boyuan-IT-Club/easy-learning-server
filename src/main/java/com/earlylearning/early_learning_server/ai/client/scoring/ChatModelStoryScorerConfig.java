@@ -1,12 +1,13 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
-import com.earlylearning.early_learning_server.ai.client.fake.FakeStoryScorerConfig;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
 
-import com.earlylearning.early_learning_server.ai.client.rubric.RubricConfigLoader;
-import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.earlylearning.early_learning_server.ai.client.fake.FakeStoryScorerConfig;
+import com.earlylearning.early_learning_server.ai.client.rubric.RubricConfigLoader;
+import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
 
 /**
  * provider=ecnu 时用真实故事评分实现（它只依赖 {@link ChatModel} 端口，所以接入任何厂商都同一份代码）。

@@ -1,5 +1,4 @@
 package com.earlylearning.early_learning_server.storage.client;
-import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,21 +6,22 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Date;
 
-import com.earlylearning.early_learning_server.common.error.BusinessException;
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
+import org.springframework.util.StreamUtils;
+
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
-import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
-import org.springframework.util.StreamUtils;
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 /** OSS 适配实现。失败抛 {@link BusinessException}（DEPENDENCY_UNAVAILABLE），由全局异常处理翻译成 503。 */
 @Service
 public class OssObjectStorageService implements ObjectStorageService {
-
 
     private final OSS client;
     private final OssProperties properties;

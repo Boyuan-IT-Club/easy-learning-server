@@ -1,8 +1,8 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.question;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 
 import java.util.List;
 
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.task.Attempt;
 
 /**

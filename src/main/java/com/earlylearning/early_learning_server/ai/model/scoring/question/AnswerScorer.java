@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.question;
-import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 
+import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 
 /**
  * 单题评分适配器。

@@ -2,6 +2,12 @@ package com.earlylearning.early_learning_server.ai.client.fake;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import com.earlylearning.early_learning_server.ai.model.scoring.Evidence;
 import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
@@ -11,11 +17,6 @@ import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerS
 import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * 单题评分的假实现：接入真实模型前用它把链路跑通。

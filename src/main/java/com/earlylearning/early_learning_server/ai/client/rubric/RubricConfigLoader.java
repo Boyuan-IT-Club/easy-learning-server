@@ -1,6 +1,4 @@
 package com.earlylearning.early_learning_server.ai.client.rubric;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricConfig;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricConfig;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
+
 import tools.jackson.databind.ObjectMapper;
 
 /**

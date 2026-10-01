@@ -1,10 +1,11 @@
 package com.earlylearning.early_learning_server.common.idempotency;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /** 幂等记录的读写。并发语义见 {@link IdempotencyService}。 */
 @Mapper

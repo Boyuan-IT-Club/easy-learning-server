@@ -1,16 +1,4 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
-import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceLocator;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
-import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScore;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScoreSection;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.MicrostructureSection;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,7 +10,19 @@ import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
 import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
 import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricConfig;
+import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceLocator;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
+import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScore;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScoreSection;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.MicrostructureSection;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -47,7 +47,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 词性工具,该条目取模型判断的 0/1/2 分。
  */
 public class ChatModelStoryScorer implements StoryScorer {
-
 
     /** 提示词版本：随 prompt 一起演进，写进结果的 model_meta，便于追溯。 */
     private static final String PROMPT_VERSION = "STORY_SCORING_PROMPT_V1";
@@ -391,7 +390,6 @@ public class ChatModelStoryScorer implements StoryScorer {
         }
         return joined.toString();
     }
-
 
     /** 用户消息与图片；图片次序即提示词里的编号次序。 */
     private record RenderedPrompt(String text, List<ChatModel.ImagePart> images) {

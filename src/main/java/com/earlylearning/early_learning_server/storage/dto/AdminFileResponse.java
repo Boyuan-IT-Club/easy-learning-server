@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.storage.dto;
-import com.earlylearning.early_learning_server.entity.CloudFile;
 
+import com.earlylearning.early_learning_server.entity.CloudFile;
 import com.earlylearning.early_learning_server.entity.CloudFileKind;
 import com.earlylearning.early_learning_server.entity.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.model.FileSummary;

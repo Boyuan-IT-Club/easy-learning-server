@@ -1,6 +1,5 @@
 package com.earlylearning.early_learning_server.security;
 
-import com.earlylearning.early_learning_server.security.config.SecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
+import com.earlylearning.early_learning_server.security.config.SecurityConfig;
 import com.earlylearning.early_learning_server.security.model.TeacherPrincipal;
 import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;

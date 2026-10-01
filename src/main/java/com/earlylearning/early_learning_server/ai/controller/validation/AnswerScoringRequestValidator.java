@@ -1,12 +1,13 @@
 package com.earlylearning.early_learning_server.ai.controller.validation;
+
+import org.springframework.stereotype.Component;
+
 import com.earlylearning.early_learning_server.ai.dto.AnswerScoringRequest;
 import com.earlylearning.early_learning_server.ai.dto.ScoringQuestion;
-
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import org.springframework.stereotype.Component;
 
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.invalid;
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.requireNotNull;
@@ -73,7 +74,6 @@ public class AnswerScoringRequestValidator {
                     ApiErrorDetails.ofLimit(ApiErrorDetails.LimitName.TEXT_LENGTH, maximum));
         }
     }
-
 
     private void validateQuestion(ScoringQuestion question) {
         requireNotNull(question, "question");

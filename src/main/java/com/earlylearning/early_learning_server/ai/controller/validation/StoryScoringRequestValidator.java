@@ -1,19 +1,20 @@
 package com.earlylearning.early_learning_server.ai.controller.validation;
-import com.earlylearning.early_learning_server.ai.dto.ContentItem;
-import com.earlylearning.early_learning_server.ai.dto.ImageContext;
-import com.earlylearning.early_learning_server.ai.dto.StoryScoringRequest;
-import com.earlylearning.early_learning_server.ai.service.scoring.AiStoryScoringService;
-import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.stereotype.Component;
+
+import com.earlylearning.early_learning_server.ai.dto.ContentItem;
+import com.earlylearning.early_learning_server.ai.dto.ImageContext;
+import com.earlylearning.early_learning_server.ai.dto.StoryScoringRequest;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
+import com.earlylearning.early_learning_server.ai.service.scoring.AiStoryScoringService;
+import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import org.springframework.stereotype.Component;
 
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.invalid;
 import static com.earlylearning.early_learning_server.ai.controller.validation.RequestFieldChecks.requireNotNull;

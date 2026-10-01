@@ -124,9 +124,10 @@ early-learning-server/
     │   │       ├── ai/                    录音转写与评分
     │   │       ├── material/              评估材料（ZIP 发布、版本下载）
     │   │       ├── storage/               官方资源文件（对象存储）
+    │   │       ├── entity/                全部表映射实体（各模块共用）
     │   │       └── common/                共享能力（web、error、idempotency、paging 等）
     │   │
-    │   │       每个模块内部：controller / dto / service / entity / mapper（按需 model / client / config），
+    │   │       每个模块内部：controller / dto / service（接口）+ service/impl / mapper（按需 model / client / config），
     │   │       规则见 AGENTS.md 第 3 节，由 ArchitectureTests 强制
     │   └── resources/
     │       ├── application.yaml          公共配置

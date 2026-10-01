@@ -1,9 +1,14 @@
 package com.earlylearning.early_learning_server.ai.controller;
-import com.earlylearning.early_learning_server.ai.model.scoring.ImageKind;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.earlylearning.early_learning_server.ai.client.fake.FakeAnswerScorerConfig;
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
@@ -39,6 +44,7 @@ import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScoringService;
 import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
+import com.earlylearning.early_learning_server.ai.service.scoring.impl.AiAnswerScoringServiceImpl;
 import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
@@ -46,17 +52,11 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-import static org.mockito.Mockito.mock;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -92,7 +92,7 @@ class AnswerScoringTests {
         ScoringImageResolver imageResolver = new ScoringImageResolver(
                 mock(CloudFileQueryService.class), mock(ObjectStorageService.class),
                 new ScoringLimits(20000, 20, 5242880));
-        service = new AiAnswerScoringService(new AiTaskSubmission(store), runner, rubricService,
+        service = new AiAnswerScoringServiceImpl(new AiTaskSubmission(store), runner, rubricService,
                 (input, rubricVersion) -> scorer.score(input, rubricVersion),
                 scoreValidator, imageResolver);
         mockMvc = MockMvcBuilders

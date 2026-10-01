@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.earlylearning.early_learning_server.common.secret.Tokens;
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
-import com.earlylearning.early_learning_server.identity.service.TeacherRegistrationService;
+import com.earlylearning.early_learning_server.identity.service.impl.TeacherRegistrationServiceImpl;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 import com.earlylearning.early_learning_server.support.AuthFixtures;
 import com.earlylearning.early_learning_server.support.HttpApi;
@@ -291,7 +291,7 @@ class AuthFlowTests {
 
     @Test
     void registerIsRateLimitedPerIp() {
-        int limit = TeacherRegistrationService.PER_IP.limit();
+        int limit = TeacherRegistrationServiceImpl.PER_IP.limit();
         for (int i = 0; i < limit; i++) {
             fixtures.register("ZZZZZZZZZZZZZZZZ", AuthFixtures.uniqueName("t_")).expect(409, "LICENSE_UNAVAILABLE");
         }

@@ -1,14 +1,13 @@
 package com.earlylearning.early_learning_server.ai.client.media;
 
-import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
-
-
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
+
+import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

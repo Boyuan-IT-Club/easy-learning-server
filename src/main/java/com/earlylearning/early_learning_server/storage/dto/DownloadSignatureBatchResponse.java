@@ -3,9 +3,6 @@ package com.earlylearning.early_learning_server.storage.dto;
 import java.util.List;
 
 import com.earlylearning.early_learning_server.storage.model.DownloadSignature;
-
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -16,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record DownloadSignatureBatchResponse(
 
         @JsonProperty("items") List<DownloadSignatureResponse> items) {
-
 
     public static DownloadSignatureBatchResponse from(List<DownloadSignature> signatures) {
         return new DownloadSignatureBatchResponse(

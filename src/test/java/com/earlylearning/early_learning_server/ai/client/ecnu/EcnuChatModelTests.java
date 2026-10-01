@@ -4,13 +4,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
+import org.junit.jupiter.api.Test;
+
 import com.earlylearning.early_learning_server.ai.model.llm.ChatModel.ChatMessage;
 import com.earlylearning.early_learning_server.ai.model.llm.ChatModel.ChatRequest;
 import com.earlylearning.early_learning_server.ai.model.llm.ChatModel.ImagePart;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
-import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

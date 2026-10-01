@@ -1,12 +1,14 @@
 package com.earlylearning.early_learning_server.common.web;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import org.junit.jupiter.api.Test;
+
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

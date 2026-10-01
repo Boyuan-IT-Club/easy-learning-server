@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.entity.AdminAccount;
+import com.earlylearning.early_learning_server.identity.mapper.AdminAccountMapper;
 import com.earlylearning.early_learning_server.security.model.AdminPrincipal;
 import com.earlylearning.early_learning_server.security.model.AuthPrincipal;
 import com.earlylearning.early_learning_server.security.model.TokenType;
@@ -16,9 +17,9 @@ import com.earlylearning.early_learning_server.security.service.TokenService;
 public class AdminBearerAuthenticator implements BearerAuthenticator {
 
     private final TokenService tokenService;
-    private final AdminAccountService accounts;
+    private final AdminAccountMapper accounts;
 
-    public AdminBearerAuthenticator(TokenService tokenService, AdminAccountService accounts) {
+    public AdminBearerAuthenticator(TokenService tokenService, AdminAccountMapper accounts) {
         this.tokenService = tokenService;
         this.accounts = accounts;
     }
@@ -31,8 +32,10 @@ public class AdminBearerAuthenticator implements BearerAuthenticator {
     @Override
     public AuthPrincipal authenticate(String token) {
         int adminId = tokenService.requireAdmin(token);
-        AdminAccount account = accounts.find(adminId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
+        AdminAccount account = accounts.selectById(adminId);
+        if (account == null) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
         if (!account.isActive()) {
             throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
         }

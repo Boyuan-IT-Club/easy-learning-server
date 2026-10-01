@@ -1,10 +1,11 @@
 package com.earlylearning.early_learning_server.ai.controller;
-import com.earlylearning.early_learning_server.ai.dto.RubricCatalogResponse;
 
-import com.earlylearning.early_learning_server.ai.service.rubric.RubricCatalogService;
-import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.earlylearning.early_learning_server.ai.dto.RubricCatalogResponse;
+import com.earlylearning.early_learning_server.ai.service.rubric.RubricCatalogService;
+import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
 /**
  * 评分条目目录查询。

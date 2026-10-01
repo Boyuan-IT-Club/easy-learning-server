@@ -7,7 +7,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.earlylearning.early_learning_server.security.model.AuthPrincipal;
 
-
 /**
  * 放进 SecurityContext 的认证结果。
  *

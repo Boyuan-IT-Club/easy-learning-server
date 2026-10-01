@@ -1,18 +1,7 @@
 package com.earlylearning.early_learning_server.storage.service;
-import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.entity.CloudFileKind;
-import com.earlylearning.early_learning_server.entity.CloudFileStatus;
-import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
 
-import com.earlylearning.early_learning_server.common.error.BusinessException;
 import java.util.List;
 
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
-import com.earlylearning.early_learning_server.storage.controller.FileMetadataController;
-import com.earlylearning.early_learning_server.storage.dto.CloudFileResponse;
-import com.earlylearning.early_learning_server.storage.model.FilePage;
-import com.earlylearning.early_learning_server.storage.model.FileSummary;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +11,18 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
+import com.earlylearning.early_learning_server.entity.CloudFile;
+import com.earlylearning.early_learning_server.entity.CloudFileKind;
+import com.earlylearning.early_learning_server.entity.CloudFileStatus;
+import com.earlylearning.early_learning_server.storage.controller.FileMetadataController;
+import com.earlylearning.early_learning_server.storage.dto.CloudFileResponse;
+import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
+import com.earlylearning.early_learning_server.storage.model.FilePage;
+import com.earlylearning.early_learning_server.storage.model.FileSummary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

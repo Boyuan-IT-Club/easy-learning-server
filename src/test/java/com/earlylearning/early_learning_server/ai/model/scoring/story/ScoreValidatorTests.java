@@ -1,8 +1,17 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
 import com.earlylearning.early_learning_server.ai.model.scoring.Evidence;
 import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
 import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScore;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScoreSection;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.MicrostructureSection;
@@ -10,14 +19,6 @@ import com.earlylearning.early_learning_server.ai.model.scoring.story.Productivi
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreValidator;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
-import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
-import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

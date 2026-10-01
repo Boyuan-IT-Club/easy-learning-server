@@ -1,6 +1,4 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
-import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,10 +6,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.springframework.stereotype.Component;
+
 import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
 import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
-import org.springframework.stereotype.Component;
 
 /**
  * 故事评分结果的运行时语义校验:维度集合完整且按规则顺序、分数不越界、证据与确认文本一致、

@@ -1,14 +1,13 @@
 package com.earlylearning.early_learning_server.ai.client.fake;
 
-import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
-import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
-import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTranscriber;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
+import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTranscriber;
 
 /**
  * 语音识别的假实现：接入真实服务前用它把链路跑通。

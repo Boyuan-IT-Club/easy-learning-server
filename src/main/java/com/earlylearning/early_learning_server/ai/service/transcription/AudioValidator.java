@@ -1,17 +1,18 @@
 package com.earlylearning.early_learning_server.ai.service.transcription;
-import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
-import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscriptionLimits;
 
 import java.util.Locale;
 import java.util.OptionalLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
+import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscriptionLimits;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.media.MediaTypeDetector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
  * 转写音频的准入校验：格式、体积、时长。每一种不合格都给出能直接定位原因的说明。

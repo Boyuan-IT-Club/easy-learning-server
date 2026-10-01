@@ -1,4 +1,5 @@
 package com.earlylearning.early_learning_server.ai.model.transcription;
+
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 
 /**

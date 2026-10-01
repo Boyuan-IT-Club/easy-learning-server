@@ -1,11 +1,12 @@
 package com.earlylearning.early_learning_server.storage.mapper;
-import com.earlylearning.early_learning_server.entity.CloudFile;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.earlylearning.early_learning_server.entity.CloudFile;
 
 /**
  * 云端文件元数据的读写。

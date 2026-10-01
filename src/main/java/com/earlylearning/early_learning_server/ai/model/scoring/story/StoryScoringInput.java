@@ -1,10 +1,10 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
 
 import java.util.List;
 
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
 
 /**
  * 故事评分的领域输入：图片已经解析成模型能直接用的东西。

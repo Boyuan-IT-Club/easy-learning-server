@@ -1,23 +1,25 @@
 package com.earlylearning.early_learning_server.ai.service.rubric;
-import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
-import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.earlylearning.early_learning_server.ai.controller.AiRubricController;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalog;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalogEntry;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
-import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
-import com.earlylearning.early_learning_server.common.error.BusinessException;
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.earlylearning.early_learning_server.ai.controller.AiRubricController;
+import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalog;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalogEntry;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
+import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
+import com.earlylearning.early_learning_server.ai.service.rubric.impl.RubricCatalogServiceImpl;
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,7 +58,7 @@ class RubricCatalogServiceTests {
             "词汇丰富度", "心理状态词", "句法复杂度", "指称衔接", "连词衔接",
             "统一问答推理");
 
-    private final RubricCatalogService service = new RubricCatalogService(new RubricProperties(VERSION));
+    private final RubricCatalogService service = new RubricCatalogServiceImpl(new RubricProperties(VERSION));
 
     @Test
     void itemsAreTheContractCodesInTheContractOrder() {
@@ -99,7 +101,7 @@ class RubricCatalogServiceTests {
 
     @Test
     void missingServerSideRubricConfigurationYields503() {
-        RubricCatalogService broken = new RubricCatalogService(new RubricProperties(" "));
+        RubricCatalogService broken = new RubricCatalogServiceImpl(new RubricProperties(" "));
 
         assertThatThrownBy(broken::catalog)
                 .isInstanceOf(BusinessException.class)

@@ -2,11 +2,12 @@ package com.earlylearning.early_learning_server.ai.model.rubric;
 
 import java.util.List;
 
-import com.earlylearning.early_learning_server.common.error.BusinessException;
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
 /**
  * 评分规则版本与条目。

@@ -1,9 +1,9 @@
 package com.earlylearning.early_learning_server.common.error;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
 
 /**
  * 错误响应中的 details：按错误类型提供必要的非敏感定位。

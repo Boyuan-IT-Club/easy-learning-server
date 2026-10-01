@@ -1,5 +1,4 @@
 package com.earlylearning.early_learning_server.storage.client;
-import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -17,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;

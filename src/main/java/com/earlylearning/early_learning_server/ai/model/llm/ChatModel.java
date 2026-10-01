@@ -1,7 +1,8 @@
 package com.earlylearning.early_learning_server.ai.model.llm;
-import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 
 import java.util.List;
+
+import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 
 /**
  * 与大模型对话的出站端口：与厂商无关。

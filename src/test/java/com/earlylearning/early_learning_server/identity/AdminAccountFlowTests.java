@@ -10,7 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.earlylearning.early_learning_server.identity.dto.AdminAccountResponse;
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
-import com.earlylearning.early_learning_server.identity.service.AdminLoginService;
+import com.earlylearning.early_learning_server.identity.service.impl.AdminLoginServiceImpl;
 import com.earlylearning.early_learning_server.security.service.TokenService;
 import com.earlylearning.early_learning_server.support.AuthFixtures;
 import com.earlylearning.early_learning_server.support.HttpApi;
@@ -87,7 +87,7 @@ class AdminAccountFlowTests {
     @Test
     void repeatedFailuresLockTheUsername() {
         AdminAccountResponse admin = fixtures.newAdmin();
-        int limit = AdminLoginService.LOGIN_FAILURES.limit();
+        int limit = AdminLoginServiceImpl.LOGIN_FAILURES.limit();
         for (int i = 1; i < limit; i++) {
             login(admin.username(), "Wrong-Password-1").expect(401, "INVALID_CREDENTIALS");
         }

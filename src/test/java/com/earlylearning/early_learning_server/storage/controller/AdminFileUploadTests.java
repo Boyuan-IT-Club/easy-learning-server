@@ -1,28 +1,27 @@
 package com.earlylearning.early_learning_server.storage.controller;
 
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.earlylearning.early_learning_server.common.error.BusinessException;
-import com.earlylearning.early_learning_server.entity.CloudFile;
-import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
-import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
+import com.earlylearning.early_learning_server.entity.CloudFile;
+import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
+import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;

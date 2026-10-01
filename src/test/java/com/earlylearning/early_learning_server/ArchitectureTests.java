@@ -2,11 +2,11 @@ package com.earlylearning.early_learning_server;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,13 +17,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaParameterizedType;
 import com.tngtech.archunit.core.domain.JavaType;
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <pre>
  *   入口        controller/（HTTP）、filter/（Servlet 过滤器）
  *   请求与响应   dto/
- *   业务        service/
+ *   业务        service/（接口）、service/impl/（XxxServiceImpl）
  *   数据与规则   顶层 entity/（全部表映射，共享）、模块内 model/（不落库的业务对象、规则与外部能力接口）
  *   数据访问     mapper/
  *   外部适配     client/
@@ -74,6 +75,7 @@ class ArchitectureTests {
     private static final String L_FILTER = LAYER + "filter..";
     private static final String L_DTO = LAYER + "dto..";
     private static final String L_SERVICE = LAYER + "service..";
+    private static final String L_SERVICE_IMPL = LAYER + "service..impl";
     /** 实体不在模块里：顶层 entity 包，被所有模块共享。 */
     private static final String L_ENTITY = BASE + ".entity..";
     private static final String L_MODEL = LAYER + "model..";
@@ -135,6 +137,24 @@ class ArchitectureTests {
     ArchRule dto与mapper不依赖业务与外部适配 =
             noClasses().that().resideInAnyPackage(L_DTO, L_MAPPER)
                     .should().dependOnClassesThat().resideInAnyPackage(L_SERVICE, L_CLIENT);
+
+    @ArchTest
+    ArchRule service包里的Service都是接口 =
+            classes().that().resideInAPackage(L_SERVICE).and().resideOutsideOfPackage(L_SERVICE_IMPL)
+                    .and().haveSimpleNameEndingWith("Service")
+                    .should().beInterfaces();
+
+    @ArchTest
+    ArchRule impl包里只放Service实现 =
+            classes().that().resideInAPackage(L_SERVICE_IMPL).and().areTopLevelClasses()
+                    .should().haveSimpleNameEndingWith("ServiceImpl")
+                    .andShould().beAnnotatedWith(Service.class)
+                    .andShould(implementTheirInterfaceInParentPackage());
+
+    @ArchTest
+    ArchRule 只依赖Service接口不依赖实现 =
+            noClasses().that().resideOutsideOfPackage(L_SERVICE_IMPL)
+                    .should().dependOnClassesThat().resideInAPackage(L_SERVICE_IMPL);
 
     @ArchTest
     ArchRule service不产出HTTP响应形状 =
@@ -215,6 +235,21 @@ class ArchitectureTests {
                     if (!ok) {
                         events.add(SimpleConditionEvent.violated(dependency, dependency.getDescription()));
                     }
+                }
+            }
+        };
+    }
+
+    /** {@code a.service.impl.XxxServiceImpl} 必须实现 {@code a.service.XxxService}。 */
+    private static ArchCondition<JavaClass> implementTheirInterfaceInParentPackage() {
+        return new ArchCondition<>("implement the interface of the same name in the parent package") {
+            @Override
+            public void check(JavaClass impl, ConditionEvents events) {
+                String parent = impl.getPackageName().substring(0, impl.getPackageName().length() - ".impl".length());
+                String expected = parent + "." + impl.getSimpleName().replaceFirst("Impl$", "");
+                boolean ok = impl.getRawInterfaces().stream().anyMatch(i -> i.getName().equals(expected));
+                if (!ok) {
+                    events.add(SimpleConditionEvent.violated(impl, impl.getName() + " 没有实现 " + expected));
                 }
             }
         };

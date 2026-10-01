@@ -1,7 +1,6 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
+
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
-
-
 
 /**
  * 故事评分适配器。

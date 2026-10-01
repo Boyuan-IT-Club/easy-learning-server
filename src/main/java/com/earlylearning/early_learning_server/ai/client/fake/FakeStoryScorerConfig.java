@@ -1,8 +1,13 @@
 package com.earlylearning.early_learning_server.ai.client.fake;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreValidator;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
 import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
@@ -16,15 +21,11 @@ import com.earlylearning.early_learning_server.ai.model.scoring.story.Microstruc
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreValidator;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * 故事评分的假实现：接入真实模型前用它把链路跑通。
