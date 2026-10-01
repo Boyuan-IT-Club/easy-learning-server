@@ -5,7 +5,7 @@ import java.util.Optional;
 /**
  * 任务登记处的端口。
  *
- * <p>任务状态目前不落库（契约与 {@code ai/package-info.java} 都明确），内存实现是
+ * <p>任务状态目前不落库（契约明确），内存实现是
  * {@code client/task/InMemoryAiTaskStore}；按 ADR-0005「异步任务要求服务端持久化任务状态」，
  * 将来落库时新增实现即可，提交与查询的语义不动。
  *
