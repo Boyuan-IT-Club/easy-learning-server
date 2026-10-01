@@ -12,7 +12,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -148,7 +147,7 @@ class IdempotencyServiceTests {
             }
             executed.incrementAndGet();
             String body = idempotency.record(SCOPE, key, 201,
-                    ApiResponse.ok(Map.of("file_code", "LF_TEST"), "上传成功"));
+                    Map.of("file_code", "LF_TEST"));
             return new StoredResponse(201, body);
         });
     }

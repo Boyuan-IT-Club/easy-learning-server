@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * 把异常翻译成契约规定的响应形状。
+ * 把异常翻译成的响应形状。
  *
  * <p>继承 {@link ResponseEntityExceptionHandler}：参数绑定、消息解析、路径不存在等框架异常由 Spring 识别，
  * 这里只覆盖需要契约特定错误码的分支，其余框架异常统一套上响应包络。
@@ -71,7 +71,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, null, null, null);
     }
 
-    /** 请求体字段校验失败（@Valid 触发）：契约要求给出失败字段的 JSON Pointer。 */
+    /** 请求体字段校验失败（@Valid 触发）：给出失败字段的 JSON Pointer。 */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
                                                                   HttpHeaders headers,
@@ -117,7 +117,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         } else {
             log.info("框架异常 {} code={} status={}", path, code.name(), status.value());
         }
-        // message 用错误码的默认文案：契约要求它非空（minLength 1、pattern \\S），
+        // message 用错误码的默认文案：它非空（minLength 1、pattern \\S），
         // 传 null 会让客户端拿到 "message": null
         return build(status, code, code.defaultMessage(), null, headers);
     }

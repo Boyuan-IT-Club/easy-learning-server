@@ -40,7 +40,7 @@ public record ApiErrorDetails(
         @JsonProperty("text_length") TEXT_LENGTH
     }
 
-    /** 入参是契约要求的 JSON Pointer，形如 {@code "/file_name"}（必须以 / 开头）。 */
+    /** 入参是的 JSON Pointer，形如 {@code "/file_name"}（必须以 / 开头）。 */
     public static ApiErrorDetails atField(String fieldPath) {
         return new ApiErrorDetails(fieldPath, null, null, null, null, null, null);
     }

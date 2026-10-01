@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
  * （如 {@link ErrorCode#LICENSE_REVOKED}）用带 {@code httpStatus} 的构造器显式指定。
  *
  * <p>依赖失败同样用它表达：{@code new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, message, cause)}，
- * 由适配层保留原始 cause。**不要**把通用运行时异常也映射成 503——那会把编程错误伪装成依赖不可用。
+ * 由适配层保留原始 cause。不要把通用运行时异常也映射成 503——那会把编程错误伪装成依赖不可用。
  */
 public class BusinessException extends RuntimeException {
 

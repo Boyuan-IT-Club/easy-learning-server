@@ -53,7 +53,7 @@ public enum ErrorCode {
     FILE_DELETED(HttpStatus.GONE, "文件已删除"),
 
     // ---------- 413 ----------
-    // 码值由契约规定；HttpStatus.PAYLOAD_TOO_LARGE 已废弃（RFC 9110 改名），故映射到 CONTENT_TOO_LARGE。
+    // 码值由；HttpStatus.PAYLOAD_TOO_LARGE 已废弃（RFC 9110 改名），故映射到 CONTENT_TOO_LARGE。
     PAYLOAD_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "超出部署允许的上限"),
     AUDIO_DURATION_EXCEEDED(HttpStatus.CONTENT_TOO_LARGE, "音频超出时长上限"),
     IMAGE_LIMIT_EXCEEDED(HttpStatus.CONTENT_TOO_LARGE, "图片数量超出上限"),
