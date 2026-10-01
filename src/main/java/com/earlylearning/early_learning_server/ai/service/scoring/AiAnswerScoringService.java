@@ -4,20 +4,20 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricService;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoredQuestion;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringCommand;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringResult;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionScoreValidator;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskSubmission;
 import com.earlylearning.early_learning_server.ai.model.task.FailedStage;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringCommand;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringResult;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionScoreValidator;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoredQuestion;
+import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.common.idempotency.InputFingerprint;
 import org.springframework.stereotype.Service;
 

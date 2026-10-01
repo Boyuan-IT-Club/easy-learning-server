@@ -44,7 +44,7 @@ public record AssessmentMaterialDownloadResponse(
 
             @JsonProperty("duration_ms") Integer durationMs) {
 
-        static FileDependencyResponse from(com.earlylearning.early_learning_server.storage.entity.CloudFile file) {
+        static FileDependencyResponse from(com.earlylearning.early_learning_server.entity.CloudFile file) {
             return new FileDependencyResponse(
                     file.getFileCode(),
                     file.getFileKind().value(),

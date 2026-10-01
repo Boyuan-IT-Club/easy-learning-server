@@ -1,8 +1,8 @@
 package com.earlylearning.early_learning_server.ai.client.fake;
 
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
-import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTranscriber;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
+import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTranscriber;
 
 
 import org.slf4j.Logger;

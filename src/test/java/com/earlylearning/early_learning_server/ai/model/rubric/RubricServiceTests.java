@@ -1,8 +1,8 @@
 package com.earlylearning.early_learning_server.ai.model.rubric;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricService;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
-import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
 import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricService;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;

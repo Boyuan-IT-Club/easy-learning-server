@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.identity.entity;
+package com.earlylearning.early_learning_server.entity;
 
 /**
  * 激活码状态（契约 {@code LicenseStatus}）：UNUSED → ACTIVE（注册占用）；UNUSED / ACTIVE → REVOKED。

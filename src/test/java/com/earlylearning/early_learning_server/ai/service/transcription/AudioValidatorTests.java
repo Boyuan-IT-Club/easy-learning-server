@@ -5,8 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscriptionLimits;
 import com.earlylearning.early_learning_server.ai.client.media.AudioDurationParser;
+import com.earlylearning.early_learning_server.ai.model.transcription.AiTranscriptionLimits;
 import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;

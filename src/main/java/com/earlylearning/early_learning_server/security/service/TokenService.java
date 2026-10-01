@@ -5,15 +5,15 @@ import java.time.Instant;
 
 import org.springframework.stereotype.Service;
 
-import com.earlylearning.early_learning_server.security.model.IssuedToken;
-import com.earlylearning.early_learning_server.security.model.TeacherTokens;
-import com.earlylearning.early_learning_server.security.model.TokenType;
-import com.earlylearning.early_learning_server.security.config.AuthProperties;
-import com.earlylearning.early_learning_server.security.client.RedisTokenStore;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.secret.Tokens;
 import com.earlylearning.early_learning_server.common.tx.AfterCommit;
+import com.earlylearning.early_learning_server.security.client.RedisTokenStore;
+import com.earlylearning.early_learning_server.security.config.AuthProperties;
+import com.earlylearning.early_learning_server.security.model.IssuedToken;
+import com.earlylearning.early_learning_server.security.model.TeacherTokens;
+import com.earlylearning.early_learning_server.security.model.TokenType;
 
 /**
  * Token 的签发、校验与吊销。只回答"这枚 Token 是不是我们发的、过没过期、属于谁"；

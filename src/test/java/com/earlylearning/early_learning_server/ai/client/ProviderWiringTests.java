@@ -1,10 +1,10 @@
 package com.earlylearning.early_learning_server.ai.client;
 
 import com.earlylearning.early_learning_server.ai.client.ecnu.EcnuChatModel;
-import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
 import com.earlylearning.early_learning_server.ai.client.scoring.ChatModelAnswerScorer;
 import com.earlylearning.early_learning_server.ai.client.scoring.ChatModelStoryScorer;
+import com.earlylearning.early_learning_server.ai.model.llm.ChatModel;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

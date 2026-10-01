@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.controller.validation;
-import com.earlylearning.early_learning_server.ai.dto.ScoringQuestion;
 import com.earlylearning.early_learning_server.ai.dto.AnswerScoringRequest;
+import com.earlylearning.early_learning_server.ai.dto.ScoringQuestion;
 
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;

@@ -1,11 +1,11 @@
 package com.earlylearning.early_learning_server.ai.service.task;
 import com.earlylearning.early_learning_server.ai.client.task.AiTaskProperties;
-import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
-import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
-import com.earlylearning.early_learning_server.ai.model.task.TaskFailure;
-import com.earlylearning.early_learning_server.ai.model.task.FailedStage;
-import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
+import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
+import com.earlylearning.early_learning_server.ai.model.task.FailedStage;
+import com.earlylearning.early_learning_server.ai.model.task.TaskFailure;
+import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
+import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
 
 import java.time.Instant;
 import java.util.concurrent.ArrayBlockingQueue;

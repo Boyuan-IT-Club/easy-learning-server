@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 
 import java.util.ArrayList;
 import java.util.HashSet;

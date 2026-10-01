@@ -1,7 +1,7 @@
 package com.earlylearning.early_learning_server.ai.service.scoring;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageKind;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringLimits;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -10,11 +10,11 @@ import com.earlylearning.early_learning_server.ai.model.scoring.ImageKind;
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageRef;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import com.earlylearning.early_learning_server.storage.entity.CloudFile;
-import com.earlylearning.early_learning_server.storage.entity.CloudFileKind;
-import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
-import com.earlylearning.early_learning_server.storage.entity.CloudFileStatus;
+import com.earlylearning.early_learning_server.entity.CloudFile;
+import com.earlylearning.early_learning_server.entity.CloudFileKind;
+import com.earlylearning.early_learning_server.entity.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
+import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

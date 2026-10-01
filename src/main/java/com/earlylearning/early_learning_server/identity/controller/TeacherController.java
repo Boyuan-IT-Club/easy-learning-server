@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
+import com.earlylearning.early_learning_server.entity.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.dto.UpdateTeacherStatusRequest;
 import com.earlylearning.early_learning_server.identity.dto.UserAccountResponse;
-import com.earlylearning.early_learning_server.identity.entity.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.service.TeacherAdminService;
 
 /** 教师云端账号管理（契约 listTeachers、updateTeacherStatus）。权限：管理员。 */

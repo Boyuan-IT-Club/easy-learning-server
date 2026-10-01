@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.earlylearning.early_learning_server.identity.entity.TeacherAccount;
+import com.earlylearning.early_learning_server.entity.TeacherAccount;
 
 /**
  * 教师账号的读写。

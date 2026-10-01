@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.service.task;
-import com.earlylearning.early_learning_server.ai.model.task.AiTaskStore;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
+import com.earlylearning.early_learning_server.ai.model.task.AiTaskStore;
 
 import java.time.Instant;
 

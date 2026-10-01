@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.identity.entity;
+package com.earlylearning.early_learning_server.entity;
 
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.BusinessException;

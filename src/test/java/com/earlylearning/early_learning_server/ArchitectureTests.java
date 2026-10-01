@@ -5,8 +5,13 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -14,8 +19,10 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaParameterizedType;
@@ -41,14 +48,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   入口        controller/（HTTP）、filter/（Servlet 过滤器）
  *   请求与响应   dto/
  *   业务        service/
- *   数据与规则   entity/（表映射）、model/（不落库的业务对象、规则与外部能力接口）
+ *   数据与规则   顶层 entity/（全部表映射，共享）、模块内 model/（不落库的业务对象、规则与外部能力接口）
  *   数据访问     mapper/
  *   外部适配     client/
  *   装配        config/
  * </pre>
  *
  * <ol>
- *   <li>模块边界：模块之间不许成环；跨模块只能用 {@link #CROSS_MODULE_API} 里列出的包，common 可被任何模块使用。</li>
+ *   <li>模块边界：模块之间不许成环；跨模块只能用 {@link #CROSS_MODULE_API} 里列出的包，common、entity 可被任何模块使用。</li>
+ *   <li>表归属：entity 集中存放，但每个实体的 Mapper 只能出现在一个模块里，别的模块经该模块的 service 读写。</li>
  *   <li>层间方向（ArchUnit，覆盖全部模块）：入口 → service → mapper / client；entity、model 不依赖任何上层。</li>
  *   <li>源码 import：只在 Javadoc 里出现的 import 不进字节码，ArchUnit 看不到，这里直接扫源码。</li>
  * </ol>
@@ -66,7 +74,8 @@ class ArchitectureTests {
     private static final String L_FILTER = LAYER + "filter..";
     private static final String L_DTO = LAYER + "dto..";
     private static final String L_SERVICE = LAYER + "service..";
-    private static final String L_ENTITY = LAYER + "entity..";
+    /** 实体不在模块里：顶层 entity 包，被所有模块共享。 */
+    private static final String L_ENTITY = BASE + ".entity..";
     private static final String L_MODEL = LAYER + "model..";
     private static final String L_MAPPER = LAYER + "mapper..";
     private static final String L_CLIENT = LAYER + "client..";
@@ -74,6 +83,10 @@ class ArchitectureTests {
 
     private static final Set<String> ABOVE_ENTITY_AND_MODEL =
             Set.of("controller", "filter", "dto", "service", "mapper", "client", "config");
+    /** 不属于任何业务模块、可被所有模块使用的顶层包。 */
+    private static final Set<String> SHARED = Set.of("common", "entity");
+    private static final String[] BUSINESS_MODULES = {
+            BASE + ".ai..", BASE + ".identity..", BASE + ".material..", BASE + ".security..", BASE + ".storage.."};
 
     /**
      * 跨模块可用的包（白名单）。默认只开放 service；其余每一项都要说明谁在用。
@@ -82,7 +95,6 @@ class ArchitectureTests {
     static final Set<String> CROSS_MODULE_API = Set.of(
             "ai.service.rubric",   // material 发布时校验评分目录
             "storage.service",     // ai 取评分图片、material 上传包内素材
-            "storage.entity",      // 同上：按 file_code 取到的 CloudFile 及其种类
             "storage.model",       // 同上：IncomingFile、ObjectStorageService
             "security.service",    // identity：签发 Token、实现 BearerAuthenticator
             "security.model");     // identity 与各模块 Controller：已认证身份类型
@@ -97,8 +109,14 @@ class ArchitectureTests {
                     .should(onlyUseOtherModulesThrough(CROSS_MODULE_API));
 
     @ArchTest
-    ArchRule entity与model不依赖任何上层与SpringWeb =
-            noClasses().that().resideInAnyPackage(L_ENTITY, L_MODEL)
+    ArchRule entity只依赖common =
+            noClasses().that().resideInAPackage(L_ENTITY)
+                    .should().dependOnClassesThat().resideInAnyPackage(BUSINESS_MODULES)
+                    .orShould().dependOnClassesThat().resideInAnyPackage("org.springframework.web..", "jakarta.servlet..");
+
+    @ArchTest
+    ArchRule model不依赖任何上层与SpringWeb =
+            noClasses().that().resideInAPackage(L_MODEL)
                     .should().dependOnClassesThat().resideInAnyPackage(
                             L_CONTROLLER, L_FILTER, L_DTO, L_SERVICE, L_MAPPER, L_CLIENT,
                             L_CONFIG, "org.springframework.web..", "jakarta.servlet..");
@@ -132,14 +150,26 @@ class ArchitectureTests {
                     .should(notReturnTypesFrom(L_ENTITY));
 
     @ArchTest
-    ArchRule common不依赖任何业务模块 =
-            noClasses().that().resideInAPackage("com.earlylearning.early_learning_server.common..")
-                    .should().dependOnClassesThat().resideInAnyPackage(
-                            "com.earlylearning.early_learning_server.ai..",
-                            "com.earlylearning.early_learning_server.identity..",
-                            "com.earlylearning.early_learning_server.material..",
-                            "com.earlylearning.early_learning_server.security..",
-                            "com.earlylearning.early_learning_server.storage..");
+    ArchRule common不依赖任何业务模块与entity =
+            noClasses().that().resideInAPackage(BASE + ".common..")
+                    .should().dependOnClassesThat().resideInAnyPackage(BUSINESS_MODULES)
+                    .orShould().dependOnClassesThat().resideInAPackage(L_ENTITY);
+
+    /** 实体集中存放后，表归属靠 Mapper 守住：同一个实体的 BaseMapper 只能出现在一个模块。 */
+    @ArchTest
+    static void 每张表只归一个模块(JavaClasses classes) {
+        Map<String, Set<String>> owners = new TreeMap<>();
+        for (JavaClass mapper : classes.that(JavaClass.Predicates.resideInAPackage(L_MAPPER))) {
+            for (Type type : mapper.reflect().getGenericInterfaces()) {
+                if (type instanceof ParameterizedType parameterized && parameterized.getRawType() == BaseMapper.class
+                        && parameterized.getActualTypeArguments()[0] instanceof Class<?> entity) {
+                    owners.computeIfAbsent(entity.getSimpleName(), k -> new TreeSet<>()).add(module(mapper.getPackageName()));
+                }
+            }
+        }
+        assertThat(owners).as("实体 → 声明了它的 Mapper 的模块").isNotEmpty()
+                .allSatisfy((entity, modules) -> assertThat(modules).as(entity).hasSize(1));
+    }
 
     @Test
     void 源码里entity与model不import上层() {
@@ -147,14 +177,21 @@ class ArchitectureTests {
         for (Path file : javaSources()) {
             String source = read(file);
             Matcher pkg = PACKAGE.matcher(source);
-            if (!pkg.find() || !(isLayer(pkg.group(1), "entity") || isLayer(pkg.group(1), "model"))) {
+            if (!pkg.find()) {
+                continue;
+            }
+            boolean entity = pkg.group(1).equals("entity") || pkg.group(1).startsWith("entity.");
+            if (!entity && !isLayer(pkg.group(1), "model")) {
                 continue;
             }
             Matcher imports = PROJECT_IMPORT.matcher(source);
             while (imports.find()) {
                 String imported = imports.group(1);
                 String[] parts = imported.split("\\.");
-                if (parts.length >= 2 && ABOVE_ENTITY_AND_MODEL.contains(parts[1])) {
+                boolean upward = entity
+                        ? !SHARED.contains(parts[0])
+                        : parts.length >= 2 && ABOVE_ENTITY_AND_MODEL.contains(parts[1]);
+                if (upward) {
                     violations.add(MAIN_SOURCES.relativize(file) + " → " + imported);
                 }
             }
@@ -170,7 +207,7 @@ class ArchitectureTests {
                 for (Dependency dependency : origin.getDirectDependenciesFromSelf()) {
                     String targetPackage = dependency.getTargetClass().getBaseComponentType().getPackageName();
                     String to = module(targetPackage);
-                    if (to == null || from == null || to.equals(from) || to.equals("common")) {
+                    if (to == null || from == null || to.equals(from) || SHARED.contains(to)) {
                         continue;
                     }
                     String relative = targetPackage.substring(BASE.length() + 1);

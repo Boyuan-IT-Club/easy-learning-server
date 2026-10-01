@@ -23,12 +23,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.security.filter.BearerTokenFilter;
 import com.earlylearning.early_learning_server.security.filter.SecurityErrorWriter;
-import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.security.model.AdminPrincipal;
 import com.earlylearning.early_learning_server.security.model.TeacherPrincipal;
+import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 
 import tools.jackson.databind.ObjectMapper;
 

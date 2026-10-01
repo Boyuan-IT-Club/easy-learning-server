@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
 
 import java.util.List;
 

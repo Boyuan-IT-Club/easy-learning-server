@@ -17,11 +17,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
-import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.security.model.AuthPrincipal;
+import com.earlylearning.early_learning_server.security.model.TokenType;
+import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 
 /**
  * 读取 {@code Authorization: Bearer <token>}，按前缀交给对应的 {@link BearerAuthenticator}。

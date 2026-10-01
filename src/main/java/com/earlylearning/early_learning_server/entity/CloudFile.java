@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.storage.entity;
+package com.earlylearning.early_learning_server.entity;
 
 import java.time.LocalDateTime;
 

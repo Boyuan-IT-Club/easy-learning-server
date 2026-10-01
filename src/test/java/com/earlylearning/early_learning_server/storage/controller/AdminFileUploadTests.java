@@ -6,7 +6,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
-import com.earlylearning.early_learning_server.storage.entity.CloudFile;
+import com.earlylearning.early_learning_server.entity.CloudFile;
 import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
 import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;

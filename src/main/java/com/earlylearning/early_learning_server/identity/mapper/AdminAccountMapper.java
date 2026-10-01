@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.earlylearning.early_learning_server.identity.entity.AdminAccount;
+import com.earlylearning.early_learning_server.entity.AdminAccount;
 
 /**
  * 管理员账号的读写。密码与状态用定点 UPDATE；分页用显式 LIMIT/OFFSET，与 storage 一致。

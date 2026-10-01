@@ -2,7 +2,7 @@ package com.earlylearning.early_learning_server.identity.dto;
 
 import java.time.Instant;
 
-import com.earlylearning.early_learning_server.identity.entity.AdminAccount;
+import com.earlylearning.early_learning_server.entity.AdminAccount;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /** 契约 {@code AdminAccount}。不含密码或密码哈希。 */

@@ -2,7 +2,7 @@ package com.earlylearning.early_learning_server.identity.dto;
 
 import java.time.Instant;
 
-import com.earlylearning.early_learning_server.identity.entity.License;
+import com.earlylearning.early_learning_server.entity.License;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -1,16 +1,16 @@
 package com.earlylearning.early_learning_server.storage.controller;
 
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
-import com.earlylearning.early_learning_server.storage.service.CloudFileDeletionService;
-import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
-import com.earlylearning.early_learning_server.storage.service.CloudFileService;
-import com.earlylearning.early_learning_server.storage.entity.CloudFile;
-import com.earlylearning.early_learning_server.storage.entity.CloudFileKind;
-import com.earlylearning.early_learning_server.storage.entity.CloudFileStatus;
-import com.earlylearning.early_learning_server.storage.model.IncomingFile;
+import com.earlylearning.early_learning_server.entity.CloudFile;
+import com.earlylearning.early_learning_server.entity.CloudFileKind;
+import com.earlylearning.early_learning_server.entity.CloudFileStatus;
 import com.earlylearning.early_learning_server.storage.dto.AdminFilePageResponse;
 import com.earlylearning.early_learning_server.storage.dto.AdminFileResponse;
 import com.earlylearning.early_learning_server.storage.dto.CloudFileResponse;
+import com.earlylearning.early_learning_server.storage.model.IncomingFile;
+import com.earlylearning.early_learning_server.storage.service.CloudFileDeletionService;
+import com.earlylearning.early_learning_server.storage.service.CloudFileQueryService;
+import com.earlylearning.early_learning_server.storage.service.CloudFileService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;

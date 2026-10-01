@@ -10,11 +10,11 @@ import java.util.List;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.earlylearning.early_learning_server.common.web.GlobalExceptionHandler;
+import com.earlylearning.early_learning_server.entity.CloudFile;
 import com.earlylearning.early_learning_server.material.controller.AssessmentMaterialAdminController;
 import com.earlylearning.early_learning_server.material.controller.AssessmentMaterialCatalogController;
-import com.earlylearning.early_learning_server.storage.entity.CloudFile;
-import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import com.earlylearning.early_learning_server.storage.mapper.CloudFileMapper;
+import com.earlylearning.early_learning_server.storage.model.ObjectStorageService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

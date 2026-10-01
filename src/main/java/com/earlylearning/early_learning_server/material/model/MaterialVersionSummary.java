@@ -2,8 +2,8 @@ package com.earlylearning.early_learning_server.material.model;
 
 import java.time.LocalDateTime;
 
-import com.earlylearning.early_learning_server.material.entity.AssessmentMaterial;
-import com.earlylearning.early_learning_server.material.entity.ContentStatus;
+import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
+import com.earlylearning.early_learning_server.entity.ContentStatus;
 
 /**
  * 平板端版本目录条目：含 DISABLED 的全部保留版本。

@@ -16,12 +16,12 @@ import com.earlylearning.early_learning_server.common.idempotency.SensitiveIdemp
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.secret.KeyedHasher;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
+import com.earlylearning.early_learning_server.entity.License;
+import com.earlylearning.early_learning_server.entity.LicenseStatus;
+import com.earlylearning.early_learning_server.entity.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.dto.CreateLicensesResponse;
 import com.earlylearning.early_learning_server.identity.dto.IssuedLicenseResponse;
 import com.earlylearning.early_learning_server.identity.dto.LicenseResponse;
-import com.earlylearning.early_learning_server.identity.entity.License;
-import com.earlylearning.early_learning_server.identity.entity.LicenseStatus;
-import com.earlylearning.early_learning_server.identity.entity.TeacherStatus;
 import com.earlylearning.early_learning_server.identity.mapper.LicenseMapper;
 import com.earlylearning.early_learning_server.identity.mapper.TeacherAccountMapper;
 import com.earlylearning.early_learning_server.identity.model.ActivationCodes;

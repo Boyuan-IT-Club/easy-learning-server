@@ -18,10 +18,10 @@ import com.earlylearning.early_learning_server.common.idempotency.IdempotencyKey
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
+import com.earlylearning.early_learning_server.entity.LicenseStatus;
 import com.earlylearning.early_learning_server.identity.dto.CreateLicensesRequest;
 import com.earlylearning.early_learning_server.identity.dto.CreateLicensesResponse;
 import com.earlylearning.early_learning_server.identity.dto.LicenseResponse;
-import com.earlylearning.early_learning_server.identity.entity.LicenseStatus;
 import com.earlylearning.early_learning_server.identity.service.LicenseService;
 import com.earlylearning.early_learning_server.security.model.AdminPrincipal;
 

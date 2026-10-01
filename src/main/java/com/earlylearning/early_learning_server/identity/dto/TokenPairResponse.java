@@ -2,7 +2,7 @@ package com.earlylearning.early_learning_server.identity.dto;
 
 import java.time.Instant;
 
-import com.earlylearning.early_learning_server.identity.entity.TeacherAccount;
+import com.earlylearning.early_learning_server.entity.TeacherAccount;
 import com.earlylearning.early_learning_server.security.model.TeacherTokens;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

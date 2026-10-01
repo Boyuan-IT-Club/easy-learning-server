@@ -1,18 +1,18 @@
 package com.earlylearning.early_learning_server.ai.service.rubric;
 import com.earlylearning.early_learning_server.ai.dto.RubricCatalogItem;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
-import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
 import com.earlylearning.early_learning_server.ai.model.rubric.MacroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.rubric.MicroDimensionCode;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
-import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalog;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricCatalogEntry;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScore;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
+import com.earlylearning.early_learning_server.ai.model.task.BusinessType;
+import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import org.springframework.stereotype.Service;

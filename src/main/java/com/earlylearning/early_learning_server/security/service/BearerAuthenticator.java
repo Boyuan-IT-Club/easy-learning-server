@@ -1,7 +1,7 @@
 package com.earlylearning.early_learning_server.security.service;
 
-import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.model.AuthPrincipal;
+import com.earlylearning.early_learning_server.security.model.TokenType;
 
 /**
  * 把一枚 Bearer Token 认成一个身份。两个实现在 identity：TeacherBearerAuthenticator 认教师的 {@code at_}，AdminBearerAuthenticator 认管理员的 {@code adt_}。

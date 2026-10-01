@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.client.rubric;
-import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricConfig;
+import com.earlylearning.early_learning_server.ai.model.rubric.RubricProperties;
 
 import java.io.IOException;
 import java.io.InputStream;

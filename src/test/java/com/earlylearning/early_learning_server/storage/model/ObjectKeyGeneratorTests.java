@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
-import com.earlylearning.early_learning_server.storage.entity.CloudFileKind;
+import com.earlylearning.early_learning_server.entity.CloudFileKind;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

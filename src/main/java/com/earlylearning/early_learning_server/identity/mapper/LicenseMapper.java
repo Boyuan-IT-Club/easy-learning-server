@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.earlylearning.early_learning_server.identity.entity.License;
+import com.earlylearning.early_learning_server.entity.License;
 
 /**
  * 激活码的读写。状态变更都带旧状态条件：即使上层漏了加锁，也不会把已占用的码再占一次。

@@ -1,13 +1,13 @@
 package com.earlylearning.early_learning_server.material.controller;
 
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
-import com.earlylearning.early_learning_server.material.service.AssessmentMaterialPublishService;
-import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
-import com.earlylearning.early_learning_server.material.entity.AssessmentMaterial;
-import com.earlylearning.early_learning_server.material.entity.ContentStatus;
-import com.earlylearning.early_learning_server.material.model.MaterialPage;
+import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
+import com.earlylearning.early_learning_server.entity.ContentStatus;
 import com.earlylearning.early_learning_server.material.dto.AssessmentMaterialPageResponse;
 import com.earlylearning.early_learning_server.material.dto.AssessmentMaterialResponse;
+import com.earlylearning.early_learning_server.material.model.MaterialPage;
+import com.earlylearning.early_learning_server.material.service.AssessmentMaterialPublishService;
+import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
 import com.earlylearning.early_learning_server.storage.model.IncomingFile;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

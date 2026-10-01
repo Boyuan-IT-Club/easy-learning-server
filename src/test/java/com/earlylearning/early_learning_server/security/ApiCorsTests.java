@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
-import com.earlylearning.early_learning_server.security.model.TokenType;
 import com.earlylearning.early_learning_server.security.model.TeacherPrincipal;
+import com.earlylearning.early_learning_server.security.model.TokenType;
+import com.earlylearning.early_learning_server.security.service.BearerAuthenticator;
 
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;

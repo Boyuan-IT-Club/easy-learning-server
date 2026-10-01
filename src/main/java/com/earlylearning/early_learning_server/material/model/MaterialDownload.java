@@ -2,8 +2,8 @@ package com.earlylearning.early_learning_server.material.model;
 
 import java.util.List;
 
-import com.earlylearning.early_learning_server.material.entity.AssessmentMaterial;
-import com.earlylearning.early_learning_server.storage.entity.CloudFile;
+import com.earlylearning.early_learning_server.entity.AssessmentMaterial;
+import com.earlylearning.early_learning_server.entity.CloudFile;
 
 /**
  * 指定版本的下载视图：冻结配置加服务端展开去重后的完整依赖。

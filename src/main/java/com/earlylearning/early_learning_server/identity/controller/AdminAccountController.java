@@ -15,10 +15,10 @@ import com.earlylearning.early_learning_server.common.idempotency.IdempotencyKey
 import com.earlylearning.early_learning_server.common.paging.PageQuery;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import com.earlylearning.early_learning_server.common.web.PageResponse;
+import com.earlylearning.early_learning_server.entity.AdminStatus;
 import com.earlylearning.early_learning_server.identity.dto.AdminAccountResponse;
 import com.earlylearning.early_learning_server.identity.dto.CreateAdminAccountRequest;
 import com.earlylearning.early_learning_server.identity.dto.UpdateAdminAccountRequest;
-import com.earlylearning.early_learning_server.identity.entity.AdminStatus;
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
 
 /** 管理员账号维护（契约 createAdminAccount、listAdminAccounts、updateAdminAccount）。权限：管理员。 */

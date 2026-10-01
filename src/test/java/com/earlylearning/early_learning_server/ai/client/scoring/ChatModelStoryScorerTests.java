@@ -1,11 +1,11 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
 import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScore;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

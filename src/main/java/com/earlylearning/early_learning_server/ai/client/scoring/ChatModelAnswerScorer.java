@@ -1,13 +1,13 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
-import com.earlylearning.early_learning_server.ai.model.task.Attempt;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
-import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceLocator;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
+import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
+import com.earlylearning.early_learning_server.ai.model.task.Attempt;
 import com.earlylearning.early_learning_server.ai.service.scoring.ScoringImageResolver;
 
 import java.util.ArrayList;

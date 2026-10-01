@@ -1,15 +1,15 @@
 package com.earlylearning.early_learning_server.ai.controller;
 import com.earlylearning.early_learning_server.ai.controller.validation.AnswerScoringRequestValidator;
-import com.earlylearning.early_learning_server.ai.dto.TaskHandleResponse;
 import com.earlylearning.early_learning_server.ai.dto.AnswerScoringRequest;
+import com.earlylearning.early_learning_server.ai.dto.TaskHandleResponse;
 
 import java.util.List;
 
-import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScoringService;
-import com.earlylearning.early_learning_server.ai.model.task.AiTask;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringCommand;
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageRef;
 import com.earlylearning.early_learning_server.ai.model.scoring.ScoredQuestion;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringCommand;
+import com.earlylearning.early_learning_server.ai.model.task.AiTask;
+import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScoringService;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

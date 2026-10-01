@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import com.earlylearning.early_learning_server.identity.entity.AdminAccount;
+import com.earlylearning.early_learning_server.entity.AdminAccount;
 import com.earlylearning.early_learning_server.security.model.AdminPrincipal;
 import com.earlylearning.early_learning_server.security.model.AuthPrincipal;
 import com.earlylearning.early_learning_server.security.model.TokenType;

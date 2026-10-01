@@ -1,6 +1,6 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.story;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
 import com.earlylearning.early_learning_server.ai.model.scoring.ImageRef;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringGroup;
 
 import java.util.List;
 

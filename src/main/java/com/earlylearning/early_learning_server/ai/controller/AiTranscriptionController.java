@@ -1,13 +1,13 @@
 package com.earlylearning.early_learning_server.ai.controller;
-import com.earlylearning.early_learning_server.ai.dto.TranscriptionContext;
 import com.earlylearning.early_learning_server.ai.dto.TaskHandleResponse;
+import com.earlylearning.early_learning_server.ai.dto.TranscriptionContext;
 
 import java.io.IOException;
 
-import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
-import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
 import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionCommand;
+import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
+import com.earlylearning.early_learning_server.ai.service.transcription.AudioValidator;
 import com.earlylearning.early_learning_server.common.error.BusinessException;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;

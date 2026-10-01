@@ -1,11 +1,11 @@
 package com.earlylearning.early_learning_server.ai.model.scoring.question;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionScoreValidator;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
-import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
-import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
 import com.earlylearning.early_learning_server.ai.model.scoring.Evidence;
+import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceValidator;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
+import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
 import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionScoreValidator;
 
 import java.util.ArrayList;
 import java.util.List;

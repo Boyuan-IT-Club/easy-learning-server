@@ -2,7 +2,7 @@ package com.earlylearning.early_learning_server.material.model;
 
 import java.time.LocalDateTime;
 
-import com.earlylearning.early_learning_server.material.entity.ContentStatus;
+import com.earlylearning.early_learning_server.entity.ContentStatus;
 
 /**
  * 语法条目在下载清单里的当前定义。语法要素模块尚未提供管理接口，

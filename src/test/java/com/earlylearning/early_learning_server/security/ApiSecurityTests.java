@@ -9,10 +9,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.earlylearning.early_learning_server.security.service.TokenService;
+import com.earlylearning.early_learning_server.common.secret.Tokens;
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
 import com.earlylearning.early_learning_server.security.client.RedisTokenStore;
-import com.earlylearning.early_learning_server.common.secret.Tokens;
+import com.earlylearning.early_learning_server.security.service.TokenService;
 import com.earlylearning.early_learning_server.support.AuthFixtures;
 import com.earlylearning.early_learning_server.support.HttpApi;
 

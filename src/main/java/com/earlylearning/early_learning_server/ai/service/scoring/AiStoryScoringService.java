@@ -4,18 +4,18 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.earlylearning.early_learning_server.ai.model.rubric.RubricService;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreValidator;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringCommand;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringResult;
 import com.earlylearning.early_learning_server.ai.model.task.AiTask;
-import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskSubmission;
 import com.earlylearning.early_learning_server.ai.model.task.FailedStage;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
 import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
 import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringCommand;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringResult;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreValidator;
+import com.earlylearning.early_learning_server.ai.service.task.AiTaskRunner;
 import com.earlylearning.early_learning_server.common.idempotency.InputFingerprint;
 import org.springframework.stereotype.Service;
 

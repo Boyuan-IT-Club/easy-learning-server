@@ -2,15 +2,15 @@ package com.earlylearning.early_learning_server.ai.client.fake;
 
 import java.util.List;
 
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
 import com.earlylearning.early_learning_server.ai.model.scoring.Evidence;
 import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScorer;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
+import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringOutput;
 import com.earlylearning.early_learning_server.ai.model.scoring.question.QuestionAiScore;
 import com.earlylearning.early_learning_server.ai.model.task.AiTaskFailedException;
 import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
-import com.earlylearning.early_learning_server.ai.model.scoring.question.AnswerScoringInput;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;

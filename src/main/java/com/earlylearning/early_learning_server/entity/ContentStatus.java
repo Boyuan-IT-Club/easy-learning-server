@@ -1,4 +1,4 @@
-package com.earlylearning.early_learning_server.material.entity;
+package com.earlylearning.early_learning_server.entity;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 

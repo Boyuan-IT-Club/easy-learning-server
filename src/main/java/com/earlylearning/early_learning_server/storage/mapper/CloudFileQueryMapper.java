@@ -1,5 +1,5 @@
 package com.earlylearning.early_learning_server.storage.mapper;
-import com.earlylearning.early_learning_server.storage.entity.CloudFile;
+import com.earlylearning.early_learning_server.entity.CloudFile;
 
 import java.util.List;
 

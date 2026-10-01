@@ -1,16 +1,16 @@
 package com.earlylearning.early_learning_server.ai.client.scoring;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
-import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
-import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.MicrostructureSection;
-import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
 import com.earlylearning.early_learning_server.ai.model.scoring.EvidenceLocator;
-import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScoreSection;
+import com.earlylearning.early_learning_server.ai.model.scoring.InvalidModelOutputException;
+import com.earlylearning.early_learning_server.ai.model.scoring.ModelMeta;
+import com.earlylearning.early_learning_server.ai.model.scoring.ScoringImage;
 import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScore;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.AiScoreSection;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.MicrostructureSection;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ProductivityStat;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreContentItem;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.ScoreDimension;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScorer;
+import com.earlylearning.early_learning_server.ai.model.scoring.story.StoryScoringInput;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
