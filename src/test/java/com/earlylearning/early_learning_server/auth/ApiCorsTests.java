@@ -1,10 +1,12 @@
 package com.earlylearning.early_learning_server.auth;
 
+import com.earlylearning.early_learning_server.auth.interfaces.security.SecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
+import com.earlylearning.early_learning_server.auth.domain.BearerAuthenticator;
+import com.earlylearning.early_learning_server.auth.domain.TokenType;
+import com.earlylearning.early_learning_server.common.security.TeacherPrincipal;
+
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,17 +34,43 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** 使用实际 SecurityFilterChain；无数据库、OSS 或 AI 调用。 */
+/**
+ * 使用实际 SecurityFilterChain；无数据库、OSS 或 AI 调用。
+ *
+ * <p>探针路径在 /api/ 下，需要教师凭证：这里用一个只认 {@link #PROBE_TOKEN} 的认证实现代替 Redis 与数据库。
+ */
 @SpringJUnitConfig(ApiCorsTests.WebConfig.class)
 @WebAppConfiguration
 class ApiCorsTests {
     private static final String WEBVIEW_ORIGIN = "https://localhost";
+    private static final String PROBE_TOKEN = "at_cors-probe";
 
     @Configuration(proxyBeanMethods = false)
     @EnableWebMvc
     @EnableWebSecurity
     @Import({SecurityConfig.class, ProbeController.class})
-    static class WebConfig {}
+    static class WebConfig {
+
+        @Bean
+        ObjectMapper objectMapper() {
+            return JsonMapper.builder().build();
+        }
+
+        @Bean
+        BearerAuthenticator probeTeacher() {
+            return new BearerAuthenticator() {
+                @Override
+                public TokenType type() {
+                    return TokenType.ACCESS;
+                }
+
+                @Override
+                public TeacherPrincipal authenticate(String token) {
+                    return new TeacherPrincipal(1);
+                }
+            };
+        }
+    }
 
     @RestController
     static class ProbeController {
@@ -58,7 +93,7 @@ class ApiCorsTests {
     @ParameterizedTest
     @ValueSource(strings = {"https://localhost", "http://localhost:5173", "http://127.0.0.1:5173"})
     void actualResponsesAllowConfiguredClients(String origin) throws Exception {
-        mvc.perform(get("/api/cors-probe").header("Origin", origin))
+        mvc.perform(get("/api/cors-probe").header("Origin", origin).header("Authorization", "Bearer " + PROBE_TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", origin))
                 .andExpect(header().doesNotExist("Access-Control-Allow-Credentials"));
@@ -80,7 +115,8 @@ class ApiCorsTests {
 
     @Test
     void errorResponsesRemainReadableByTheWebview() throws Exception {
-        mvc.perform(get("/api/cors-probe/error").header("Origin", WEBVIEW_ORIGIN))
+        mvc.perform(get("/api/cors-probe/error").header("Origin", WEBVIEW_ORIGIN)
+                        .header("Authorization", "Bearer " + PROBE_TOKEN))
                 .andExpect(status().isBadRequest())
                 .andExpect(header().string("Access-Control-Allow-Origin", WEBVIEW_ORIGIN));
     }
@@ -104,7 +140,7 @@ class ApiCorsTests {
 
     @Test
     void requestsWithoutOriginAndOtherSecurityChainsKeepTheirBehavior() throws Exception {
-        mvc.perform(get("/api/cors-probe")).andExpect(status().isOk());
+        mvc.perform(get("/api/cors-probe").header("Authorization", "Bearer " + PROBE_TOKEN)).andExpect(status().isOk());
         mvc.perform(get("/something-else")).andExpect(status().isUnauthorized());
     }
 }

@@ -7,8 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.earlylearning.early_learning_server.admin.AdminAccountService;
-import com.earlylearning.early_learning_server.auth.TokenService;
+import com.earlylearning.early_learning_server.admin.application.AdminAccountService;
+import com.earlylearning.early_learning_server.auth.application.TokenService;
 import com.earlylearning.early_learning_server.support.AuthFixtures;
 import com.earlylearning.early_learning_server.support.HttpApi;
 

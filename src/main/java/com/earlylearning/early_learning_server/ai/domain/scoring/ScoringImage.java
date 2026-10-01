@@ -1,5 +1,4 @@
 package com.earlylearning.early_learning_server.ai.domain.scoring;
-import com.earlylearning.early_learning_server.ai.interfaces.dto.ImageContext;
 
 /**
  * 一张已经解析好、可以直接交给模型的图片。

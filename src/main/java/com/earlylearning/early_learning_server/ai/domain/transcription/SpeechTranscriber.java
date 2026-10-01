@@ -1,5 +1,4 @@
 package com.earlylearning.early_learning_server.ai.domain.transcription;
-import com.earlylearning.early_learning_server.ai.infrastructure.fake.FakeTranscriberConfig;
 import com.earlylearning.early_learning_server.ai.domain.task.AiTaskFailedException;
 
 /**
@@ -8,7 +7,7 @@ import com.earlylearning.early_learning_server.ai.domain.task.AiTaskFailedExcept
  * <p>实现可替换：接口只声明契约，不关心谁来实现。
  * 输入是内存中的音频字节——音频只在内存处理，实现不得把它落到磁盘。
  *
- * <p><b>默认实现见 {@link com.earlylearning.early_learning_server.ai.infrastructure.fake.FakeTranscriberConfig}（假实现，接通真实识别服务前把链路跑通用）。</b>
+ * <p><b>默认实现见 {@code infrastructure.fake.FakeTranscriberConfig}（假实现，接通真实识别服务前把链路跑通用）。</b>
  * 接入真实识别服务时：提供本接口同类型的 Bean 并标 {@code @Primary} 即可覆盖，业务代码不用改。
  */
 public interface SpeechTranscriber {

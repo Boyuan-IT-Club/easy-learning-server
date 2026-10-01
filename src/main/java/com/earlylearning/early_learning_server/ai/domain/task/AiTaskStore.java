@@ -1,5 +1,4 @@
 package com.earlylearning.early_learning_server.ai.domain.task;
-import com.earlylearning.early_learning_server.ai.infrastructure.task.InMemoryAiTaskStore;
 
 import java.util.Optional;
 

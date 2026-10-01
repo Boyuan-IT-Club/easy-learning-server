@@ -1,5 +1,4 @@
 package com.earlylearning.early_learning_server.ai.domain.rubric;
-import com.earlylearning.early_learning_server.ai.infrastructure.rubric.RubricConfigLoader;
 
 import java.util.List;
 
@@ -13,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * 版本发布后内容不可原地改变」。所以标准是随代码发布的资源，不是数据库内容、也不由请求携带。
  *
  * @param schemaVersion 评分结构版本
- * @param rubricVersion 标准版本；必须与 {@code ai.rubric.version} 一致（不一致会在启动时被 {@link RubricConfigLoader} 挡住）
+ * @param rubricVersion 标准版本；必须与 {@code ai.rubric.version} 一致（不一致会在启动时被 {@code infrastructure.rubric.RubricConfigLoader} 挡住）
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RubricConfig(

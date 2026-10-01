@@ -13,8 +13,8 @@ import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.earlylearning.early_learning_server.admin.AdminAccountService;
-import com.earlylearning.early_learning_server.auth.TokenService;
+import com.earlylearning.early_learning_server.admin.application.AdminAccountService;
+import com.earlylearning.early_learning_server.auth.application.TokenService;
 import com.earlylearning.early_learning_server.common.secret.KeyedHasher;
 import com.earlylearning.early_learning_server.support.AuthFixtures;
 import com.earlylearning.early_learning_server.support.HttpApi;

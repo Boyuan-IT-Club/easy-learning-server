@@ -8,7 +8,10 @@ import org.springframework.boot.web.server.context.WebServerApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.earlylearning.early_learning_server.auth.TokenService;
+import com.earlylearning.early_learning_server.admin.application.AdminAccountService;
+import com.earlylearning.early_learning_server.admin.application.AdminLoginService;
+import com.earlylearning.early_learning_server.admin.domain.AdminAccountSummary;
+import com.earlylearning.early_learning_server.auth.application.TokenService;
 import com.earlylearning.early_learning_server.support.AuthFixtures;
 import com.earlylearning.early_learning_server.support.HttpApi;
 
@@ -45,21 +48,21 @@ class AdminAccountFlowTests {
 
     @Test
     void loginReturnsASessionUsableOnAdminEndpoints() {
-        AdminAccount admin = fixtures.newAdmin();
+        AdminAccountSummary admin = fixtures.newAdmin();
 
-        JsonNode session = login(admin.getUsername().toUpperCase(), AuthFixtures.ADMIN_PASSWORD).expect(200, "OK")
+        JsonNode session = login(admin.username().toUpperCase(), AuthFixtures.ADMIN_PASSWORD).expect(200, "OK")
                 .conformsTo("adminLogin").data();
 
         assertThat(session.get("token_type").asString()).isEqualTo("Bearer");
         assertThat(session.get("token").asString()).startsWith("adt_");
-        assertThat(session.get("account").get("id").asInt()).isEqualTo(admin.getId());
+        assertThat(session.get("account").get("id").asInt()).isEqualTo(admin.id());
         api.get("/admin/accounts").bearer(session.get("token").asString()).send().expect(200, "OK");
     }
 
     @Test
     void wrongPasswordAndUnknownUserLookTheSame() {
-        AdminAccount admin = fixtures.newAdmin();
-        HttpApi.Response wrong = login(admin.getUsername(), "Wrong-Password-1").expect(401, "INVALID_CREDENTIALS")
+        AdminAccountSummary admin = fixtures.newAdmin();
+        HttpApi.Response wrong = login(admin.username(), "Wrong-Password-1").expect(401, "INVALID_CREDENTIALS")
                 .conformsTo("adminLogin");
         HttpApi.Response unknown = login(AuthFixtures.uniqueName("nobody_"), "Wrong-Password-1")
                 .expect(401, "INVALID_CREDENTIALS");
@@ -68,29 +71,29 @@ class AdminAccountFlowTests {
 
     @Test
     void passwordIsNotTrimmed() {
-        AdminAccount admin = fixtures.newAdmin();
-        login(admin.getUsername(), " " + AuthFixtures.ADMIN_PASSWORD).expect(401, "INVALID_CREDENTIALS");
+        AdminAccountSummary admin = fixtures.newAdmin();
+        login(admin.username(), " " + AuthFixtures.ADMIN_PASSWORD).expect(401, "INVALID_CREDENTIALS");
     }
 
     @Test
     void disabledAdminIsRejectedOnlyWithTheRightPassword() {
-        AdminAccount admin = fixtures.newAdmin();
-        jdbc.update("UPDATE admin_account SET status = 'DISABLED' WHERE id = ?", admin.getId());
+        AdminAccountSummary admin = fixtures.newAdmin();
+        jdbc.update("UPDATE admin_account SET status = 'DISABLED' WHERE id = ?", admin.id());
 
-        login(admin.getUsername(), AuthFixtures.ADMIN_PASSWORD).expect(403, "ACCOUNT_DISABLED").conformsTo("adminLogin");
-        login(admin.getUsername(), "Wrong-Password-1").expect(401, "INVALID_CREDENTIALS");
+        login(admin.username(), AuthFixtures.ADMIN_PASSWORD).expect(403, "ACCOUNT_DISABLED").conformsTo("adminLogin");
+        login(admin.username(), "Wrong-Password-1").expect(401, "INVALID_CREDENTIALS");
     }
 
     @Test
     void repeatedFailuresLockTheUsername() {
-        AdminAccount admin = fixtures.newAdmin();
-        int limit = AdminAccountService.LOGIN_FAILURES.limit();
+        AdminAccountSummary admin = fixtures.newAdmin();
+        int limit = AdminLoginService.LOGIN_FAILURES.limit();
         for (int i = 1; i < limit; i++) {
-            login(admin.getUsername(), "Wrong-Password-1").expect(401, "INVALID_CREDENTIALS");
+            login(admin.username(), "Wrong-Password-1").expect(401, "INVALID_CREDENTIALS");
         }
-        login(admin.getUsername(), "Wrong-Password-1").expect(429, "RATE_LIMITED").conformsTo("adminLogin");
+        login(admin.username(), "Wrong-Password-1").expect(429, "RATE_LIMITED").conformsTo("adminLogin");
         // 锁定期内正确密码也拒绝
-        login(admin.getUsername(), AuthFixtures.ADMIN_PASSWORD).expect(429, "RATE_LIMITED");
+        login(admin.username(), AuthFixtures.ADMIN_PASSWORD).expect(429, "RATE_LIMITED");
     }
 
     @Test
@@ -142,15 +145,15 @@ class AdminAccountFlowTests {
     @Test
     void listFiltersByExactUsernameAndStatus() {
         String token = fixtures.adminToken();
-        AdminAccount target = fixtures.newAdmin();
+        AdminAccountSummary target = fixtures.newAdmin();
 
-        JsonNode exact = api.get("/admin/accounts?username=" + target.getUsername().toUpperCase()).bearer(token)
+        JsonNode exact = api.get("/admin/accounts?username=" + target.username().toUpperCase()).bearer(token)
                 .send().expect(200, "OK").conformsTo("listAdminAccounts").data();
         assertThat(exact.get("total").asLong()).isEqualTo(1);
-        assertThat(exact.get("items").get(0).get("id").asInt()).isEqualTo(target.getId());
+        assertThat(exact.get("items").get(0).get("id").asInt()).isEqualTo(target.id());
 
         // 精确匹配，不是包含匹配
-        String prefix = target.getUsername().substring(0, target.getUsername().length() - 1);
+        String prefix = target.username().substring(0, target.username().length() - 1);
         assertThat(api.get("/admin/accounts?username=" + prefix).bearer(token).send().expect(200, "OK")
                 .data().get("total").asLong()).isZero();
 
@@ -163,52 +166,52 @@ class AdminAccountFlowTests {
     @Test
     void changingPasswordRevokesAllTokensOfThatAdmin() {
         String operator = fixtures.adminToken();
-        AdminAccount target = fixtures.newAdmin();
-        String targetToken = login(target.getUsername(), AuthFixtures.ADMIN_PASSWORD).expect(200, "OK")
+        AdminAccountSummary target = fixtures.newAdmin();
+        String targetToken = login(target.username(), AuthFixtures.ADMIN_PASSWORD).expect(200, "OK")
                 .data().get("token").asString();
 
-        JsonNode updated = patch(operator, target.getId(), "{\"password\":\"Changed-Pass-01\"}").expect(200, "OK")
+        JsonNode updated = patch(operator, target.id(), "{\"password\":\"Changed-Pass-01\"}").expect(200, "OK")
                 .conformsTo("updateAdminAccount").data();
         assertThat(updated.get("status").asString()).isEqualTo("ACTIVE");
 
         api.get("/admin/accounts").bearer(targetToken).send().expect(401, "TOKEN_INVALID");
-        login(target.getUsername(), AuthFixtures.ADMIN_PASSWORD).expect(401, "INVALID_CREDENTIALS");
-        login(target.getUsername(), "Changed-Pass-01").expect(200, "OK");
+        login(target.username(), AuthFixtures.ADMIN_PASSWORD).expect(401, "INVALID_CREDENTIALS");
+        login(target.username(), "Changed-Pass-01").expect(200, "OK");
     }
 
     @Test
     void disablingRevokesTokensAndReenablingRequiresANewLogin() {
         String operator = fixtures.adminToken();
-        AdminAccount target = fixtures.newAdmin();
+        AdminAccountSummary target = fixtures.newAdmin();
         String targetToken = fixtures.adminToken(target);
 
-        patch(operator, target.getId(), "{\"status\":\"DISABLED\"}").expect(200, "OK");
+        patch(operator, target.id(), "{\"status\":\"DISABLED\"}").expect(200, "OK");
         api.get("/admin/accounts").bearer(targetToken).send().expect(401, "TOKEN_INVALID");
         // 重复提交相同状态
-        patch(operator, target.getId(), "{\"status\":\"DISABLED\"}").expect(200, "OK");
+        patch(operator, target.id(), "{\"status\":\"DISABLED\"}").expect(200, "OK");
 
-        patch(operator, target.getId(), "{\"status\":\"ACTIVE\"}").expect(200, "OK");
+        patch(operator, target.id(), "{\"status\":\"ACTIVE\"}").expect(200, "OK");
         api.get("/admin/accounts").bearer(targetToken).send().expect(401, "TOKEN_INVALID");
-        login(target.getUsername(), AuthFixtures.ADMIN_PASSWORD).expect(200, "OK");
+        login(target.username(), AuthFixtures.ADMIN_PASSWORD).expect(200, "OK");
     }
 
     @Test
     void disabledAdminTokenIsRejectedOnTheNextRequest() {
-        AdminAccount target = fixtures.newAdmin();
+        AdminAccountSummary target = fixtures.newAdmin();
         String token = fixtures.adminToken(target);
         // 绕过接口直接改库：每个请求都要查账号状态，不能只靠吊销
-        jdbc.update("UPDATE admin_account SET status = 'DISABLED' WHERE id = ?", target.getId());
+        jdbc.update("UPDATE admin_account SET status = 'DISABLED' WHERE id = ?", target.id());
         api.get("/admin/accounts").bearer(token).send().expect(403, "ACCOUNT_DISABLED");
     }
 
     @Test
     void updateValidatesInput() {
         String operator = fixtures.adminToken();
-        AdminAccount target = fixtures.newAdmin();
-        patch(operator, target.getId(), "{}").expect(400, "INVALID_REQUEST").conformsTo("updateAdminAccount");
-        patch(operator, target.getId(), "{\"status\":\"LOCKED\"}").expect(400, "INVALID_REQUEST");
-        patch(operator, target.getId(), "{\"password\":\"short\"}").expect(400, "INVALID_REQUEST");
-        patch(operator, target.getId(), "{\"username\":\"rename\"}").expect(400, "INVALID_REQUEST");
+        AdminAccountSummary target = fixtures.newAdmin();
+        patch(operator, target.id(), "{}").expect(400, "INVALID_REQUEST").conformsTo("updateAdminAccount");
+        patch(operator, target.id(), "{\"status\":\"LOCKED\"}").expect(400, "INVALID_REQUEST");
+        patch(operator, target.id(), "{\"password\":\"short\"}").expect(400, "INVALID_REQUEST");
+        patch(operator, target.id(), "{\"username\":\"rename\"}").expect(400, "INVALID_REQUEST");
         patch(operator, 999999999, "{\"status\":\"ACTIVE\"}").expect(404, "RESOURCE_NOT_FOUND")
                 .conformsTo("updateAdminAccount");
     }

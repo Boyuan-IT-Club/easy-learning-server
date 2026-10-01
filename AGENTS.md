@@ -36,13 +36,19 @@
 **第一轴：顶层包 = 限界上下文（业务模块）。** 当前实际存在的模块：
 
 ```text
+admin/     ← 管理员控制（登录、账号维护、首个管理员初始化）
+auth/      ← 鉴权：安全链与 Token 机制、教师注册与刷新、每个请求的账号校验
+license/   ← 激活码（生成、查询、撤销、注册时占码）
+teacher/   ← 教师云端账号（启用 / 停用、供 auth 读写 refresh 哈希）
 ai/        ← 录音转写与评分
 material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
 storage/   ← 官方资源文件目录（对象存储）
-auth/      ← 安全配置（简单模块，只有根包）
-common/    ← 共享能力：web（响应信封）/ error / idempotency / logging / media（MIME 探测与音频时长），
-             每个子包都是 @NamedInterface 暴露的对外 API；只被依赖、不依赖任何模块
+common/    ← 共享能力，只被依赖、不依赖任何模块；每个子包都是 @NamedInterface 暴露的对外 API：
+             web（响应信封、分页响应）/ error / idempotency / logging / media（MIME 探测与音频时长）/
+             security（已认证身份类型）/ paging / identity（用户名规则）/ secret / ratelimit / tx / time
 ```
+
+模块依赖单向、无环：`admin → auth → teacher → license`，`auth → license`；ai、material、storage 之间按各自需要。
 
 业务代码应留在所属业务模块；跨业务复用的机械能力才抽成公共模块。不要建立一个掌握所有课程、评估、字典规则的巨大 `contentimport` 模块——将来做 `course/importer/`、`assessment/importer/` 时，各自负责对应资源的解析和业务校验。
 
@@ -50,17 +56,23 @@ common/    ← 共享能力：web（响应信封）/ error / idempotency / loggi
 
 ```text
 <module>/
-├── interfaces/       Controller + 请求/响应 DTO + 请求形状校验；HTTP 是这一层的事
-├── application/      应用服务（XxxService）：编排、幂等、任务提交；返回领域对象，不返回 DTO
-├── domain/           Entity（允许带 MyBatis 注解）+ 领域规则 + 端口（接口定义在这）
-└── infrastructure/   Mapper + 对外适配器（OSS / ECNU / fake）+ 字节级解析；实现 domain 的端口
+├── interfaces/       controller/ + dto/（Jackson 注解只在这里）+ 请求形状校验；HTTP 是这一层的事
+│                     （auth 另有 security/：Spring Security 安全链与 Bearer 过滤器）
+├── application/      应用服务（XxxService）：编排、事务、幂等、限流；返回领域对象，不返回 DTO
+├── domain/           Entity（允许带 MyBatis 注解）+ 领域规则 + 只读快照（XxxSummary）+ 事件 + 端口
+└── infrastructure/   Mapper + Redis 存储 + 对外适配器（OSS / ECNU / fake）+ 字节级解析；实现 domain 的端口
 ```
 
-- 小模块（如 `auth`）允许只有根包的简单模块；一旦分层，必须用标准四层。
-- 跨模块只走对方**根包或 @NamedInterface 暴露的子包**里的类型（Spring Modulith verify 强制，
-  违反即 `ArchitectureTests` 红）。storage 的 `application`/`domain` 即由此暴露给 ai 取评分图片。
-- 接口与实现的判据：**存在第二个真实实现才立端口**（如 `ChatModel`：ecnu + fake）。不做一实现一接口的仪式。
-- 服务返回**领域对象**（如 `CloudFile`、`AiTask`），HTTP 形状（状态码、信封、DTO）只在 interfaces 层出现。
+- 一律用标准四层；根包只放 package-info（写清本模块职责、四层各放什么、依赖谁）。
+- 跨模块只走对方**根包或 @NamedInterface 暴露的子包**（通常是 `application`、`domain`）里的类型，
+  Spring Modulith verify 强制，违反即 `ArchitectureTests` 红。
+- 反向需求不靠互相调用：用同步事件（如撤销激活码发布 `LicenseRevoked`，teacher 在同一事务里停用教师）。
+  需要同一事务时用 `@EventListener`，不要用提交后才执行的 `@TransactionalEventListener` / `@ApplicationModuleListener`。
+- 接口与实现的判据：**存在第二个真实实现才立端口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。不做一实现一接口的仪式。
+- 服务返回**领域对象**（如 `CloudFile`、`AiTask`、`LicenseSummary`），HTTP 形状（状态码、信封、DTO）只在 interfaces 层出现。
+  含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开应用层，对外与幂等快照都用 `XxxSummary`。
+- `ArchitectureTests` 同时扫描源码 import：只在 Javadoc 里出现的 import 不进字节码、ArchUnit 看不到，
+  但同样让 domain 指向外层，一律改用 `{@code}` 引用。
 
 ---
 

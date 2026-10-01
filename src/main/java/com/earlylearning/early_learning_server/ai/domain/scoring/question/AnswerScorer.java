@@ -1,5 +1,4 @@
 package com.earlylearning.early_learning_server.ai.domain.scoring.question;
-import com.earlylearning.early_learning_server.ai.infrastructure.fake.FakeAnswerScorerConfig;
 import com.earlylearning.early_learning_server.ai.domain.task.AiTaskFailedException;
 
 
@@ -13,7 +12,7 @@ import com.earlylearning.early_learning_server.ai.domain.task.AiTaskFailedExcept
  * <p>返回的分数会经过 {@code QuestionScoreValidator} 的运行时语义校验，
  * 不合格会被落成 {@code MODEL_OUTPUT_INVALID} 任务失败，而不是返回一个看起来成功的分数。
  *
- * <p><b>默认实现见 {@link com.earlylearning.early_learning_server.ai.infrastructure.fake.FakeAnswerScorerConfig}（假实现，接通真实评分模型前把链路跑通用）。</b>
+ * <p><b>默认实现见 {@code infrastructure.fake.FakeAnswerScorerConfig}（假实现，接通真实评分模型前把链路跑通用）。</b>
  * 接入真实评分模型时：提供本接口同类型的 Bean 并标 {@code @Primary} 即可覆盖，业务代码不用改。
  */
 public interface AnswerScorer {

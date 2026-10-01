@@ -119,18 +119,17 @@ early-learning-server/
     ├── main/
     │   ├── java/
     │   │   └── com/earlylearning/early_learning_server/
-    │   │       ├── admin/                 管理员业务模块
-    │   │       ├── auth/                  鉴权业务模块
-    │   │       ├── license/               激活码与授权业务模块
-    │   │       ├── teacher/               教师业务模块
-    │   │       ├── course/                课程业务模块
-    │   │       ├── assessment/            评估业务模块
-    │   │       ├── dictionary/            字典业务模块
-    │   │       ├── grammar/               语法业务模块
-    │   │       ├── ai/                    AI 业务模块
-    │   │       ├── storage/               ObjectStorageService 及 OSS 实现
-    │   │       └── common/
-    │   │           └── code/              跨端稳定 Code 类型与校验
+    │   │       ├── admin/                 管理员控制（登录、账号维护）
+    │   │       ├── auth/                  鉴权：安全链、Token、教师注册与刷新
+    │   │       ├── license/               激活码
+    │   │       ├── teacher/               教师云端账号
+    │   │       ├── ai/                    录音转写与评分
+    │   │       ├── material/              评估材料（ZIP 发布、版本下载）
+    │   │       ├── storage/               官方资源文件（对象存储）
+    │   │       └── common/                共享能力（web、error、idempotency、security、paging 等）
+    │   │
+    │   │       每个业务模块内部统一四层：interfaces / application / domain / infrastructure，
+    │   │       规则见 AGENTS.md 第 3 节，由 ArchitectureTests 强制
     │   └── resources/
     │       ├── application.yaml          公共配置
     │       ├── application-dev.yml       开发数据库配置

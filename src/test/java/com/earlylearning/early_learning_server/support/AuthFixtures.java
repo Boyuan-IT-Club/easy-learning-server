@@ -7,9 +7,9 @@ import java.util.UUID;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.earlylearning.early_learning_server.admin.AdminAccount;
-import com.earlylearning.early_learning_server.admin.AdminAccountService;
-import com.earlylearning.early_learning_server.auth.TokenService;
+import com.earlylearning.early_learning_server.admin.domain.AdminAccountSummary;
+import com.earlylearning.early_learning_server.admin.application.AdminAccountService;
+import com.earlylearning.early_learning_server.auth.application.TokenService;
 
 import tools.jackson.databind.JsonNode;
 
@@ -40,12 +40,12 @@ public final class AuthFixtures {
     }
 
     /** 新建一个 ACTIVE 管理员。 */
-    public AdminAccount newAdmin() {
+    public AdminAccountSummary newAdmin() {
         return admins.bootstrap(uniqueName("admin_"), ADMIN_PASSWORD);
     }
 
-    public String adminToken(AdminAccount admin) {
-        return tokens.issueAdmin(admin.getId()).value();
+    public String adminToken(AdminAccountSummary admin) {
+        return tokens.issueAdmin(admin.id()).value();
     }
 
     public String adminToken() {
