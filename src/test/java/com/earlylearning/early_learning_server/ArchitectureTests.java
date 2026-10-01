@@ -12,12 +12,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaParameterizedType;
 import com.tngtech.archunit.core.domain.JavaType;
@@ -29,8 +28,10 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </pre>
  *
  * <ol>
- *   <li>模块边界（Spring Modulith）：模块之间只能用对方根包或 @NamedInterface 暴露的子包，不许成环。</li>
+ *   <li>模块边界：模块之间不许成环；跨模块只能用 {@link #CROSS_MODULE_API} 里列出的包，common 可被任何模块使用。</li>
  *   <li>层间方向（ArchUnit，覆盖全部模块）：入口 → service → mapper / client；entity、model 不依赖任何上层。</li>
  *   <li>源码 import：只在 Javadoc 里出现的 import 不进字节码，ArchUnit 看不到，这里直接扫源码。</li>
  * </ol>
@@ -55,6 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AnalyzeClasses(packages = "com.earlylearning.early_learning_server", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTests {
 
+    private static final String BASE = "com.earlylearning.early_learning_server";
     private static final Path MAIN_SOURCES = Path.of("src/main/java/com/earlylearning/early_learning_server");
     private static final Pattern PACKAGE = Pattern.compile("^package com\\.earlylearning\\.early_learning_server\\.([\\w.]+);", Pattern.MULTILINE);
     private static final Pattern PROJECT_IMPORT = Pattern.compile("^import com\\.earlylearning\\.early_learning_server\\.([\\w.]+);", Pattern.MULTILINE);
@@ -73,10 +75,26 @@ class ArchitectureTests {
     private static final Set<String> ABOVE_ENTITY_AND_MODEL =
             Set.of("controller", "filter", "dto", "service", "mapper", "client", "config");
 
+    /**
+     * 跨模块可用的包（白名单）。默认只开放 service；其余每一项都要说明谁在用。
+     * 新增一项 = 新增一条模块间依赖，评审时要看得见。
+     */
+    static final Set<String> CROSS_MODULE_API = Set.of(
+            "ai.service.rubric",   // material 发布时校验评分目录
+            "storage.service",     // ai 取评分图片、material 上传包内素材
+            "storage.entity",      // 同上：按 file_code 取到的 CloudFile 及其种类
+            "storage.model",       // 同上：IncomingFile、ObjectStorageService
+            "security.service",    // identity：签发 Token、实现 BearerAuthenticator
+            "security.model");     // identity 与各模块 Controller：已认证身份类型
+
     @ArchTest
-    void 模块间只走对方暴露的API且不成环(JavaClasses classes) {
-        ApplicationModules.of(EarlyLearningServerApplication.class).verify();
-    }
+    ArchRule 模块之间不成环 =
+            slices().matching("com.earlylearning.early_learning_server.(*)..").should().beFreeOfCycles();
+
+    @ArchTest
+    ArchRule 跨模块只用白名单里的包 =
+            classes().that().resideInAPackage("com.earlylearning.early_learning_server.*..")
+                    .should(onlyUseOtherModulesThrough(CROSS_MODULE_API));
 
     @ArchTest
     ArchRule entity与model不依赖任何上层与SpringWeb =
@@ -142,6 +160,35 @@ class ArchitectureTests {
             }
         }
         assertThat(violations).as("entity / model 源码引用了上层（含只在 Javadoc 中使用的 import）").isEmpty();
+    }
+
+    private static ArchCondition<JavaClass> onlyUseOtherModulesThrough(Set<String> allowed) {
+        return new ArchCondition<>("only use other modules through " + allowed) {
+            @Override
+            public void check(JavaClass origin, ConditionEvents events) {
+                String from = module(origin.getPackageName());
+                for (Dependency dependency : origin.getDirectDependenciesFromSelf()) {
+                    String targetPackage = dependency.getTargetClass().getBaseComponentType().getPackageName();
+                    String to = module(targetPackage);
+                    if (to == null || from == null || to.equals(from) || to.equals("common")) {
+                        continue;
+                    }
+                    String relative = targetPackage.substring(BASE.length() + 1);
+                    boolean ok = allowed.stream().anyMatch(api -> relative.equals(api) || relative.startsWith(api + "."));
+                    if (!ok) {
+                        events.add(SimpleConditionEvent.violated(dependency, dependency.getDescription()));
+                    }
+                }
+            }
+        };
+    }
+
+    /** 项目内的包所属模块（主包的直接子包名）；项目外或主包本身返回 null。 */
+    private static String module(String packageName) {
+        if (!packageName.startsWith(BASE + ".")) {
+            return null;
+        }
+        return packageName.substring(BASE.length() + 1).split("\\.")[0];
     }
 
     /** 返回类型及其泛型参数里不得出现给定包的类型（如 {@code ApiResponse<CloudFile>}）。 */

@@ -41,7 +41,7 @@ security/  ← 鉴权机制：安全链、Token 签发 / 校验 / 吊销、已�
 ai/        ← 录音转写与评分
 material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
 storage/   ← 官方资源文件（对象存储）
-common/    ← 共享能力，只被依赖、不依赖任何模块；每个子包都是 @NamedInterface：
+common/    ← 共享能力，只被依赖、不依赖任何模块，任何模块都可以用：
              web（响应信封、分页响应）/ error / idempotency / logging / media / paging /
              identity（用户名规则）/ secret / ratelimit / tx / time
 ```
@@ -71,8 +71,9 @@ common/    ← 共享能力，只被依赖、不依赖任何模块；每个子�
 - **Controller 不把实体直接返回给客户端**：返回类型（含泛型参数）里不得出现 entity。
 - entity、model 不依赖任何上层（controller、filter、dto、service、mapper、client、config），也不依赖 Spring Web。
 - dto、mapper 不依赖 service、client。
-- 跨模块只用对方 `@NamedInterface` 暴露的包：默认只暴露 service（如 `ai.service.rubric`）；
-  storage 另外暴露 entity 与 model（`CloudFile`、`IncomingFile`、`ObjectStorageService`），security 暴露 service 与 model。
+- 跨模块只能用 `ArchitectureTests.CROSS_MODULE_API` 白名单里的包，模块之间不许成环。当前白名单：
+  `ai.service.rubric`、`storage.service`、`storage.entity`、`storage.model`、`security.service`、`security.model`。
+  新增跨模块依赖要先改白名单并写明谁在用，评审时看得见；不使用 package-info 或注解声明。
 - 事务只开在 service 上；Redis、MQ、OSS 等外部写入放在事务外或提交之后（`AfterCommit`）。
 - 接口与实现的判据：**存在第二个真实实现才立接口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。
 - 含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开 service，对外与幂等快照都用 dto。
