@@ -15,6 +15,7 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileQuerySer
 import com.earlylearning.early_learning_server.storage.service.CloudFileSignatureService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 教师端的文件读取接口：元数据与批量下载地址签发。
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
+@Slf4j
 public class FileMetadataController {
 
     private final CloudFileQueryService cloudFileQueryService;
@@ -31,6 +33,7 @@ public class FileMetadataController {
 
     @GetMapping("/{file_code}")
     public ApiResponse<CloudFileResponse> metadata(@PathVariable("file_code") String fileCode) {
+        log.debug("查询文件元数据 fileCode={}", fileCode);
         return ApiResponse.ok(CloudFileResponse.from(cloudFileQueryService.metadata(fileCode)));
     }
 
@@ -41,6 +44,7 @@ public class FileMetadataController {
      */
     @PostMapping("/signatures")
     public ApiResponse<DownloadSignatureBatchResponse> sign(@RequestBody SignDownloadUrlsRequest request) {
+        log.info("请求签发下载地址 count={}", request.fileCodes() == null ? 0 : request.fileCodes().size());
         return ApiResponse.ok(DownloadSignatureBatchResponse.from(cloudFileSignatureService.sign(request.fileCodes())));
     }
 }

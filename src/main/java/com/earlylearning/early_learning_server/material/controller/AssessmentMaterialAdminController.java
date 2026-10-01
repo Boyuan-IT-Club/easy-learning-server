@@ -28,6 +28,7 @@ import com.earlylearning.early_learning_server.material.service.AssessmentMateri
 import com.earlylearning.early_learning_server.storage.model.IncomingFile;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -39,6 +40,7 @@ import tools.jackson.databind.ObjectMapper;
 @RequestMapping("/admin/assessment-materials")
 @Validated
 @RequiredArgsConstructor
+@Slf4j
 public class AssessmentMaterialAdminController {
 
     private final AssessmentMaterialPublishService assessmentMaterialPublishService;
@@ -49,6 +51,7 @@ public class AssessmentMaterialAdminController {
     public ResponseEntity<ApiResponse<AssessmentMaterialResponse>> publish(
             @RequestHeader("Idempotency-Key") @NotBlank @Size(max = 128) String idempotencyKey,
             @RequestPart("file") MultipartFile file) {
+        log.info("请求发布评估材料 fileName={} sizeBytes={}", file.getOriginalFilename(), file.getSize());
         IncomingFile incoming = new IncomingFile(file.getSize(), file.getOriginalFilename(),
                 file.getContentType(), file::transferTo);
         AssessmentMaterial saved = assessmentMaterialPublishService.publish(idempotencyKey, incoming);
@@ -64,6 +67,8 @@ public class AssessmentMaterialAdminController {
             @RequestParam(name = "official_material_code", required = false) String officialMaterialCode,
             @RequestParam(required = false) ContentStatus status,
             @RequestParam(required = false) String keyword) {
+        log.debug("查询评估材料列表 page={} pageSize={} code={} status={} keyword={}",
+                page, pageSize, officialMaterialCode, status, keyword);
         MaterialPage pageResult =
                 assessmentMaterialQueryService.list(page, pageSize, officialMaterialCode, status, keyword);
         return ApiResponse.ok(AssessmentMaterialPageResponse.from(pageResult));
@@ -71,6 +76,7 @@ public class AssessmentMaterialAdminController {
 
     @PostMapping("/{id}/disable")
     public ApiResponse<AssessmentMaterialResponse> disable(@PathVariable int id) {
+        log.info("请求禁用评估材料版本 materialId={}", id);
         AssessmentMaterial disabled = assessmentMaterialQueryService.disable(id);
         return ApiResponse.ok(AssessmentMaterialResponse.from(disabled,
                 objectMapper.readTree(disabled.getActivityConfigsJson())));

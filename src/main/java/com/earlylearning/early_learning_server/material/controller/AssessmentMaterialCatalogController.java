@@ -15,6 +15,7 @@ import com.earlylearning.early_learning_server.material.model.MaterialVersionSum
 import com.earlylearning.early_learning_server.material.service.AssessmentMaterialQueryService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -26,6 +27,7 @@ import tools.jackson.databind.ObjectMapper;
 @RestController
 @RequestMapping("/api/assessment-materials")
 @RequiredArgsConstructor
+@Slf4j
 public class AssessmentMaterialCatalogController {
 
     private final AssessmentMaterialQueryService assessmentMaterialQueryService;
@@ -33,6 +35,7 @@ public class AssessmentMaterialCatalogController {
 
     @GetMapping("/versions")
     public ApiResponse<AssessmentMaterialVersionsResponse> versions() {
+        log.debug("查询评估材料版本目录");
         List<MaterialVersionSummary> summaries = assessmentMaterialQueryService.versions();
         return ApiResponse.ok(AssessmentMaterialVersionsResponse.from(summaries));
     }
@@ -41,6 +44,7 @@ public class AssessmentMaterialCatalogController {
     public ApiResponse<AssessmentMaterialDownloadResponse> download(
             @PathVariable String code,
             @PathVariable String version) {
+        log.info("下载评估材料 code={} version={}", code, version);
         MaterialDownload download = assessmentMaterialQueryService.download(code, version);
         return ApiResponse.ok(AssessmentMaterialDownloadResponse.from(download, objectMapper));
     }

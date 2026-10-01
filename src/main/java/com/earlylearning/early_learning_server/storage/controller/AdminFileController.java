@@ -28,6 +28,7 @@ import com.earlylearning.early_learning_server.storage.service.CloudFileQuerySer
 import com.earlylearning.early_learning_server.storage.service.CloudFileService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 官方文件的管理端接口：上传、列表、标记删除。
@@ -41,6 +42,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/admin/files")
 @Validated
 @RequiredArgsConstructor
+@Slf4j
 public class AdminFileController {
 
     private final CloudFileService cloudFileService;
@@ -55,6 +57,7 @@ public class AdminFileController {
      */
     @PostMapping("/{file_code}/delete")
     public ApiResponse<CloudFileResponse> markDeleted(@PathVariable("file_code") String fileCode) {
+        log.info("请求标记删除文件 fileCode={}", fileCode);
         return ApiResponse.ok(CloudFileResponse.from(cloudFileDeletionService.markDeleted(fileCode)));
     }
 
@@ -66,6 +69,7 @@ public class AdminFileController {
             // 用 @RequestPart 会让 Spring 拿消息转换器去解枚举，客户端会收到 415。
             @RequestParam("file_kind") CloudFileKind fileKind,
             @RequestParam(value = "file_name", required = false) String fileName) {
+        log.info("请求上传官方文件 kind={} fileName={} sizeBytes={}", fileKind, file.getOriginalFilename(), file.getSize());
         IncomingFile incoming = new IncomingFile(file.getSize(), file.getOriginalFilename(),
                 file.getContentType(), file::transferTo);
         CloudFile saved = cloudFileService.upload(idempotencyKey, incoming, fileKind, fileName);
@@ -85,6 +89,8 @@ public class AdminFileController {
             @RequestParam(name = "file_kind", required = false) CloudFileKind fileKind,
             @RequestParam(required = false) CloudFileStatus status,
             @RequestParam(required = false) String keyword) {
+        log.debug("查询文件列表 page={} pageSize={} fileCode={} kind={} status={} keyword={}",
+                page, pageSize, fileCode, fileKind, status, keyword);
         return ApiResponse.ok(AdminFilePageResponse.from(
                 cloudFileQueryService.list(page, pageSize, fileCode, fileKind, status, keyword)));
     }

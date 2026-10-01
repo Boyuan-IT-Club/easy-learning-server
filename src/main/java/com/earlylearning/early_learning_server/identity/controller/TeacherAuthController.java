@@ -17,11 +17,13 @@ import com.earlylearning.early_learning_server.identity.service.TeacherRefreshSe
 import com.earlylearning.early_learning_server.identity.service.TeacherRegistrationService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** 教师注册与刷新（契约 registerTeacher、refreshTeacherToken）。两个接口都免认证。 */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class TeacherAuthController {
 
     private final TeacherRegistrationService teacherRegistrationService;
@@ -32,6 +34,7 @@ public class TeacherAuthController {
     public ApiResponse<TokenPairResponse> register(
             @RequestHeader(name = IdempotencyKeys.HEADER, required = false) String idempotencyKey,
             @RequestBody RegisterRequest request) {
+        log.info("教师注册请求 username={}", request.username());
         return ApiResponse.ok(teacherRegistrationService.register(request.activationCode(), request.username(),
                 IdempotencyKeys.require(idempotencyKey)));
     }
@@ -40,6 +43,7 @@ public class TeacherAuthController {
     public ApiResponse<TokenPairResponse> refresh(
             @RequestHeader(name = IdempotencyKeys.HEADER, required = false) String idempotencyKey,
             @RequestBody RefreshRequest request) {
+        log.info("教师刷新凭证请求");
         return ApiResponse.ok(teacherRefreshService.refresh(request.refreshToken(),
                 IdempotencyKeys.require(idempotencyKey)));
     }

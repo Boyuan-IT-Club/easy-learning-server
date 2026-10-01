@@ -17,11 +17,13 @@ import com.earlylearning.early_learning_server.identity.dto.UserAccountResponse;
 import com.earlylearning.early_learning_server.identity.service.TeacherAdminService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** 教师云端账号管理（契约 listTeachers、updateTeacherStatus）。权限：管理员。 */
 @RestController
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
+@Slf4j
 public class TeacherController {
 
     private final TeacherAdminService teacherAdminService;
@@ -32,6 +34,7 @@ public class TeacherController {
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) Integer status) {
+        log.debug("查询教师列表 page={} pageSize={} username={} status={}", page, pageSize, username, status);
         TeacherStatus filter = status == null ? null : TeacherStatus.of(status, "/parameters/status");
         return ApiResponse.ok(teacherAdminService.list(PageQuery.of(page, pageSize), username, filter));
     }
@@ -39,6 +42,7 @@ public class TeacherController {
     @PatchMapping("/{id}/status")
     public ApiResponse<UserAccountResponse> updateStatus(@PathVariable int id,
                                                          @RequestBody UpdateTeacherStatusRequest request) {
+        log.info("请求变更教师状态 userId={} status={}", id, request.status());
         return ApiResponse.ok(teacherAdminService.updateStatus(id, TeacherStatus.of(request.status(), "/status")));
     }
 }

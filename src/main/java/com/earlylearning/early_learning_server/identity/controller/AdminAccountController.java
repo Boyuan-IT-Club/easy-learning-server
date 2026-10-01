@@ -23,11 +23,13 @@ import com.earlylearning.early_learning_server.identity.dto.UpdateAdminAccountRe
 import com.earlylearning.early_learning_server.identity.service.AdminAccountService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** 管理员账号维护（契约 createAdminAccount、listAdminAccounts、updateAdminAccount）。权限：管理员。 */
 @RestController
 @RequestMapping("/admin/accounts")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminAccountController {
 
     private final AdminAccountService adminAccountService;
@@ -37,6 +39,7 @@ public class AdminAccountController {
     public ApiResponse<AdminAccountResponse> create(
             @RequestHeader(name = IdempotencyKeys.HEADER, required = false) String idempotencyKey,
             @RequestBody CreateAdminAccountRequest request) {
+        log.info("请求创建管理员 username={}", request.username());
         return ApiResponse.ok(adminAccountService.create(request.username(), request.password(),
                 IdempotencyKeys.require(idempotencyKey)));
     }
@@ -47,12 +50,14 @@ public class AdminAccountController {
             @RequestParam(name = "page_size", defaultValue = "20") int pageSize,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) AdminStatus status) {
+        log.debug("查询管理员列表 page={} pageSize={} username={} status={}", page, pageSize, username, status);
         return ApiResponse.ok(adminAccountService.list(PageQuery.of(page, pageSize), username, status));
     }
 
     @PatchMapping("/{id}")
     public ApiResponse<AdminAccountResponse> update(@PathVariable int id,
                                                     @RequestBody UpdateAdminAccountRequest request) {
+        log.info("请求更新管理员 adminId={} changePassword={} status={}", id, request.password() != null, request.status());
         return ApiResponse.ok(adminAccountService.update(id, request.password(), request.status()));
     }
 }

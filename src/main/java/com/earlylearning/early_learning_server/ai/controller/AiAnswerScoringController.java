@@ -21,6 +21,7 @@ import com.earlylearning.early_learning_server.ai.service.scoring.AiAnswerScorin
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 单题（提示前／提示后）评分提交。
@@ -32,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
+@Slf4j
 public class AiAnswerScoringController {
 
     private final AiAnswerScoringService aiAnswerScoringService;
@@ -41,6 +43,8 @@ public class AiAnswerScoringController {
     public ResponseEntity<ApiResponse<TaskHandleResponse>> scoreAnswer(
             @RequestParam(name = "retry_attempt", defaultValue = "0") int retryAttempt,
             @RequestBody AnswerScoringRequest request) {
+        log.info("单题评分请求 requestId={} businessType={} activityId={} attempt={} retryAttempt={}",
+                request.requestId(), request.businessType(), request.activityId(), request.attempt(), retryAttempt);
         answerScoringRequestValidator.validate(request);
         AiTask task = aiAnswerScoringService.submit(toCommand(request), retryAttempt);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(TaskHandleResponse.from(task)));

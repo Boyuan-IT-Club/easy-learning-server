@@ -23,6 +23,7 @@ import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 录音转写提交。
@@ -32,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
+@Slf4j
 public class AiTranscriptionController {
 
     private final AudioValidationService audioValidationService;
@@ -45,6 +47,8 @@ public class AiTranscriptionController {
             @RequestParam(name = "retry_attempt", defaultValue = "0") int retryAttempt,
             @RequestPart("audio") MultipartFile audio,
             @RequestPart("context") TranscriptionContext context) {
+        log.info("录音转写请求 requestId={} businessType={} sizeBytes={} declaredMime={} retryAttempt={}",
+                context.requestId(), context.businessType(), audio.getSize(), audio.getContentType(), retryAttempt);
         byte[] content = readAudio(audio);
         String detectedMime = audioValidationService.detect(content);
         audioValidationService.validate(content, audio.getContentType());

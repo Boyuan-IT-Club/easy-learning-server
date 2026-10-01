@@ -3,7 +3,7 @@
   日志配置。
 
   要点：
-  - 每行都带 traceId（由 TraceIdFilter 写入 MDC）
+  - 每行都带 traceId 与调用方（admin:3 / teacher:12，未认证为 -），由 TraceIdFilter / BearerTokenFilter 写入 MDC
   - ERROR 级别单独一份文件，便于排查
   - 严禁打印凭证、完整预签名地址、儿童个人数据与业务正文（见 docs/04）
 -->
@@ -11,7 +11,7 @@
 
     <property name="LOG_HOME" value="${LOG_HOME:-logs}"/>
     <property name="PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"/>
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] [%X{principal:--}] %logger{36} - %msg%n"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

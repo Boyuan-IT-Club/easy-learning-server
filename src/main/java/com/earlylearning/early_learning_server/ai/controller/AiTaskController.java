@@ -10,6 +10,7 @@ import com.earlylearning.early_learning_server.ai.service.task.AiTaskService;
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * AI 任务查询。
@@ -19,12 +20,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
+@Slf4j
 public class AiTaskController {
 
     private final AiTaskService aiTaskService;
 
     @GetMapping("/tasks/{task_id}")
     public ApiResponse<AiTaskResponse> get(@PathVariable("task_id") String taskId) {
+        log.debug("查询 AI 任务 taskId={}", taskId);
         return ApiResponse.ok(AiTaskResponse.from(aiTaskService.query(taskId)));
     }
 }

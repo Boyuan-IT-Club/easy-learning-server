@@ -9,6 +9,7 @@ import com.earlylearning.early_learning_server.ai.service.rubric.RubricCatalogSe
 import com.earlylearning.early_learning_server.common.web.ApiResponse;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 评分条目目录查询。
@@ -18,12 +19,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
+@Slf4j
 public class AiRubricController {
 
     private final RubricCatalogService rubricCatalogService;
 
     @GetMapping("/rubrics")
     public ApiResponse<RubricCatalogResponse> catalog() {
+        log.debug("查询评分条目目录");
         return ApiResponse.ok(RubricCatalogResponse.from(rubricCatalogService.catalog()));
     }
 }
