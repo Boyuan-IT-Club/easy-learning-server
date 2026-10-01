@@ -2,7 +2,7 @@
 
 早期学习项目的 Java 服务端，负责云端账号、课程、评估、字典及资源存储等能力。业务规则与数据协议以 [技术方案](docs/技术方案.md) 和 [功能细则入口](docs/参考资料.md) 为准。
 
-当前已包含云端数据库迁移、公共 Code 校验和 OSS 存储服务；其余业务包主要为模块占位，尚未提供完整业务接口或正式鉴权流程。
+当前已包含云端数据库迁移、公共 Code 校验、OSS 存储服务、AI 评分，以及管理员控制、激活码管理、教师注册与鉴权；其余业务包主要为模块占位。
 
 ## 环境准备
 
@@ -11,6 +11,7 @@
 | JDK | 项目编译目标为 Java 21，开发可使用 JDK 21；配置 `JAVA_HOME` |
 | Maven | 使用仓库自带 Maven Wrapper，无需单独安装；首次运行需要联网下载 |
 | MySQL | 使用 MySQL 8，需支持迁移中的 `utf8mb4_0900_bin` 排序规则和 `CHECK` 约束 |
+| Redis | Redis 6 及以上；只存 Token、刷新宽限、敏感结果重放与限流计数，**须关闭持久化**（`--save "" --appendonly no`），`docker compose up -d redis` 即按此启动 |
 | 阿里云 OSS | 启动应用需填写 OSS 配置；资源联调需已有 Bucket 及具备上传、读取、删除权限的凭证 |
 
 主要依赖：Spring Boot 4.1.1、MyBatis-Plus 3.5.17、Flyway、阿里云 OSS SDK。具体版本见 [pom.xml](pom.xml)。
@@ -26,7 +27,7 @@ CREATE DATABASE IF NOT EXISTS early_learning
     CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
 ```
 
-配置的数据库账号需要具备该库的建表、索引、外键及数据读写权限。应用启动时由 Flyway 执行 `src/main/resources/db/migration/` 下的迁移，不需要手动执行 SQL 文件。迁移只建表，不创建初始管理员账号。
+配置的数据库账号需要具备该库的建表、索引、外键及数据读写权限。应用启动时由 Flyway 执行 `src/main/resources/db/migration/` 下的迁移，不需要手动执行 SQL 文件。迁移只建表，不创建管理员；首个管理员由 `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD` 在库里没有任何管理员时于启动时创建，之后这两项被忽略。
 
 ### 2. 在 IDEA 中配置环境变量
 
@@ -49,6 +50,9 @@ CREATE DATABASE IF NOT EXISTS early_learning
 | `OSS_ACCESS_KEY_ID` / `OSS_ACCESS_KEY_SECRET` | OSS 访问凭证 |
 | `OSS_DOWNLOAD_URL_TTL_SECONDS` | 签名下载地址有效秒数，默认 `900`，范围 `1～604800` |
 | `OSS_REAL_TEST` | 默认 `false`；仅显式设为 `true` 时执行真实 Bucket 测试 |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Redis 地址，默认 `localhost:6379`、无密码 |
+| `AUTH_CODE_PEPPER` | 激活码 HMAC 的密钥，**必填**，至少 32 个字符；上线后不要更换，否则已发出的激活码全部失效 |
+| `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD` | 首个管理员；用户名 3—64 位字母数字 `_.-`（存小写），密码 8—128 字符 |
 
 真实凭证只保存在本地运行配置中，不写入 `.env.example` 或提交到仓库。OSS 配置细节见 [OSS 接入说明](docs/OSS接入.md)。
 
@@ -65,7 +69,7 @@ CREATE DATABASE IF NOT EXISTS early_learning
 
 完整测试需要先准备开发数据库，并在 IDEA 对应的 **JUnit 测试配置**中填写上表的环境变量；应用配置中的变量不会自动共享给测试配置。
 
-`EarlyLearningServerApplicationTests` 和 `DatabaseMigrationTests` 会启动 Spring 上下文并连接配置的 MySQL；迁移测试会建表并校验约束，数据写入测试使用事务回滚。请使用专用开发 / 测试数据库。`OSS_REAL_TEST=false` 时跳过真实 OSS 测试；开启后的上传、下载、删除联调见 [OSS 接入说明](docs/OSS接入.md#真实-bucket-测试)。
+`EarlyLearningServerApplicationTests` 和 `DatabaseMigrationTests` 会启动 Spring 上下文并连接配置的 MySQL 与 Redis；`ApiSecurityTests` 及 `*FlowTests` 走真实 HTTP，会写入测试账号与激活码并清理 Redis 中的限流计数。迁移测试会建表并校验约束，数据写入测试使用事务回滚。请使用专用开发 / 测试数据库。`OSS_REAL_TEST=false` 时跳过真实 OSS 测试；开启后的上传、下载、删除联调见 [OSS 接入说明](docs/OSS接入.md#真实-bucket-测试)。
 
 ## 目录与开发约定
 
@@ -109,3 +113,5 @@ early-learning-server/
 | Flyway 迁移失败 | 检查 MySQL 版本、DDL 权限和已有表状态；不要通过修改已执行迁移或清空数据库绕过问题 |
 | 修改 Flyway 配置没有效果 | 当前 `application-dev.yml` 中的配置位于 `aliyun.flyway`，不属于 Spring Boot 的 Flyway 配置前缀；当前迁移依赖自动配置默认值，后续调整应使用 `spring.flyway` |
 | 端口被占用 | 修改 IDEA 应用配置的环境变量 `SERVER_PORT` |
+| 启动报 `secret.code-pepper` 校验失败 | 未设置 `AUTH_CODE_PEPPER` 或少于 32 个字符 |
+| 接口返回 503 `DEPENDENCY_UNAVAILABLE` | Redis 不可达或密码错误；Token 校验与签发都依赖 Redis |

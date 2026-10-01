@@ -4,6 +4,16 @@ spring:
   profiles:
     active: dev
 
+  data:
+    redis:
+      # 存放短时数据：Token、刷新宽限、敏感结果重放、限流计数。
+      # 服务端必须关闭持久化（RDB 与 AOF），否则 Token 与激活码明文会落到磁盘。
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2s
+      connect-timeout: 2s
+
   servlet:
     multipart:
       # 比业务上限（storage.upload.max-size-bytes，默认 500MB）略高：
@@ -47,3 +57,23 @@ storage:
     # 业务侧单文件上限。413 PAYLOAD_TOO_LARGE 的 details.limit.maximum 用的就是这个值，
     # 所以它必须比 spring.servlet.multipart 的上限低——否则超限会先被 Spring 拦下，带不出 details。
     max-size-bytes: ${UPLOAD_MAX_SIZE_BYTES:524288000}
+
+# 激活码用 HMAC-SHA256(pepper) 落库。pepper 至少 32 字符，只从环境变量读取；
+# 更换后已签发的激活码全部无法匹配，所以上线后不要改。
+secret:
+  code-pepper: ${AUTH_CODE_PEPPER:}
+
+auth:
+  # 教师 access_token、管理员 Token 的有效期。refresh_token 不设到期时间（契约）。
+  access-token-ttl: ${AUTH_ACCESS_TOKEN_TTL:30m}
+  admin-token-ttl: ${AUTH_ADMIN_TOKEN_TTL:8h}
+
+idempotency:
+  # 含明文凭证的写接口（生成激活码、注册、刷新）结果的重放时长，过期后返回 SENSITIVE_RESULT_EXPIRED。
+  sensitive-replay-ttl: ${IDEMPOTENCY_SENSITIVE_REPLAY_TTL:10m}
+
+admin:
+  # 首个管理员：表里没有任何管理员时才创建；之后忽略。密码只放在环境变量里。
+  bootstrap:
+    username: ${ADMIN_BOOTSTRAP_USERNAME:}
+    password: ${ADMIN_BOOTSTRAP_PASSWORD:}
