@@ -225,6 +225,50 @@ class ArchitectureTests {
         assertThat(violations).as("entity / enums / model 源码引用了上层（含只在 Javadoc 中使用的 import）").isEmpty();
     }
 
+    /**
+     * Javadoc 里的 {@code @throws X}、{@code {@link X}}、{@code @see X} 必须能解析：javac 不检查注释，
+     * 漏了 import 照样编译通过，但 IDE 会标红、生成文档时会报错。
+     */
+    @Test
+    void 源码里Javadoc引用的类型都能解析() {
+        Pattern reference = Pattern.compile("(?:@throws|@exception|@see|\\{@link(?:plain)?)\\s+([A-Z]\\w*)(?=[\\s#}(.]|$)");
+        Pattern javadoc = Pattern.compile("/\\*\\*.*?\\*/", Pattern.DOTALL);
+        Pattern declared = Pattern.compile("\\b(?:class|interface|record|enum)\\s+(\\w+)");
+        Pattern anyImport = Pattern.compile("^import (?:static )?[\\w.]+\\.(\\w+);", Pattern.MULTILINE);
+        List<String> violations = new ArrayList<>();
+        for (Path file : javaSources()) {
+            String source = read(file);
+            Set<String> known = new java.util.HashSet<>();
+            anyImport.matcher(source).results().forEach(m -> known.add(m.group(1)));
+            declared.matcher(source).results().forEach(m -> known.add(m.group(1)));
+            try (Stream<Path> siblings = Files.list(file.getParent())) {
+                siblings.forEach(p -> known.add(p.getFileName().toString().replaceFirst("\\.java$", "")));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            Matcher docs = javadoc.matcher(source);
+            while (docs.find()) {
+                Matcher ref = reference.matcher(docs.group());
+                while (ref.find()) {
+                    String name = ref.group(1);
+                    if (!known.contains(name) && !isJavaLang(name)) {
+                        violations.add(MAIN_SOURCES.relativize(file) + " → " + name);
+                    }
+                }
+            }
+        }
+        assertThat(violations).as("Javadoc 引用了未 import 的类型").isEmpty();
+    }
+
+    private static boolean isJavaLang(String simpleName) {
+        try {
+            Class.forName("java.lang." + simpleName);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     private static ArchCondition<JavaClass> onlyUseOtherModulesThrough(Set<String> allowed) {
         return new ArchCondition<>("only use other modules through " + allowed) {
             @Override
