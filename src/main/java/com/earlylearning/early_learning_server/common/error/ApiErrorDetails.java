@@ -1,9 +1,9 @@
 package com.earlylearning.early_learning_server.common.error;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
 
 /**
  * 错误响应中的 details：按错误类型提供必要的非敏感定位。
@@ -40,7 +40,7 @@ public record ApiErrorDetails(
         @JsonProperty("text_length") TEXT_LENGTH
     }
 
-    /** 入参是契约要求的 JSON Pointer，形如 {@code "/file_name"}（必须以 / 开头）。 */
+    /** 入参是的 JSON Pointer，形如 {@code "/file_name"}（必须以 / 开头）。 */
     public static ApiErrorDetails atField(String fieldPath) {
         return new ApiErrorDetails(fieldPath, null, null, null, null, null, null);
     }

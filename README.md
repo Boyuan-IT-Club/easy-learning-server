@@ -53,8 +53,47 @@ CREATE DATABASE IF NOT EXISTS early_learning
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Redis 地址，默认 `localhost:6379`、无密码 |
 | `AUTH_CODE_PEPPER` | 激活码 HMAC 的密钥，**必填**，至少 32 个字符；上线后不要更换，否则已发出的激活码全部失效 |
 | `ADMIN_BOOTSTRAP_USERNAME` / `ADMIN_BOOTSTRAP_PASSWORD` | 首个管理员；用户名 3—64 位字母数字 `_.-`（存小写），密码 8—128 字符 |
+| `AI_LLM_PROVIDER` | **AI 评分用哪套实现**。默认 `ecnu`（`.env.example`、镜像与 compose 的缺省一致）：真实模型，需填好 API Key，缺 Key 启动期报错；填 `fake` 用离线假实现（返回固定内容，不调用模型服务）。详见下文「接真实大模型（ECNU）」一节 |
+| `AI_LLM_ECNU_BASE_URL` / `AI_LLM_ECNU_API_KEY` | `AI_LLM_PROVIDER=ecnu` 时必填；令牌留空会在**启动期**报错，不会静默降级 |
+| `AI_LLM_ECNU_MODEL_TEXT` / `AI_LLM_ECNU_MODEL_VISION` | 文本与多模态模型名，默认 `ecnu-max` / `ecnu-plus` |
+| `AI_LLM_ECNU_*`（其余） | 是否开启思考、超时、单图字节上限等，见 [`.env.example`](.env.example) |
 
 真实凭证只保存在本地运行配置中，不写入 `.env.example` 或提交到仓库。OSS 配置细节见 [OSS 接入说明](docs/OSS接入.md)。
+
+## 接真实大模型（ECNU）
+
+**不配也能跑**：`AI_LLM_PROVIDER` 缺省是 `fake`——评分链路返回固定内容（`model_meta.model` 是
+`fake-story-model`、每条理由写「示例理由」），不联网、不产生费用。本地开发与自动化测试默认就是这一套，
+所以别人拿到仓库直接启动不会因为缺少模型凭证而失败。
+
+**要用真实模型，配三个变量就够了**：
+
+| 变量 | 值 |
+| --- | --- |
+| `AI_LLM_PROVIDER` | `ecnu` |
+| `AI_LLM_ECNU_BASE_URL` | ECNU 服务地址（形如 `https://…/v1`） |
+| `AI_LLM_ECNU_API_KEY` | 令牌 |
+
+可选项见 [`.env.example`](.env.example)（文本 / 多模态模型名、是否开启思考、超时、单图字节上限）。
+
+**怎么确认真的接上了**：启动日志会自报家门——
+
+```text
+AI 评分使用 ECNU 真实模型：baseUrl=… 文本模型=ecnu-max 多模态模型=ecnu-plus
+AI 评分使用**假实现**（ai.llm.provider=fake）：返回固定内容，不会调用任何模型服务。…
+```
+
+业务返回里看 `model_meta.model`：`ecnu-plus` / `ecnu-max` 是真实模型，`fake-story-model` 是假实现。
+
+**两种跑法在"变量怎么进去"上不一样**，这点最容易踩：
+
+- `docker compose`（在仓库根目录执行）会读同目录的 `.env`，所以写进 `.env` 就生效；
+- IDEA 或直接 `java -jar` **不会读 `.env`**，要在运行配置里逐个填（见上一节）；
+- `AI_LLM_PROVIDER` 设成**空值**（`AI_LLM_PROVIDER=`）时，真假两套实现都不会装配，**启动直接失败**——
+  要么给一个明确的值，要么干脆不设这个变量。
+
+**语音转写（ASR）与这条开关无关**：转写侧目前只有假实现（返回固定文本），还没有真实适配器，
+启动日志会写明这一点。
 
 ## 测试
 
@@ -80,18 +119,16 @@ early-learning-server/
     ├── main/
     │   ├── java/
     │   │   └── com/earlylearning/early_learning_server/
-    │   │       ├── admin/                 管理员业务模块
-    │   │       ├── auth/                  鉴权业务模块
-    │   │       ├── license/               激活码与授权业务模块
-    │   │       ├── teacher/               教师业务模块
-    │   │       ├── course/                课程业务模块
-    │   │       ├── assessment/            评估业务模块
-    │   │       ├── dictionary/            字典业务模块
-    │   │       ├── grammar/               语法业务模块
-    │   │       ├── ai/                    AI 业务模块
-    │   │       ├── storage/               ObjectStorageService 及 OSS 实现
-    │   │       └── common/
-    │   │           └── code/              跨端稳定 Code 类型与校验
+    │   │       ├── identity/              账号与鉴权（管理员、激活码、教师、注册与刷新）
+    │   │       ├── security/              鉴权机制（安全链、Token）
+    │   │       ├── ai/                    录音转写与评分
+    │   │       ├── material/              评估材料（ZIP 发布、版本下载）
+    │   │       ├── storage/               官方资源文件（对象存储）
+    │   │       ├── entity/                表映射类（各模块共用）
+    │   │       └── common/                共享能力与取值枚举（enums、web、error、idempotency、paging 等）
+    │   │
+    │   │       每个模块内部：controller / dto / service（接口）+ service/impl / mapper（按需 model / client / config），
+    │   │       规则见 AGENTS.md 第 3 节，由 ArchitectureTests 强制
     │   └── resources/
     │       ├── application.yaml          公共配置
     │       ├── application-dev.yml       开发数据库配置
@@ -112,6 +149,8 @@ early-learning-server/
 | OSS 配置校验失败 | 必填项不能为空；检查 Endpoint、Region、Bucket 和下载地址有效期 |
 | Flyway 迁移失败 | 检查 MySQL 版本、DDL 权限和已有表状态；不要通过修改已执行迁移或清空数据库绕过问题 |
 | 修改 Flyway 配置没有效果 | 当前 `application-dev.yml` 中的配置位于 `aliyun.flyway`，不属于 Spring Boot 的 Flyway 配置前缀；当前迁移依赖自动配置默认值，后续调整应使用 `spring.flyway` |
+| 评分能出结果，但理由是「示例理由」、`model_meta.model` 是 `fake-story-model` | 在跑假实现：`AI_LLM_PROVIDER` 没生效。看启动日志那一行；注意 IDEA 直接启动**不读** `.env`（见下文「接真实大模型（ECNU）」） |
+| 启动报找不到 `AnswerScorer` / 条件装配失败 | `AI_LLM_PROVIDER` 被设成了**空值**——它不是 `fake` 也不是 `ecnu`，两套实现都不装配。删掉这个变量或填明确值 |
 | 端口被占用 | 修改 IDEA 应用配置的环境变量 `SERVER_PORT` |
 | 启动报 `secret.code-pepper` 校验失败 | 未设置 `AUTH_CODE_PEPPER` 或少于 32 个字符 |
 | 接口返回 503 `DEPENDENCY_UNAVAILABLE` | Redis 不可达或密码错误；Token 校验与签发都依赖 Redis |

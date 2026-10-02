@@ -5,7 +5,7 @@ import org.slf4j.MDC;
 /**
  * 当前请求的来源信息，由 {@link TraceIdFilter} 在请求入口写入 MDC。
  *
- * <p>让应用层拿到 IP 与 traceId 而不依赖 HTTP 类型（限流需要 IP）。
+ * <p>让 service 层拿到 IP 与 traceId 而不依赖 HTTP 类型（限流需要 IP）。
  * 请求线程之外（启动任务、异步任务）调用时返回 null。
  *
  * <p>IP 取的是直连地址：部署在 Nginx 之后时需要开启 {@code server.forward-headers-strategy}，

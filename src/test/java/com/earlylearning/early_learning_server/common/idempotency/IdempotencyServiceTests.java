@@ -1,6 +1,5 @@
 package com.earlylearning.early_learning_server.common.idempotency;
 
-import com.earlylearning.early_learning_server.common.error.BusinessException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,8 +11,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.earlylearning.early_learning_server.common.web.ApiResponse;
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +20,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -148,7 +148,7 @@ class IdempotencyServiceTests {
             }
             executed.incrementAndGet();
             String body = idempotency.record(SCOPE, key, 201,
-                    ApiResponse.ok(Map.of("file_code", "LF_TEST"), "上传成功"));
+                    Map.of("file_code", "LF_TEST"));
             return new StoredResponse(201, body);
         });
     }

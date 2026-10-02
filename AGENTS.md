@@ -31,47 +31,69 @@
 
 ## 3. 模块组织
 
-代码优先按照业务模块组织，例如：
+由 `ArchitectureTests` 强制执行（违反即测试红）。
+
+**第一层：按业务模块分包。** 当前模块：
 
 ```text
-auth/
-license/
-teacher/
-course/
-assessment/
-dictionary/
-sync/
-ai/
-usage/
-storage/
-common/
+identity/  ← 账号与鉴权：管理员、激活码、教师账号、教师注册与刷新
+security/  ← 鉴权机制：安全链、Token 签发 / 校验 / 吊销、已认证身份类型（不含账号业务）
+ai/        ← 录音转写与评分
+material/  ← 评估材料（ZIP 发布成内容版本，供下载同步）
+storage/   ← 官方资源文件（对象存储）
+entity/    ← 表映射类，每个类对应一张表（@TableName），集中存放，任何模块都可以用；只依赖 common
+common/    ← 共享能力与共享取值，只被依赖、不依赖任何模块与 entity，任何模块都可以用：
+             enums（实体字段的取值：状态、种类）/ web（响应信封、分页响应）/ error / idempotency /
+             logging / media / paging / identity（用户名规则）/ secret / ratelimit / tx / time
 ```
 
-业务代码应留在所属业务模块。
+模块依赖单向、无环：`identity → security`；`ai → storage`；`material → storage, ai`。
 
-例如：
+业务代码应留在所属业务模块；跨业务复用的机械能力才抽成公共模块。不要建立一个掌握所有课程、评估、字典规则的巨大 `contentimport` 模块——将来做 `course/importer/`、`assessment/importer/` 时，各自负责对应资源的解析和业务校验。
+
+**第二层：模块内部按职责分包，入口与层次一眼可见：**
 
 ```text
-course/importer/
-assessment/importer/
-dictionary/importer/
+<module>/
+├── controller/   入口：HTTP 接口（以后有 MQ、定时任务，在同级加 listener/、job/；security 的过滤器在 filter/）
+├── dto/          请求与响应（契约的 JSON 形状，Jackson 注解只在这里）
+├── service/      只放业务接口 XxxService（不加 I 前缀）
+│   └── impl/     接口的实现 XxxServiceImpl：业务逻辑、事务、幂等、限流、编排
+├── mapper/       MyBatis Mapper；这个模块的表只由这里的 Mapper 读写
+├── model/        （可选）不落库的业务对象与规则，以及外部能力的接口（如 ChatModel、ObjectStorageService）
+├── client/       （可选）外部系统与底层 I/O 适配：OSS、ECNU、Redis、ZIP / JSON 解析；实现 model 里的接口
+└── config/       （可选）Spring 装配与配置项
 ```
 
-分别负责对应资源的解析和业务校验。
+依赖规则：
 
-不要建立一个掌握所有课程、评估、字典规则的巨大 `contentimport` 模块。
-
-只有真正与业务无关的公共能力才允许抽离，例如：
-
-```text
-importsupport/
-storage/
-common/
-```
-
-原则：
-
-> 业务知识留在业务模块；跨业务复用的机械能力才抽成公共模块。
+- controller 只调 service 接口，使用 dto（可用 entity / model 做转换）；**不碰 mapper、client**，不写业务。
+  公共路径写在类上的 `@RequestMapping`，方法上只写剩余部分。
+- 注入一律走构造器：字段 `private final` + 类上 `@RequiredArgsConstructor`（构造器里有别的逻辑时才手写），
+  字段名取类型名的小驼峰（`licenseMapper`、`tokenService`）。
+- Lombok 只用 `@Slf4j`、`@RequiredArgsConstructor`、实体上的 `@Getter @Setter`。**实体不用 `@Data`**：
+  它生成的 `toString` 会带出密码哈希、refresh 哈希与激活码哈希。dto 用 record，不需要 Lombok。
+- service 可以用 mapper、entity、model、client、dto；**不产出 `ApiResponse` / `ResponseEntity`**，包络由 controller 套。
+- **service 一律接口 + 实现**：`service/` 下只有接口，`service/impl/XxxServiceImpl` 加 `@Service` 并实现同名接口；
+  impl 里也可以放别的 service 接口的实现（如 identity 实现 security 的 `BearerAuthenticator`）。
+  除 impl 自己外谁都不依赖 impl（注入一律用接口）。不是业务的组件不放 service：
+  执行器、外部适配进 `client/`，纯规则校验进 `model/`，启动初始化进 `config/`。
+  接口写契约语义（做什么、失败返回什么），实现细节（锁、事务边界、并发处理）写在 impl 上；
+  impl 方法只加 `@Override`，不重复接口注释；常量放 impl 里。
+- **实体集中在顶层 `entity/`，只放表映射类**；状态、种类等取值枚举放 `common/enums/`。
+  状态迁移规则写在实体方法里（如 License.claimBy、TeacherAccount.ensureCanEnable）。
+  表归属由 Mapper 决定：同一实体的 BaseMapper 只能出现在一个模块，别的模块经该模块的 service 读写。
+- **Controller 不把实体直接返回给客户端**：返回类型（含泛型参数）里不得出现 entity。
+- entity 只依赖 common；model 不依赖任何上层（controller、filter、dto、service、mapper、client、config）；两者都不依赖 Spring Web。
+- dto、mapper 不依赖 service、client。
+- 跨模块只能用 `ArchitectureTests.CROSS_MODULE_API` 白名单里的包，模块之间不许成环。当前白名单：
+  `ai.service.rubric`、`storage.service`、`storage.model`、`security.service`、`security.model`。
+  新增跨模块依赖要先改白名单并写明谁在用，评审时看得见；不使用 package-info 或注解声明。
+- 事务只开在 service 上；Redis、MQ、OSS 等外部写入放在事务外或提交之后（`AfterCommit`）。
+- service 之外，**存在第二个真实实现才立接口**（如 `ChatModel`：ecnu + fake；`BearerAuthenticator`：教师 + 管理员）。
+- 含敏感字段的实体（密码哈希、refresh 哈希、激活码哈希）不离开 service，对外与幂等快照都用 dto。
+- `ArchitectureTests` 同时扫描源码 import：只在 Javadoc 里出现的 import 不进字节码、ArchUnit 看不到，
+  但同样让 entity / model 指向上层，一律改用 `{@code}` 引用。
 
 ---
 
@@ -184,6 +206,19 @@ MySQL 保存文件元数据和对象引用；OSS 保存实际大文件。
 - refresh token 按既定方案安全存储。
 - 不把内部 Entity 无条件直接返回给客户端。
 - 不在日志中输出敏感信息。
+
+### 日志
+
+- 类上加 `@Slf4j`，消息用中文，参数写成 `key={}`。
+- 级别：`info` 记业务成功事件（登录、注册、发布、撤销、状态变更等）；`warn` 记被拒绝的请求（4xx、限流、锁定、
+  疑似凭证重放）；`error` 记服务端故障，异常对象作为最后一个参数带出堆栈
+  （message 可能带识别原文等内容的异常只记类型，见 `AiTaskRunner`）；`debug` 记排查细节（签发 Token 等）。
+- controller 每个方法开头记一行：写操作 `info`、查询 `debug`，只记 id、用户名、筛选条件、数量等定位信息。
+- 每个请求另由 `AccessLogFilter` 记一行：方法、路径、状态码、耗时、调用方，不记查询串与请求体。
+- 日志格式里每行都带 traceId 与调用方（`admin:3` / `teacher:12`，未认证为 `-`），service 里不用再手动记操作人。
+- 被拒绝的业务请求已由 `GlobalExceptionHandler` 记下错误码与路径，service 里不重复记；只在需要补充上下文时再记
+  （如是哪条限流规则、哪个用户名被锁）。
+- 不进日志：密码、Token、激活码原文及其哈希、预签名地址、录音与识别原文、儿童个人信息、请求体。
 
 ---
 

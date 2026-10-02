@@ -1,12 +1,8 @@
 package com.earlylearning.early_learning_server.common.web;
 
-import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
-import com.earlylearning.early_learning_server.common.error.BusinessException;
-import com.earlylearning.early_learning_server.common.error.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -19,8 +15,14 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
+
+import lombok.extern.slf4j.Slf4j;
+
 /**
- * 把异常翻译成契约规定的响应形状。
+ * 把异常翻译成的响应形状。
  *
  * <p>继承 {@link ResponseEntityExceptionHandler}：参数绑定、消息解析、路径不存在等框架异常由 Spring 识别，
  * 这里只覆盖需要契约特定错误码的分支，其余框架异常统一套上响应包络。
@@ -28,9 +30,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * <p>500 的响应体里只有错误码与简短说明，不回传堆栈；堆栈只进日志。
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /** 业务异常：状态码与错误码都已确定。 */
     @ExceptionHandler(BusinessException.class)
@@ -39,7 +40,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if (ex.getHttpStatus().is5xxServerError()) {
             log.error("业务异常 {} {} code={}", request.getMethod(), request.getRequestURI(), code.name(), ex);
         } else {
-            log.info("业务异常 {} {} code={} status={}",
+            log.warn("业务异常 {} {} code={} status={}",
                     request.getMethod(), request.getRequestURI(), code.name(), ex.getHttpStatus().value());
         }
         return build(ex.getHttpStatus(), code, ex.getMessage(), ex.getDetails(), null);
@@ -52,7 +53,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .findFirst()
                 .map(violation -> "/" + violation.getPropertyPath())
                 .orElse(null);
-        log.info("参数校验失败 field={}", fieldPath);
+        log.warn("参数校验失败 field={}", fieldPath);
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, null,
                 fieldPath == null ? null : ApiErrorDetails.atField(fieldPath), null);
     }
@@ -60,7 +61,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** 其它 multipart 解析失败，属于请求本身不合法。 */
     @ExceptionHandler(MultipartException.class)
     public ResponseEntity<Object> handleMultipart(MultipartException ex) {
-        log.info("multipart 解析失败: {}", ex.getMessage());
+        log.warn("multipart 解析失败: {}", ex.getMessage());
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, null, null, null);
     }
 
@@ -71,7 +72,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR, null, null, null);
     }
 
-    /** 请求体字段校验失败（@Valid 触发）：契约要求给出失败字段的 JSON Pointer。 */
+    /** 请求体字段校验失败（@Valid 触发）：给出失败字段的 JSON Pointer。 */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
                                                                   HttpHeaders headers,
@@ -81,7 +82,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .findFirst()
                 .map(error -> "/" + error.getField())
                 .orElse(null);
-        log.info("请求体校验失败 field={}", fieldPath);
+        log.warn("请求体校验失败 field={}", fieldPath);
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, null,
                 fieldPath == null ? null : ApiErrorDetails.atField(fieldPath), headers);
     }
@@ -95,7 +96,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(org.apache.tomcat.util.http.InvalidParameterException.class)
     public ResponseEntity<Object> handleInvalidParameter(org.apache.tomcat.util.http.InvalidParameterException ex,
                                                          WebRequest request) {
-        log.info("URL 参数解码失败 {}", request instanceof ServletWebRequest servletRequest
+        log.warn("URL 参数解码失败 {}", request instanceof ServletWebRequest servletRequest
                 ? servletRequest.getRequest().getRequestURI() : "");
         return build(HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
                 ErrorCode.INVALID_REQUEST.defaultMessage(), null, HttpHeaders.EMPTY);
@@ -115,9 +116,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if (status.is5xxServerError()) {
             log.error("框架异常 {} code={}", path, code.name(), ex);
         } else {
-            log.info("框架异常 {} code={} status={}", path, code.name(), status.value());
+            log.warn("框架异常 {} code={} status={}", path, code.name(), status.value());
         }
-        // message 用错误码的默认文案：契约要求它非空（minLength 1、pattern \\S），
+        // message 用错误码的默认文案：它非空（minLength 1、pattern \\S），
         // 传 null 会让客户端拿到 "message": null
         return build(status, code, code.defaultMessage(), null, headers);
     }

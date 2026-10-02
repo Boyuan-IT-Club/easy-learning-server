@@ -1,0 +1,110 @@
+package com.earlylearning.early_learning_server.ai.service.transcription.impl;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import com.earlylearning.early_learning_server.ai.client.task.AiTaskRunner;
+import com.earlylearning.early_learning_server.ai.model.task.AiTask;
+import com.earlylearning.early_learning_server.ai.model.task.AiTaskSubmission;
+import com.earlylearning.early_learning_server.ai.model.task.FailedStage;
+import com.earlylearning.early_learning_server.ai.model.task.TaskFailureCode;
+import com.earlylearning.early_learning_server.ai.model.task.TaskKind;
+import com.earlylearning.early_learning_server.ai.model.task.TaskStage;
+import com.earlylearning.early_learning_server.ai.model.transcription.SpeechTranscriber;
+import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionCommand;
+import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionResult;
+import com.earlylearning.early_learning_server.ai.model.transcription.TranscriptionTarget;
+import com.earlylearning.early_learning_server.ai.service.transcription.AiTranscriptionService;
+import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
+import com.earlylearning.early_learning_server.common.error.BusinessException;
+import com.earlylearning.early_learning_server.common.error.ErrorCode;
+import com.earlylearning.early_learning_server.common.idempotency.InputFingerprint;
+
+import lombok.RequiredArgsConstructor;
+
+/** {@link AiTranscriptionService} 的实现。 */
+@Service
+@RequiredArgsConstructor
+public class AiTranscriptionServiceImpl implements AiTranscriptionService {
+
+    private static final String CONTEXT_FIELD_PREFIX = "/context/";
+
+    private final AiTaskSubmission aiTaskSubmission;
+    private final AiTaskRunner aiTaskRunner;
+    private final SpeechTranscriber speechTranscriber;
+
+    @Override
+    public AiTask submit(byte[] audio, String mimeType, TranscriptionCommand command, int retryAttempt) {
+        requireValidContext(command);
+        return aiTaskSubmission.submitAndRun(command.requestId(), fingerprintOf(command, audio), retryAttempt,
+                () -> newTask(command),
+                task -> runTranscription(task, audio, mimeType));
+    }
+
+    /** 新建任务；只在首次提交（CREATE）时调用，登记由 {@code resolveAndRegister} 一并完成。 */
+    private AiTask newTask(TranscriptionCommand command) {
+        return new AiTask(
+                UUID.randomUUID().toString(),
+                command.requestId(),
+                command.inputRevision(),
+                TaskKind.TRANSCRIPTION,
+                AiTaskSubmission.FIRST_ATTEMPT,
+                null,
+                command.businessType(),
+                command.activityId(),
+                Instant.now());
+    }
+
+    private AiTask runTranscription(AiTask task, byte[] audio, String mimeType) {
+        aiTaskRunner.run(task, TaskStage.TRANSCRIBING, FailedStage.TRANSCRIBE, TaskFailureCode.ASR_FAILED,
+                () -> new TranscriptionResult(speechTranscriber.transcribe(audio, mimeType)));
+        return task;
+    }
+
+    /** 指纹覆盖请求的全部输入；含任务类型，因此三个提交接口之间复用 request_id 会被判为冲突。 */
+    private String fingerprintOf(TranscriptionCommand command, byte[] audio) {
+        return InputFingerprint.of(
+                TaskKind.TRANSCRIPTION.name(),
+                command.requestId(),
+                command.inputRevision(),
+                String.valueOf(command.businessType()),
+                command.activityId(),
+                String.valueOf(command.target()),
+                String.valueOf(command.questionId()),
+                String.valueOf(command.attempt()),
+                InputFingerprint.sha256Hex(audio));
+    }
+
+    /** 按 target 校验上下文形态：单题录音必须有 question_id 与 attempt，故事录音则不能有。 */
+    private void requireValidContext(TranscriptionCommand command) {
+        if (command == null) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, ApiErrorDetails.atField("/context"));
+        }
+        requirePresent(command.requestId(), "request_id");
+        requirePresent(command.inputRevision(), "input_revision");
+        requirePresent(command.businessType(), "business_type");
+        requirePresent(command.activityId(), "activity_id");
+        requirePresent(command.target(), "target");
+
+        boolean singleQuestion = command.target() == TranscriptionTarget.QUESTION_ANSWERING;
+        if (singleQuestion) {
+            requirePresent(command.questionId(), "question_id");
+            if (command.attempt() == null) {
+                throw new BusinessException(ErrorCode.INVALID_REQUEST,
+                        ApiErrorDetails.atField(CONTEXT_FIELD_PREFIX + "attempt"));
+            }
+        } else if (command.questionId() != null || command.attempt() != null) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST,
+                    ApiErrorDetails.atField(CONTEXT_FIELD_PREFIX + "question_id"));
+        }
+    }
+
+    private void requirePresent(Object value, String field) {
+        if (value == null || (value instanceof String text && text.isBlank())) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST,
+                    ApiErrorDetails.atField(CONTEXT_FIELD_PREFIX + field));
+        }
+    }
+}

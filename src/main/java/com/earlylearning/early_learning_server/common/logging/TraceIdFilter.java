@@ -1,18 +1,19 @@
 package com.earlylearning.early_learning_server.common.logging;
 
+import java.io.IOException;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * 为每个请求建立 traceId，写入 MDC 与响应头。
@@ -33,6 +34,9 @@ public class TraceIdFilter extends OncePerRequestFilter {
 
     /** 来源 IP，供限流读取（见 {@link RequestOrigin}）；不进日志 pattern。 */
     public static final String CLIENT_IP_MDC_KEY = "clientIp";
+
+    /** 已认证的调用方（如 {@code admin:3}、{@code teacher:12}），由鉴权过滤器写入，供访问日志读取。 */
+    public static final String PRINCIPAL_MDC_KEY = "principal";
 
     /**
      * 只接受安全字符且限长。
@@ -56,6 +60,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
             // 线程池会复用线程，不清理会导致下一个请求串上本次的 traceId
             MDC.remove(MDC_KEY);
             MDC.remove(CLIENT_IP_MDC_KEY);
+            MDC.remove(PRINCIPAL_MDC_KEY);
         }
     }
 

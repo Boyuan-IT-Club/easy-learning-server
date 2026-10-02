@@ -1,12 +1,14 @@
 package com.earlylearning.early_learning_server.common.web;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
 import com.earlylearning.early_learning_server.common.error.ApiErrorDetails;
 import com.earlylearning.early_learning_server.common.error.ErrorCode;
-import org.junit.jupiter.api.Test;
+
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +52,7 @@ class ApiResponseTests {
                 .get("details");
 
         assertThat(details.get("file_code").asString()).isEqualTo("CF_a1b2");
-        // 契约要求 minProperties:1，其余字段为 null 时必须被省略
+        //  minProperties:1，其余字段为 null 时必须被省略
         assertThat(details.size()).isEqualTo(1);
     }
 

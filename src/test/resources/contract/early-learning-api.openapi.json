@@ -3,7 +3,7 @@
   "info": {
     "title": "早期学习困难儿童筛查与干预系统 HTTP API",
     "description": "Android 平板教师端与管理端的功能接口，共 39 个操作。依据《公共工程基础》九份资料、《技术方案》及用户确认口径，为待实现和联调的设计契约。\n\n成功响应 {code,message,data}；错误响应 {code,message,data:null,details?}。使用 Bearer Token 鉴权。标明 Idempotency-Key 的写入，同一操作重试沿用原值，防止重复创建或消耗凭证；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。激活码/凭证只允许短时内存重放，失效返回 SENSITIVE_RESULT_EXPIRED，不重复生成。\n\nAI request_id 防止重复任务，input_revision 用于拒收旧输入的结果。评分标准按基本固定的一套服务端配置使用，不做自动更新、整场预检或服务端会话锁版。首次评分直接提交，服务端返回实际 rubric_version；后续同一评估/课堂沿用该版本即可。所有故事共用同一套评分规则，上新故事不触发评分标准更新。评分结果保存在本地 JSON，不自动重算或改写。转写与评分分开，文本须经教师确认。\n\n儿童业务数据留在本地；AI 音频、文本、图片及结果仅内存临时处理，不云端持久保存。官方内容单向下载，被引用文件不可删除。故事采用 AIScore v2，问答采用 QuestionAIScore；课程/材料必含故事叙述，字典无版本。\n\n调用顺序见 docs/api/业务流程与接口调用.md，导入说明见 docs/api/README.md。示例均为结构演示，不能作为真实内容或凭证使用。\n\n课程和评估材料发布改为 multipart 的 file 字段上传 ZIP，config.json 与素材放在包内。后端转换文件名后保存原冻结结构；现有详情、下载与单文件接口保留，接口总数仍为 39。\n\n刷新凭证不设到期时间，仅在刷新成功时轮换；上一枚凭证通过现有内存缓存保留 30 秒重试宽限期，窗口内返回同一组新凭证，不重复轮换或延长窗口。数据库仅保存当前 refresh_token_hash，不加字段或表。访问凭证仍有有效期。云端等待 ZIP 异步校验与文件准备全部成功后，在短事务中发布新版并禁用同编号旧版，再返回 201。平板独立等待全部资源下载和校验成功后，在本地短事务中启用新版并禁用旧版；任一步失败保留原可用状态。",
-    "version": "1.6.0"
+    "version": "1.8.0"
   },
   "tags": [
     {
@@ -836,6 +836,13 @@
                           "CF_EXAMPLE_IMG_7"
                         ],
                         "rubric_item_code": "NARRATIVE_CONTENT_05"
+                      },
+                      {
+                        "content_item_id": "content_006",
+                        "image_file_codes": [
+                          "CF_EXAMPLE_IMG_7"
+                        ],
+                        "rubric_item_code": "NARRATIVE_CONTENT_06"
                       }
                     ],
                     "images": [
@@ -907,7 +914,7 @@
                     "input_revision": "22222222-2222-4222-8222-222222222222",
                     "task_kind": "STORY_SCORING",
                     "attempt_no": 0,
-                    "rubric_version": "narrative-assessment-v1",
+                    "rubric_version": "narrative-assessment-v2",
                     "submitted_at": "2026-09-24T00:00:00.000Z",
                     "business_type": "ASSESSMENT",
                     "activity_id": "act_003"
@@ -1003,7 +1010,7 @@
                     "input_revision": "22222222-2222-4222-8222-222222222222",
                     "business_type": "CLASSROOM",
                     "activity_id": "act_002",
-                    "rubric_version": "narrative-assessment-v1",
+                    "rubric_version": "narrative-assessment-v2",
                     "confirmed_text": "",
                     "text_confirmed": true,
                     "story_context": "待填写：与七张图片一致的完整故事文本；本占位文本不可用于正式评分。",
@@ -1082,7 +1089,7 @@
                     "input_revision": "22222222-2222-4222-8222-222222222222",
                     "task_kind": "ANSWER_SCORING",
                     "attempt_no": 0,
-                    "rubric_version": "narrative-assessment-v1",
+                    "rubric_version": "narrative-assessment-v2",
                     "submitted_at": "2026-09-24T00:00:00.000Z",
                     "business_type": "CLASSROOM",
                     "activity_id": "act_002"
@@ -1182,7 +1189,7 @@
                         "input_revision": "22222222-2222-4222-8222-222222222222",
                         "task_kind": "STORY_SCORING",
                         "attempt_no": 0,
-                        "rubric_version": "narrative-assessment-v1",
+                        "rubric_version": "narrative-assessment-v2",
                         "submitted_at": "2026-09-24T00:00:00.000Z",
                         "stage": "SUCCEEDED",
                         "updated_at": "2026-09-24T00:00:00.000Z",
@@ -1190,7 +1197,7 @@
                         "result": {
                           "ai_score": {
                             "schema_version": 2,
-                            "rubric_version": "narrative-assessment-v1",
+                            "rubric_version": "narrative-assessment-v2",
                             "summary": null,
                             "macrostructure": {
                               "dimensions": [
@@ -1283,6 +1290,14 @@
                                   "max_score": 2,
                                   "reason": "仅为结构示例，不是对实际回答的评分。",
                                   "evidence": []
+                                },
+                                {
+                                  "content_item_id": "content_006",
+                                  "rubric_item_code": "NARRATIVE_CONTENT_06",
+                                  "score": 0,
+                                  "max_score": 2,
+                                  "reason": "仅为结构示例，不是对实际回答的评分。",
+                                  "evidence": []
                                 }
                               ]
                             },
@@ -1363,7 +1378,7 @@
                         "input_revision": "22222222-2222-4222-8222-222222222222",
                         "task_kind": "ANSWER_SCORING",
                         "attempt_no": 0,
-                        "rubric_version": "narrative-assessment-v1",
+                        "rubric_version": "narrative-assessment-v2",
                         "submitted_at": "2026-09-24T00:00:00.000Z",
                         "stage": "SUCCEEDED",
                         "updated_at": "2026-09-24T00:00:00.000Z",
@@ -1372,7 +1387,7 @@
                           "question_id": "q_001",
                           "attempt": "BEFORE_HINT",
                           "ai_score": {
-                            "rubric_version": "narrative-assessment-v1",
+                            "rubric_version": "narrative-assessment-v2",
                             "score": 1,
                             "max_score": 2,
                             "reason": "仅为结构示例，不是对实际回答的评分。",
@@ -1423,7 +1438,7 @@
                         "input_revision": "22222222-2222-4222-8222-222222222222",
                         "task_kind": "STORY_SCORING",
                         "attempt_no": 0,
-                        "rubric_version": "narrative-assessment-v1",
+                        "rubric_version": "narrative-assessment-v2",
                         "submitted_at": "2026-09-24T00:00:00.000Z",
                         "stage": "SCORING",
                         "updated_at": "2026-09-24T00:00:00.000Z",
@@ -1443,7 +1458,7 @@
                         "input_revision": "22222222-2222-4222-8222-222222222222",
                         "task_kind": "STORY_SCORING",
                         "attempt_no": 0,
-                        "rubric_version": "narrative-assessment-v1",
+                        "rubric_version": "narrative-assessment-v2",
                         "submitted_at": "2026-09-24T00:00:00.000Z",
                         "stage": "FAILED",
                         "updated_at": "2026-09-24T00:00:00.000Z",
@@ -1522,7 +1537,7 @@
                   "code": "OK",
                   "message": "成功",
                   "data": {
-                    "rubric_version": "narrative-assessment-v1",
+                    "rubric_version": "narrative-assessment-v2",
                     "ai_score_schema_version": 2,
                     "business_types": [
                       "ASSESSMENT",
@@ -1585,7 +1600,13 @@
                       },
                       {
                         "item_code": "NARRATIVE_CONTENT_05",
-                        "item_name": "图7",
+                        "item_name": "图7-1",
+                        "task_kind": "STORY_SCORING",
+                        "applicability": "所有故事通用；本故事图片通过 content_items 显式映射到此条目，不按图片序号猜测。"
+                      },
+                      {
+                        "item_code": "NARRATIVE_CONTENT_06",
+                        "item_name": "图7-2",
                         "task_kind": "STORY_SCORING",
                         "applicability": "所有故事通用；本故事图片通过 content_items 显式映射到此条目，不按图片序号猜测。"
                       },
@@ -1655,6 +1676,1007 @@
           "403": {
             "$ref": "#/components/responses/Forbidden",
             "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          },
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/assessment-materials": {
+      "post": {
+        "summary": "上传 ZIP 并发布评估材料版本",
+        "deprecated": false,
+        "description": "一次提交一个 ZIP，服务端异步执行校验和文件准备，当前请求等待全部完成并提交发布后，才返回 201 和已转换为 file_code 的完整内容。不能仅因上传完毕或开始校验就返回发布成功。不需要预先逐个上传文件，也不新增导入会话或任务查询。\n\nZIP 所有文件平铺根目录，恰有一个 UTF-8 config.json，其余为图片或音频。包内文件名忽略大小写不得重复；JSON 引用须与实际名称完全一致且类型正确。只接受普通文件，不接受目录、绝对/相对路径、链接、加密包或嵌套压缩包。校验压缩大小、解压总大小及媒体格式，超限返回 413，不支持的格式返回 415。\n\n先完整校验配置和文件，再生成文件码并转换 file_name→file_code、image_file_names→image_file_codes、audio_file_name→audio_file_code。包内媒体都保存为官方独立素材；未被配置引用的素材不进入课程依赖或播放流程，仍可从文件列表查看。当前故事活动只引用一段音频，不自动拼接其他音频。\n\n保留原业务校验：故事恰有一项、ID 唯一、排序完整、语法有效且图片分组引用统一评分规则中的有效条目；所有故事共用同一套规则，上新不要求新增故事专用规则。解压、校验、文件准备及其异步等待均在数据库事务外。全部成功后，在一个短事务内提交文件记录、将新版设为 ACTIVE，并将同一官方编号下的旧版设为 DISABLED；其他编号不受影响。校验、文件准备或提交失败均不发布半成品、不禁用旧版，清理本次未提交文件。同一编号的发布提交串行处理，重复完成信号不得再次切换状态；保持最多一个云端 ACTIVE 版本。\n\n同一 Idempotency-Key 重传同一个 ZIP 返回原发布结果，不重复创建文件或版本；同键不同包返回 409 IDEMPOTENCY_CONFLICT。同一编号/content_version 不可覆盖。ZIP 只作导入材料，后续下载仍使用现有配置详情、依赖和文件签名接口。\n\nHTTP 响应就是本次发布的完成结果，不另设回调、轮询或二次确认。云端提交不等待平板下载；各平板独立在自己的下载和校验成功后切换本地版本。",
+        "operationId": "assessmentMaterialPublish",
+        "tags": [
+          "评估材料"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "防止重复提交。客户端生成 UUID，同一次操作重试沿用；同键不同输入返回 409 IDEMPOTENCY_CONFLICT。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "file": {
+                  "contentType": "application/zip"
+                }
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "包含 config.json 与图片/音频的 ZIP 文件。",
+                    "example": "<选择本地评估材料.zip>"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              },
+              "example": {
+                "file": "<选择本地评估材料.zip>"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/assessmentMaterialPublishResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "content_version": "v1",
+                    "name": "结构示例课程（不可正式发布）",
+                    "activity_configs_json": {
+                      "schema_version": 2,
+                      "story_context": "待填写：与七张图片一致的完整故事文本；本占位文本不可用于正式评分。",
+                      "activities": [
+                        {
+                          "activity_id": "act_001",
+                          "type": "IMAGE_SORTING",
+                          "config": {
+                            "items": [
+                              {
+                                "item_id": "img_001",
+                                "file_code": "CF_EXAMPLE_IMG_1"
+                              },
+                              {
+                                "item_id": "img_002",
+                                "file_code": "CF_EXAMPLE_IMG_2"
+                              },
+                              {
+                                "item_id": "img_003",
+                                "file_code": "CF_EXAMPLE_IMG_3"
+                              },
+                              {
+                                "item_id": "img_004",
+                                "file_code": "CF_EXAMPLE_IMG_4"
+                              },
+                              {
+                                "item_id": "img_005",
+                                "file_code": "CF_EXAMPLE_IMG_5"
+                              },
+                              {
+                                "item_id": "img_006",
+                                "file_code": "CF_EXAMPLE_IMG_6"
+                              },
+                              {
+                                "item_id": "img_007",
+                                "file_code": "CF_EXAMPLE_IMG_7"
+                              }
+                            ],
+                            "correct_order": [
+                              "img_001",
+                              "img_002",
+                              "img_003",
+                              "img_004",
+                              "img_005",
+                              "img_006",
+                              "img_007"
+                            ]
+                          }
+                        },
+                        {
+                          "activity_id": "act_002",
+                          "type": "QUESTION_ANSWERING",
+                          "config": {
+                            "questions": [
+                              {
+                                "question_id": "q_001",
+                                "text": "为什么老师不知道是这几个男生打坏了窗户？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_002",
+                                "text": "老师会对戴耳机的同学说什么？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_003",
+                                "text": "跳绳的女孩子们会怎么做？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_004",
+                                "text": "如果你是被责怪的同学你会怎么做？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_005",
+                                "text": "自己相似经历补充描述",
+                                "hint": "",
+                                "grammar": []
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "activity_id": "act_003",
+                          "type": "STORY_NARRATION",
+                          "config": {
+                            "audio_file_code": "CF_EXAMPLE_AUDIO_001",
+                            "content_items": [
+                              {
+                                "content_item_id": "content_001",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_1"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_01"
+                              },
+                              {
+                                "content_item_id": "content_002",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_2",
+                                  "CF_EXAMPLE_IMG_3"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_02"
+                              },
+                              {
+                                "content_item_id": "content_003",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_4",
+                                  "CF_EXAMPLE_IMG_5"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_03"
+                              },
+                              {
+                                "content_item_id": "content_004",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_6"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_04"
+                              },
+                              {
+                                "content_item_id": "content_005",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_7"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_05"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "status": "ACTIVE",
+                    "created_at": "2026-09-24T00:00:00.000Z",
+                    "updated_at": "2026-09-24T00:00:00.000Z",
+                    "official_material_code": "MATERIAL_EXAMPLE"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge",
+            "description": "文件/音频/图片超出部署允许上限。"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType",
+            "description": "不支持的格式或声明 MIME 与实际内容不符。"
+          },
+          "422": {
+            "description": "JSON 可解析，但不满足业务语义或冻结契约。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnprocessableEntityResponse"
+                },
+                "example": {
+                  "code": "INVALID_RESOURCE_REFERENCE",
+                  "message": "配置引用的图片未在包内找到。",
+                  "data": null,
+                  "details": {
+                    "file_name": "image_01.png"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      },
+      "get": {
+        "summary": "管理端查询评估材料版本",
+        "deprecated": false,
+        "description": "分页返回评估材料版本概要，不含活动配置；用编号和版本调用 GET /api/assessment-materials/{code}/{version} 查看详情。",
+        "operationId": "assessmentMaterialList",
+        "tags": [
+          "评估材料"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码，从 1 开始。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "页码。",
+              "default": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "每页条数，默认 20，最大 100。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "每页条数。",
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "official_material_code",
+            "in": "query",
+            "description": "稳定编号精确筛选。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Code"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "版本状态。",
+            "required": false,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/ContentStatus"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "名称包含匹配，通配符按普通字符处理。",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "description": "名称关键词。"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/assessmentMaterialListResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "id": 1,
+                        "content_version": "v1",
+                        "name": "结构示例课程（不可正式发布）",
+                        "status": "ACTIVE",
+                        "created_at": "2026-09-24T00:00:00.000Z",
+                        "updated_at": "2026-09-24T00:00:00.000Z",
+                        "official_material_code": "MATERIAL_EXAMPLE"
+                      }
+                    ],
+                    "page": 1,
+                    "page_size": 20,
+                    "total": 1
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/admin/assessment-materials/{id}/disable": {
+      "post": {
+        "summary": "禁用评估材料指定版本",
+        "deprecated": false,
+        "description": "无请求体。版本禁止新选，历史评估/计划/课堂仍能读取和执行其原配置和资源。不删除资源，不自动重新启用更早版本。已禁用幂等返回。",
+        "operationId": "assessmentMaterialDisable",
+        "tags": [
+          "评估材料"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "云端记录 ID。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/CloudId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/assessmentMaterialDisableResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "id": 1,
+                    "content_version": "v1",
+                    "name": "结构示例课程（不可正式发布）",
+                    "activity_configs_json": {
+                      "schema_version": 2,
+                      "story_context": "待填写：与七张图片一致的完整故事文本；本占位文本不可用于正式评分。",
+                      "activities": [
+                        {
+                          "activity_id": "act_001",
+                          "type": "IMAGE_SORTING",
+                          "config": {
+                            "items": [
+                              {
+                                "item_id": "img_001",
+                                "file_code": "CF_EXAMPLE_IMG_1"
+                              },
+                              {
+                                "item_id": "img_002",
+                                "file_code": "CF_EXAMPLE_IMG_2"
+                              },
+                              {
+                                "item_id": "img_003",
+                                "file_code": "CF_EXAMPLE_IMG_3"
+                              },
+                              {
+                                "item_id": "img_004",
+                                "file_code": "CF_EXAMPLE_IMG_4"
+                              },
+                              {
+                                "item_id": "img_005",
+                                "file_code": "CF_EXAMPLE_IMG_5"
+                              },
+                              {
+                                "item_id": "img_006",
+                                "file_code": "CF_EXAMPLE_IMG_6"
+                              },
+                              {
+                                "item_id": "img_007",
+                                "file_code": "CF_EXAMPLE_IMG_7"
+                              }
+                            ],
+                            "correct_order": [
+                              "img_001",
+                              "img_002",
+                              "img_003",
+                              "img_004",
+                              "img_005",
+                              "img_006",
+                              "img_007"
+                            ]
+                          }
+                        },
+                        {
+                          "activity_id": "act_002",
+                          "type": "QUESTION_ANSWERING",
+                          "config": {
+                            "questions": [
+                              {
+                                "question_id": "q_001",
+                                "text": "为什么老师不知道是这几个男生打坏了窗户？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_002",
+                                "text": "老师会对戴耳机的同学说什么？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_003",
+                                "text": "跳绳的女孩子们会怎么做？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_004",
+                                "text": "如果你是被责怪的同学你会怎么做？（心智理解）",
+                                "hint": "",
+                                "grammar": []
+                              },
+                              {
+                                "question_id": "q_005",
+                                "text": "自己相似经历补充描述",
+                                "hint": "",
+                                "grammar": []
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "activity_id": "act_003",
+                          "type": "STORY_NARRATION",
+                          "config": {
+                            "audio_file_code": "CF_EXAMPLE_AUDIO_001",
+                            "content_items": [
+                              {
+                                "content_item_id": "content_001",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_1"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_01"
+                              },
+                              {
+                                "content_item_id": "content_002",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_2",
+                                  "CF_EXAMPLE_IMG_3"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_02"
+                              },
+                              {
+                                "content_item_id": "content_003",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_4",
+                                  "CF_EXAMPLE_IMG_5"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_03"
+                              },
+                              {
+                                "content_item_id": "content_004",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_6"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_04"
+                              },
+                              {
+                                "content_item_id": "content_005",
+                                "image_file_codes": [
+                                  "CF_EXAMPLE_IMG_7"
+                                ],
+                                "rubric_item_code": "NARRATIVE_CONTENT_05"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    "status": "DISABLED",
+                    "created_at": "2026-09-24T00:00:00.000Z",
+                    "updated_at": "2026-09-24T00:00:00.000Z",
+                    "official_material_code": "MATERIAL_EXAMPLE"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/assessment-materials/versions": {
+      "get": {
+        "summary": "查询评估材料版本目录",
+        "deprecated": false,
+        "description": "全量返回该账号可读的全部保留版本（含 DISABLED），不接收 GET 请求体或客户端版本映射；客户端按稳定编号和 content_version 比对。按稳定编号升序、创建时间升序返回。同一编号最多一个云端 ACTIVE 版本，表示当前可新下载的版本；仅禁用且无 ACTIVE 时不提示下载旧版本作新内容。检查目录不自动下载文件，也不因云端旧版已被替代就直接修改本地旧版状态。教师确认后异步下载新版，配置与全部依赖校验成功才触发本地短事务：保存新版为 ACTIVE，并将同编号本地旧版设为 DISABLED。此前本地旧版继续可用；失败或取消不切换。云端与每台平板各自提交，不相互等待。管理员凭证可读取同一官方目录供预览。",
+        "operationId": "assessmentMaterialVersions",
+        "tags": [
+          "评估材料"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/assessmentMaterialVersionsResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "items": [
+                      {
+                        "official_material_code": "MATERIAL_EXAMPLE",
+                        "content_version": "v1",
+                        "name": "结构示例课程（不可正式发布）",
+                        "status": "ACTIVE",
+                        "updated_at": "2026-09-24T00:00:00.000Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests",
+            "description": "请求频率或并发超过上限，请稍后重试。"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError",
+            "description": "内部错误，请稍后重试。"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable",
+            "description": "服务或必需依赖暂不可用。"
+          }
+        },
+        "security": [
+          {
+            "AdminBearer": []
+          },
+          {
+            "TeacherBearer": []
+          }
+        ],
+        "x-design-origin": "原文接口清单 + 用户确认修订 + 授权补充协议"
+      }
+    },
+    "/api/assessment-materials/{code}/{version}": {
+      "get": {
+        "summary": "获取评估材料指定版本及依赖清单",
+        "deprecated": false,
+        "description": "精确读取稳定编号与版本，版本标签按 URL path segment 编码。ACTIVE/DISABLED 均可读取；云端 DISABLED 版本可供历史引用，不作为新的下载选择。因版本替代而被云端禁用的已下载旧版，在本地新版下载并校验成功前仍按本地原状态使用，不提前禁用。服务端展开配置资源和 grammar 图标，返回完整去重依赖；课程额外携带该版本词语位置及其所需字典条目。任一必需文件非 READY 返回 409 RESOURCE_NOT_READY，不能发不完整清单。客户端取得清单估算空间，经教师确认后才异步下载文件；配置、全部文件及引用关系校验成功后，完成信号触发本地短事务，保存新版为 ACTIVE 并将同编号旧版设为 DISABLED。网络、文件下载与等待均在事务外；下载、校验或提交失败均保留旧内容及原可用状态。重复完成信号不得重复创建或切换版本。已有计划、评估和课堂继续引用原版本，历史评分 JSON 不变。",
+        "operationId": "assessmentMaterialDownload",
+        "tags": [
+          "评估材料"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "description": "官方稳定业务编号。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/Code"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "description": "精确内容版本。",
+            "required": true,
+            "example": {},
+            "schema": {
+              "$ref": "#/components/schemas/ContentVersion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/assessmentMaterialDownloadResponse"
+                },
+                "example": {
+                  "code": "OK",
+                  "message": "成功",
+                  "data": {
+                    "content": {
+                      "id": 1,
+                      "content_version": "v1",
+                      "name": "结构示例课程（不可正式发布）",
+                      "activity_configs_json": {
+                        "schema_version": 2,
+                        "story_context": "待填写：与七张图片一致的完整故事文本；本占位文本不可用于正式评分。",
+                        "activities": [
+                          {
+                            "activity_id": "act_001",
+                            "type": "IMAGE_SORTING",
+                            "config": {
+                              "items": [
+                                {
+                                  "item_id": "img_001",
+                                  "file_code": "CF_EXAMPLE_IMG_1"
+                                },
+                                {
+                                  "item_id": "img_002",
+                                  "file_code": "CF_EXAMPLE_IMG_2"
+                                },
+                                {
+                                  "item_id": "img_003",
+                                  "file_code": "CF_EXAMPLE_IMG_3"
+                                },
+                                {
+                                  "item_id": "img_004",
+                                  "file_code": "CF_EXAMPLE_IMG_4"
+                                },
+                                {
+                                  "item_id": "img_005",
+                                  "file_code": "CF_EXAMPLE_IMG_5"
+                                },
+                                {
+                                  "item_id": "img_006",
+                                  "file_code": "CF_EXAMPLE_IMG_6"
+                                },
+                                {
+                                  "item_id": "img_007",
+                                  "file_code": "CF_EXAMPLE_IMG_7"
+                                }
+                              ],
+                              "correct_order": [
+                                "img_001",
+                                "img_002",
+                                "img_003",
+                                "img_004",
+                                "img_005",
+                                "img_006",
+                                "img_007"
+                              ]
+                            }
+                          },
+                          {
+                            "activity_id": "act_002",
+                            "type": "QUESTION_ANSWERING",
+                            "config": {
+                              "questions": [
+                                {
+                                  "question_id": "q_001",
+                                  "text": "为什么老师不知道是这几个男生打坏了窗户？（心智理解）",
+                                  "hint": "",
+                                  "grammar": []
+                                },
+                                {
+                                  "question_id": "q_002",
+                                  "text": "老师会对戴耳机的同学说什么？（心智理解）",
+                                  "hint": "",
+                                  "grammar": []
+                                },
+                                {
+                                  "question_id": "q_003",
+                                  "text": "跳绳的女孩子们会怎么做？（心智理解）",
+                                  "hint": "",
+                                  "grammar": []
+                                },
+                                {
+                                  "question_id": "q_004",
+                                  "text": "如果你是被责怪的同学你会怎么做？（心智理解）",
+                                  "hint": "",
+                                  "grammar": []
+                                },
+                                {
+                                  "question_id": "q_005",
+                                  "text": "自己相似经历补充描述",
+                                  "hint": "",
+                                  "grammar": []
+                                }
+                              ]
+                            }
+                          },
+                          {
+                            "activity_id": "act_003",
+                            "type": "STORY_NARRATION",
+                            "config": {
+                              "audio_file_code": "CF_EXAMPLE_AUDIO_001",
+                              "content_items": [
+                                {
+                                  "content_item_id": "content_001",
+                                  "image_file_codes": [
+                                    "CF_EXAMPLE_IMG_1"
+                                  ],
+                                  "rubric_item_code": "NARRATIVE_CONTENT_01"
+                                },
+                                {
+                                  "content_item_id": "content_002",
+                                  "image_file_codes": [
+                                    "CF_EXAMPLE_IMG_2",
+                                    "CF_EXAMPLE_IMG_3"
+                                  ],
+                                  "rubric_item_code": "NARRATIVE_CONTENT_02"
+                                },
+                                {
+                                  "content_item_id": "content_003",
+                                  "image_file_codes": [
+                                    "CF_EXAMPLE_IMG_4",
+                                    "CF_EXAMPLE_IMG_5"
+                                  ],
+                                  "rubric_item_code": "NARRATIVE_CONTENT_03"
+                                },
+                                {
+                                  "content_item_id": "content_004",
+                                  "image_file_codes": [
+                                    "CF_EXAMPLE_IMG_6"
+                                  ],
+                                  "rubric_item_code": "NARRATIVE_CONTENT_04"
+                                },
+                                {
+                                  "content_item_id": "content_005",
+                                  "image_file_codes": [
+                                    "CF_EXAMPLE_IMG_7"
+                                  ],
+                                  "rubric_item_code": "NARRATIVE_CONTENT_05"
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "status": "ACTIVE",
+                      "created_at": "2026-09-24T00:00:00.000Z",
+                      "updated_at": "2026-09-24T00:00:00.000Z",
+                      "official_material_code": "MATERIAL_EXAMPLE"
+                    },
+                    "dependencies": [
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_1",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": null
+                      },
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_2",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": null
+                      },
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_3",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": null
+                      },
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_4",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": null
+                      },
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_5",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": null
+                      },
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_6",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": null
+                      },
+                      {
+                        "file_code": "CF_EXAMPLE_IMG_7",
+                        "file_kind": "IMAGE",
+                        "mime_type": "image/png",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": null
+                      },
+                      {
+                        "file_code": "CF_EXAMPLE_AUDIO_001",
+                        "file_kind": "AUDIO",
+                        "mime_type": "audio/mp4",
+                        "size_bytes": 1024,
+                        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+                        "duration_ms": 1000
+                      }
+                    ],
+                    "grammars": []
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": "请求参数或编码不合法。"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "缺少凭证、凭证失效或账号密码不正确。"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "账号/激活码不可用、凭证类型错误或无资源权限。"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "资源不存在；其他账号的 AI 任务同样返回 TASK_NOT_FOUND。"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "当前状态冲突或同一逻辑请求的输入已改变。"
           },
           "429": {
             "$ref": "#/components/responses/TooManyRequests",
@@ -3759,13 +4781,17 @@
           },
           {
             "$ref": "#/components/schemas/ImageDescription"
+          },
+          {
+            "$ref": "#/components/schemas/ServerFetchedImage"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
             "INLINE_IMAGE": "#/components/schemas/InlineImage",
-            "CONFIRMED_DESCRIPTION": "#/components/schemas/ImageDescription"
+            "CONFIRMED_DESCRIPTION": "#/components/schemas/ImageDescription",
+            "SERVER_FETCH": "#/components/schemas/ServerFetchedImage"
           }
         }
       },
@@ -3829,7 +4855,7 @@
             "items": {
               "$ref": "#/components/schemas/ContentItem"
             },
-            "description": "本次叙事的全部图片分组，按配置顺序。",
+            "description": "本次叙事的全部图片分组，按配置顺序。同一张图可以被多个分组引用（细则 v2：图7 同时进两个分组）；同一分组内不应重复列出同一编号。",
             "minItems": 1
           },
           "images": {
@@ -3837,7 +4863,7 @@
             "items": {
               "$ref": "#/components/schemas/ImageContext"
             },
-            "description": "必须为所有分组引用的图片逐一提供真实图片或确认说明；不得仅发送 file_code。",
+            "description": "必须为所有分组引用的图片逐一提供：由服务端按 file_code 取图（SERVER_FETCH），或教师确认过的图片说明（CONFIRMED_DESCRIPTION）。不再要求客户端内联图片内容。",
             "minItems": 1
           }
         },
@@ -3912,7 +4938,7 @@
             "items": {
               "$ref": "#/components/schemas/ImageContext"
             },
-            "description": "纯文本故事依据足够时可空；需要识图时必须提供全部相关图片或确认说明。"
+            "description": "纯文本故事依据足够时可空；需要评图时，为相关图片提供 SERVER_FETCH（服务端按 file_code 取图）或 CONFIRMED_DESCRIPTION（教师确认过的说明）。"
           }
         },
         "required": [
@@ -5661,51 +6687,681 @@
           "data"
         ]
       },
-      "NullableTimestamp": {
-        "type": "string",
-        "description": "UTC ISO 8601 时间戳。",
-        "format": "date-time",
-        "nullable": true
+      "ServerFetchedImage": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "由服务端按 file_code 取回图片内容后交给模型。客户端只给编号，不传图片内容。",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SERVER_FETCH"
+            ]
+          },
+          "file_code": {
+            "$ref": "#/components/schemas/CloudFileCode"
+          }
+        },
+        "required": [
+          "kind",
+          "file_code"
+        ]
       },
-      "AdminStatus": {
+      "Activity": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ImageSortingActivity"
+          },
+          {
+            "$ref": "#/components/schemas/QuestionAnsweringActivity"
+          },
+          {
+            "$ref": "#/components/schemas/StoryNarrationActivity"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "IMAGE_SORTING": "#/components/schemas/ImageSortingActivity",
+            "QUESTION_ANSWERING": "#/components/schemas/QuestionAnsweringActivity",
+            "STORY_NARRATION": "#/components/schemas/StoryNarrationActivity"
+          }
+        }
+      },
+      "ActivityConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "enum": [
+              2
+            ],
+            "description": "结构版本，与评分/内容版本独立。"
+          },
+          "story_context": {
+            "type": "string",
+            "description": "故事依据。评估材料发布时字段必填，允许空字符串；实际 AI 评分仍须提供经确认的故事依据。"
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Activity"
+            },
+            "description": "每类活动最多一个；activity_id 唯一。"
+          }
+        },
+        "required": [
+          "schema_version",
+          "story_context",
+          "activities"
+        ],
+        "description": "冻结 ActivityConfig v2 的传输对象。发布服务额外要求恰好一项 STORY_NARRATION、选择的活动非空、引用资源 READY、规则及 grammar_code 存在。"
+      },
+      "AssessmentMaterial": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "official_material_code": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "content_version": {
+            "$ref": "#/components/schemas/ContentVersion"
+          },
+          "name": {
+            "type": "string",
+            "description": "内容显示名称。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "activity_configs_json": {
+            "$ref": "#/components/schemas/ActivityConfig"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "official_material_code",
+          "content_version",
+          "name",
+          "activity_configs_json",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "不可变的已发布官方内容版本。云端 ID 仅管理端使用，移动端按稳定编号与版本创建/定位本地行。"
+      },
+      "AssessmentMaterialDownload": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/AssessmentMaterial"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileDependency"
+            },
+            "description": "服务端展开全部依赖并去重，包含配置图片/音频和所需语法图标。"
+          },
+          "grammars": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Grammar"
+            },
+            "description": "配置所引用的语法当前定义，按 grammar_code 映射。"
+          }
+        },
+        "required": [
+          "content",
+          "dependencies",
+          "grammars"
+        ],
+        "description": "包含指定版本的配置及完整文件依赖；课程字典仅返回该版本位置及对应条目。任一依赖不可用时整次响应失败。云端 DISABLED 版本仍可供历史读取；已下载旧版的本地可用状态在新版下载校验成功后再切换。"
+      },
+      "AssessmentMaterialPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssessmentMaterialSummary"
+            },
+            "description": "当前页记录。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "AssessmentMaterialSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
+          },
+          "official_material_code": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "content_version": {
+            "$ref": "#/components/schemas/ContentVersion"
+          },
+          "name": {
+            "type": "string",
+            "description": "内容显示名称。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "official_material_code",
+          "content_version",
+          "name",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "管理列表概要；完整活动配置通过已有 GET /api/assessment-materials/{code}/{version} 读取。"
+      },
+      "AssessmentMaterialVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "official_material_code": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "content_version": {
+            "$ref": "#/components/schemas/ContentVersion"
+          },
+          "name": {
+            "type": "string",
+            "description": "内容名称。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "official_material_code",
+          "content_version",
+          "name",
+          "status",
+          "updated_at"
+        ]
+      },
+      "ContentStatus": {
         "type": "string",
         "enum": [
           "ACTIVE",
           "DISABLED"
         ],
-        "description": "管理员状态；本次补充明确取值。"
+        "description": "状态在所属端生效：ACTIVE 可新选；DISABLED 禁止新选但历史引用可读。课程/材料因新版替换而在云端禁用旧版，不直接覆盖平板本地状态；本地等待新版完整下载并校验成功后，才将原本地版本设为 DISABLED。"
       },
-      "UserStatus": {
-        "type": "integer",
-        "enum": [
-          0,
-          1
-        ],
-        "description": "教师云端状态：0 禁用，1 启用。与本地离线登录无关。"
-      },
-      "LicenseStatus": {
+      "ContentVersion": {
         "type": "string",
-        "enum": [
-          "UNUSED",
-          "ACTIVE",
-          "REVOKED"
-        ],
-        "description": "激活码状态；REVOKED 不可恢复。"
-      },
-      "Username": {
-        "type": "string",
-        "description": "账号名；本次约定 3—64 位 ASCII 字母、数字、下划线、点或连字符，服务端转换为小写后唯一。",
-        "minLength": 3,
-        "pattern": "^[A-Za-z0-9_.-]+$",
+        "description": "不可变版本标签；同一业务码内唯一。全新课程或材料使用新编号及初始版本；仅修改同一内容时沿用编号并增加内容版本。不使用字符串大小或 SemVer 推断新旧。云端当前版本由云端 ACTIVE 状态确定，本地在下载校验成功后独立切换。",
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
         "maxLength": 64
       },
-      "AdminPassword": {
-        "type": "string",
-        "description": "管理员明文密码，仅 HTTPS 传输，服务端仅存哈希，不记录日志。8—128 字符，不裁剪空白。",
-        "minLength": 8,
-        "maxLength": 128,
-        "format": "password",
-        "writeOnly": true
+      "FileDependency": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "file_code": {
+            "$ref": "#/components/schemas/CloudFileCode"
+          },
+          "file_kind": {
+            "$ref": "#/components/schemas/CloudFileKind"
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "实际 MIME。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "完整字节数。"
+          },
+          "sha256": {
+            "$ref": "#/components/schemas/Hash"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "音频毫秒时长；非音频 null。",
+            "nullable": true
+          }
+        },
+        "required": [
+          "file_code",
+          "file_kind",
+          "mime_type",
+          "size_bytes",
+          "sha256",
+          "duration_ms"
+        ],
+        "description": "仅 READY 官方资源可进入清单；file_code 在同一清单内唯一。"
+      },
+      "Grammar": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "grammar_code": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "name": {
+            "type": "string",
+            "description": "语法名称。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "递增整数版本，创建为 1；任何有效修改均加 1。"
+          },
+          "icon_file_code": {
+            "type": "string",
+            "description": "官方资源编号；终身对应同一份字节，不复用。",
+            "minLength": 1,
+            "pattern": "^CF_[A-Za-z0-9_-]+$",
+            "maxLength": 128,
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "grammar_code",
+          "name",
+          "version",
+          "icon_file_code",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "ImageSortingActivity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "activity_id": {
+            "type": "string",
+            "description": "配置内唯一活动编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "IMAGE_SORTING"
+            ],
+            "description": "图片排序。"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "item_id": {
+                      "type": "string",
+                      "description": "活动内唯一图片项编号。",
+                      "minLength": 1,
+                      "pattern": "\\S"
+                    },
+                    "file_code": {
+                      "$ref": "#/components/schemas/FileCode"
+                    }
+                  },
+                  "required": [
+                    "item_id",
+                    "file_code"
+                  ]
+                },
+                "description": "图片项。"
+              },
+              "correct_order": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "图片项编号。",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "description": "与 items 一一对应的正确顺序，不得多漏或重复。",
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "items",
+              "correct_order"
+            ]
+          }
+        },
+        "required": [
+          "activity_id",
+          "type",
+          "config"
+        ]
+      },
+      "Question": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "description": "问答活动内唯一且稳定的题目编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "text": {
+            "type": "string",
+            "description": "经业务确认的问题原文。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "hint": {
+            "type": "string",
+            "description": "预设提示，评估材料中可省略，允许空字符串；不得混入评分规则。"
+          },
+          "grammar": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Code"
+            },
+            "description": "语法编号数组，评估材料中可省略；允许空数组，不得重复。",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "question_id",
+          "text"
+        ]
+      },
+      "QuestionAnsweringActivity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "activity_id": {
+            "type": "string",
+            "description": "配置内唯一活动编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "QUESTION_ANSWERING"
+            ],
+            "description": "问题问答。"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "questions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Question"
+                },
+                "description": "题目列表，question_id 唯一。"
+              }
+            },
+            "required": [
+              "questions"
+            ]
+          }
+        },
+        "required": [
+          "activity_id",
+          "type",
+          "config"
+        ]
+      },
+      "StoryNarrationActivity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "activity_id": {
+            "type": "string",
+            "description": "配置内唯一活动编号。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "STORY_NARRATION"
+            ],
+            "description": "故事叙述。"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "评估材料的标准故事音频可省略；导入时未提供 audio_file_name，则配置中不生成 audio_file_code。",
+            "properties": {
+              "audio_file_code": {
+                "$ref": "#/components/schemas/FileCode"
+              },
+              "content_items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContentItem"
+                },
+                "description": "实际故事图片分组；content_item_id 唯一，不固定为五组。"
+              }
+            },
+            "required": [
+              "content_items"
+            ]
+          }
+        },
+        "required": [
+          "activity_id",
+          "type",
+          "config"
+        ]
+      },
+      "assessmentMaterialDisableResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AssessmentMaterial"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "assessmentMaterialDownloadResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AssessmentMaterialDownload"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "assessmentMaterialListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AssessmentMaterialPage"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "assessmentMaterialPublishResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AssessmentMaterial"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "assessmentMaterialVersionsResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AssessmentMaterialVersion"
+                },
+                "description": "全量版本目录，无分页。"
+              }
+            },
+            "required": [
+              "items"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
       },
       "AdminAccount": {
         "type": "object",
@@ -5735,28 +7391,113 @@
           "updated_at"
         ]
       },
-      "UserAccount": {
+      "AdminAccountPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAccount"
+            },
+            "description": "当前页记录。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "AdminPassword": {
+        "type": "string",
+        "description": "管理员明文密码，仅 HTTPS 传输，服务端仅存哈希，不记录日志。8—128 字符，不裁剪空白。",
+        "minLength": 8,
+        "maxLength": 128,
+        "format": "password",
+        "writeOnly": true
+      },
+      "AdminSession": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "管理员访问凭证。",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "token_type": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ],
+            "description": "认证方案。"
+          },
+          "expires_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "account": {
+            "$ref": "#/components/schemas/AdminAccount"
+          }
+        },
+        "required": [
+          "token",
+          "token_type",
+          "expires_at",
+          "account"
+        ]
+      },
+      "AdminStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "DISABLED"
+        ],
+        "description": "管理员状态；本次补充明确取值。"
+      },
+      "IssuedLicense": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "id": {
             "$ref": "#/components/schemas/CloudId"
           },
-          "username": {
-            "$ref": "#/components/schemas/Username"
+          "activation_code": {
+            "type": "string",
+            "description": "仅本次生成结果返回的可分发激活码。不得写日志。",
+            "minLength": 1,
+            "pattern": "\\S"
           },
           "status": {
-            "$ref": "#/components/schemas/UserStatus"
-          },
-          "created_at": {
-            "$ref": "#/components/schemas/Timestamp"
+            "type": "string",
+            "enum": [
+              "UNUSED"
+            ],
+            "description": "新生成状态。"
           }
         },
         "required": [
           "id",
-          "username",
-          "status",
-          "created_at"
+          "activation_code",
+          "status"
         ]
       },
       "License": {
@@ -5787,31 +7528,89 @@
           "activated_at"
         ]
       },
-      "IssuedLicense": {
+      "LicensePage": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "id": {
-            "$ref": "#/components/schemas/CloudId"
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/License"
+            },
+            "description": "当前页记录。"
           },
-          "activation_code": {
-            "type": "string",
-            "description": "仅本次生成结果返回的可分发激活码。不得写日志。",
-            "minLength": 1,
-            "pattern": "\\S"
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "UNUSED"
-            ],
-            "description": "新生成状态。"
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
           }
         },
         "required": [
-          "id",
-          "activation_code",
-          "status"
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ]
+      },
+      "LicenseStatus": {
+        "type": "string",
+        "enum": [
+          "UNUSED",
+          "ACTIVE",
+          "REVOKED"
+        ],
+        "description": "激活码状态；REVOKED 不可恢复。"
+      },
+      "NullableTimestamp": {
+        "type": "string",
+        "description": "UTC ISO 8601 时间戳。",
+        "format": "date-time",
+        "nullable": true
+      },
+      "TeacherPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserAccount"
+            },
+            "description": "当前页记录。"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "当前页码。"
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "每页条数。",
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "过滤后的总条数。"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
         ]
       },
       "TokenPair": {
@@ -5852,36 +7651,44 @@
           "user"
         ]
       },
-      "AdminSession": {
+      "UserAccount": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "token": {
-            "type": "string",
-            "description": "管理员访问凭证。",
-            "minLength": 1,
-            "pattern": "\\S"
+          "id": {
+            "$ref": "#/components/schemas/CloudId"
           },
-          "token_type": {
-            "type": "string",
-            "enum": [
-              "Bearer"
-            ],
-            "description": "认证方案。"
+          "username": {
+            "$ref": "#/components/schemas/Username"
           },
-          "expires_at": {
+          "status": {
+            "$ref": "#/components/schemas/UserStatus"
+          },
+          "created_at": {
             "$ref": "#/components/schemas/Timestamp"
-          },
-          "account": {
-            "$ref": "#/components/schemas/AdminAccount"
           }
         },
         "required": [
-          "token",
-          "token_type",
-          "expires_at",
-          "account"
+          "id",
+          "username",
+          "status",
+          "created_at"
         ]
+      },
+      "UserStatus": {
+        "type": "integer",
+        "enum": [
+          0,
+          1
+        ],
+        "description": "教师云端状态：0 禁用，1 启用。与本地离线登录无关。"
+      },
+      "Username": {
+        "type": "string",
+        "description": "账号名；本次约定 3—64 位 ASCII 字母、数字、下划线、点或连字符，服务端转换为小写后唯一。",
+        "minLength": 3,
+        "pattern": "^[A-Za-z0-9_.-]+$",
+        "maxLength": 64
       },
       "adminLoginResponse": {
         "type": "object",
@@ -5909,31 +7716,6 @@
         ]
       },
       "createAdminAccountResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "code": {
-            "type": "string",
-            "enum": [
-              "OK"
-            ],
-            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
-          },
-          "message": {
-            "type": "string",
-            "description": "脱敏说明。"
-          },
-          "data": {
-            "$ref": "#/components/schemas/AdminAccount"
-          }
-        },
-        "required": [
-          "code",
-          "message",
-          "data"
-        ]
-      },
-      "updateAdminAccountResponse": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -5998,39 +7780,29 @@
           "data"
         ]
       },
-      "LicensePage": {
+      "listAdminAccountsResponse": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/License"
-            },
-            "description": "当前页记录。"
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
           },
-          "page": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "当前页码。"
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
           },
-          "page_size": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "每页条数。",
-            "maximum": 100
-          },
-          "total": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "过滤后的总条数。"
+          "data": {
+            "$ref": "#/components/schemas/AdminAccountPage"
           }
         },
         "required": [
-          "items",
-          "page",
-          "page_size",
-          "total"
+          "code",
+          "message",
+          "data"
         ]
       },
       "listLicensesResponse": {
@@ -6058,7 +7830,7 @@
           "data"
         ]
       },
-      "revokeLicenseResponse": {
+      "listTeachersResponse": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -6074,32 +7846,7 @@
             "description": "脱敏说明。"
           },
           "data": {
-            "$ref": "#/components/schemas/License"
-          }
-        },
-        "required": [
-          "code",
-          "message",
-          "data"
-        ]
-      },
-      "registerTeacherResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "code": {
-            "type": "string",
-            "enum": [
-              "OK"
-            ],
-            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
-          },
-          "message": {
-            "type": "string",
-            "description": "脱敏说明。"
-          },
-          "data": {
-            "$ref": "#/components/schemas/TokenPair"
+            "$ref": "#/components/schemas/TeacherPage"
           }
         },
         "required": [
@@ -6133,42 +7880,7 @@
           "data"
         ]
       },
-      "TeacherPage": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/UserAccount"
-            },
-            "description": "当前页记录。"
-          },
-          "page": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "当前页码。"
-          },
-          "page_size": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "每页条数。",
-            "maximum": 100
-          },
-          "total": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "过滤后的总条数。"
-          }
-        },
-        "required": [
-          "items",
-          "page",
-          "page_size",
-          "total"
-        ]
-      },
-      "listTeachersResponse": {
+      "registerTeacherResponse": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -6184,7 +7896,57 @@
             "description": "脱敏说明。"
           },
           "data": {
-            "$ref": "#/components/schemas/TeacherPage"
+            "$ref": "#/components/schemas/TokenPair"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "revokeLicenseResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/License"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ]
+      },
+      "updateAdminAccountResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "OK"
+            ],
+            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
+          },
+          "message": {
+            "type": "string",
+            "description": "脱敏说明。"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AdminAccount"
           }
         },
         "required": [
@@ -6210,66 +7972,6 @@
           },
           "data": {
             "$ref": "#/components/schemas/UserAccount"
-          }
-        },
-        "required": [
-          "code",
-          "message",
-          "data"
-        ]
-      },
-      "AdminAccountPage": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminAccount"
-            },
-            "description": "当前页记录。"
-          },
-          "page": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "当前页码。"
-          },
-          "page_size": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "每页条数。",
-            "maximum": 100
-          },
-          "total": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "过滤后的总条数。"
-          }
-        },
-        "required": [
-          "items",
-          "page",
-          "page_size",
-          "total"
-        ]
-      },
-      "listAdminAccountsResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "code": {
-            "type": "string",
-            "enum": [
-              "OK"
-            ],
-            "description": "业务请求受理或读取成功；异步结果须进一步检查任务 stage。"
-          },
-          "message": {
-            "type": "string",
-            "description": "脱敏说明。"
-          },
-          "data": {
-            "$ref": "#/components/schemas/AdminAccountPage"
           }
         },
         "required": [
